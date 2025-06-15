@@ -6,8 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, Ban, CheckCircle, XCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Search, 
+  Eye, 
+  Ban, 
+  CheckCircle, 
+  XCircle, 
+  Download, 
+  Filter, 
+  Calendar,
+  TrendingUp,
+  Users,
+  CreditCard
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import StudentDetailsModal from "./StudentDetailsModal";
 
 interface Student {
   id: number;
@@ -18,6 +32,9 @@ interface Student {
   status: 'active' | 'inactive';
   createdAt: string;
   lastBooking?: string;
+  totalSpent?: string;
+  averageSessionDuration?: string;
+  preferredStudyHalls?: string[];
 }
 
 const StudentsTable = () => {
@@ -25,9 +42,12 @@ const StudentsTable = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [bookingFilter, setBookingFilter] = useState<string>('all');
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
-  // Mock data for now - replace with actual API call
+  // Enhanced mock data with more details
   const mockStudents: Student[] = [
     {
       id: 1,
@@ -37,7 +57,10 @@ const StudentsTable = () => {
       bookingsCount: 15,
       status: 'active',
       createdAt: "2024-01-15",
-      lastBooking: "2024-06-10"
+      lastBooking: "2024-06-10",
+      totalSpent: "₹3,750",
+      averageSessionDuration: "4.2h",
+      preferredStudyHalls: ["Central Study Hub", "Elite Library"]
     },
     {
       id: 2,
@@ -47,7 +70,10 @@ const StudentsTable = () => {
       bookingsCount: 8,
       status: 'active',
       createdAt: "2024-02-20",
-      lastBooking: "2024-06-12"
+      lastBooking: "2024-06-12",
+      totalSpent: "₹2,160",
+      averageSessionDuration: "3.5h",
+      preferredStudyHalls: ["Study Zone Pro"]
     },
     {
       id: 3,
@@ -57,7 +83,10 @@ const StudentsTable = () => {
       bookingsCount: 3,
       status: 'inactive',
       createdAt: "2024-03-10",
-      lastBooking: "2024-05-15"
+      lastBooking: "2024-05-15",
+      totalSpent: "₹810",
+      averageSessionDuration: "2.8h",
+      preferredStudyHalls: ["Central Study Hub"]
     },
     {
       id: 4,
@@ -67,7 +96,36 @@ const StudentsTable = () => {
       bookingsCount: 22,
       status: 'active',
       createdAt: "2024-01-05",
-      lastBooking: "2024-06-14"
+      lastBooking: "2024-06-14",
+      totalSpent: "₹5,940",
+      averageSessionDuration: "5.1h",
+      preferredStudyHalls: ["Elite Library", "Study Zone Pro", "Central Study Hub"]
+    },
+    {
+      id: 5,
+      name: "Arjun Reddy",
+      email: "arjun.reddy@email.com",
+      phone: "+91 9876543214",
+      bookingsCount: 12,
+      status: 'active',
+      createdAt: "2024-02-01",
+      lastBooking: "2024-06-13",
+      totalSpent: "₹3,240",
+      averageSessionDuration: "4.0h",
+      preferredStudyHalls: ["Central Study Hub"]
+    },
+    {
+      id: 6,
+      name: "Kavya Nair",
+      email: "kavya.nair@email.com",
+      phone: "+91 9876543215",
+      bookingsCount: 0,
+      status: 'active',
+      createdAt: "2024-06-10",
+      lastBooking: undefined,
+      totalSpent: "₹0",
+      averageSessionDuration: "0h",
+      preferredStudyHalls: []
     }
   ];
 
@@ -123,16 +181,101 @@ const StudentsTable = () => {
     }
   };
 
+  const handleViewStudent = (student: Student) => {
+    setSelectedStudent(student);
+    setIsModalOpen(true);
+  };
+
+  const handleExportStudents = () => {
+    // TODO: Implement actual export functionality
+    toast({
+      title: "Export Started",
+      description: "Student data export will be ready shortly",
+    });
+  };
+
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    let matchesBookings = true;
+    if (bookingFilter === 'high') {
+      matchesBookings = student.bookingsCount >= 10;
+    } else if (bookingFilter === 'medium') {
+      matchesBookings = student.bookingsCount >= 5 && student.bookingsCount < 10;
+    } else if (bookingFilter === 'low') {
+      matchesBookings = student.bookingsCount > 0 && student.bookingsCount < 5;
+    } else if (bookingFilter === 'none') {
+      matchesBookings = student.bookingsCount === 0;
+    }
+    
+    return matchesSearch && matchesStatus && matchesBookings;
   });
+
+  // Calculate statistics
+  const totalStudents = students.length;
+  const activeStudents = students.filter(s => s.status === 'active').length;
+  const totalBookings = students.reduce((sum, s) => sum + s.bookingsCount, 0);
+  const totalRevenue = students.reduce((sum, s) => {
+    const amount = parseFloat(s.totalSpent?.replace('₹', '').replace(',', '') || '0');
+    return sum + amount;
+  }, 0);
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Total Students</p>
+                <p className="text-2xl font-bold">{totalStudents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-sm text-gray-600">Active Students</p>
+                <p className="text-2xl font-bold">{activeStudents}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="h-8 w-8 text-orange-600" />
+              <div>
+                <p className="text-sm text-gray-600">Total Bookings</p>
+                <p className="text-2xl font-bold">{totalBookings}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CreditCard className="h-8 w-8 text-purple-600" />
+              <div>
+                <p className="text-sm text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Enhanced Filters */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -147,6 +290,7 @@ const StudentsTable = () => {
                 />
               </div>
             </div>
+            
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by status" />
@@ -157,6 +301,24 @@ const StudentsTable = () => {
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={bookingFilter} onValueChange={setBookingFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by bookings" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Booking Levels</SelectItem>
+                <SelectItem value="high">High Activity (10+)</SelectItem>
+                <SelectItem value="medium">Medium Activity (5-9)</SelectItem>
+                <SelectItem value="low">Low Activity (1-4)</SelectItem>
+                <SelectItem value="none">No Bookings</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button onClick={handleExportStudents} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -179,6 +341,8 @@ const StudentsTable = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Bookings</TableHead>
+                  <TableHead>Total Spent</TableHead>
+                  <TableHead>Avg. Session</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Last Booking</TableHead>
                   <TableHead>Actions</TableHead>
@@ -193,6 +357,8 @@ const StudentsTable = () => {
                     <TableCell>
                       <Badge variant="secondary">{student.bookingsCount}</Badge>
                     </TableCell>
+                    <TableCell className="font-medium">{student.totalSpent}</TableCell>
+                    <TableCell>{student.averageSessionDuration}</TableCell>
                     <TableCell>
                       <Badge 
                         variant={student.status === 'active' ? 'default' : 'destructive'}
@@ -213,7 +379,11 @@ const StudentsTable = () => {
                     <TableCell>{student.lastBooking || 'Never'}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewStudent(student)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
@@ -242,6 +412,13 @@ const StudentsTable = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Student Details Modal */}
+      <StudentDetailsModal
+        student={selectedStudent}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };
