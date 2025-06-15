@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,17 +16,64 @@ import {
   Building2,
   Calendar,
   CheckCircle,
-  XCircle
+  XCircle,
+  Plus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStudyHalls } from "@/hooks/useStudyHalls";
+import StudyHallForm from "./StudyHallForm";
 import ExportButtons from "@/components/shared/ExportButtons";
 
 const StudyHallsTable = () => {
-  const { studyHalls, loading, updateStudyHall } = useStudyHalls();
+  const { studyHalls, loading, updateStudyHall, addStudyHall } = useStudyHalls();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const { toast } = useToast();
+
+  const handleCreateStudyHall = async (formData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('study_halls')
+        .insert({
+          name: formData.name,
+          merchant_id: formData.merchantId,
+          location: formData.location,
+          description: formData.description,
+          capacity: formData.rows * formData.seatsPerRow,
+          price_per_day: parseFloat(formData.pricePerDay),
+          price_per_week: formData.pricePerWeek ? parseFloat(formData.pricePerWeek) : null,
+          price_per_month: formData.pricePerMonth ? parseFloat(formData.pricePerMonth) : null,
+          amenities: formData.amenities,
+          status: formData.status,
+          operating_hours: {
+            layout: formData.layout,
+            rows: formData.rows,
+            seatsPerRow: formData.seatsPerRow,
+            gpsLocation: formData.gpsLocation
+          }
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      addStudyHall(data);
+      setShowCreateForm(false);
+      
+      toast({
+        title: "Success",
+        description: "Study hall created successfully",
+      });
+    } catch (error) {
+      console.error('Error creating study hall:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create study hall",
+        variant: "destructive",
+      });
+    }
+  };
 
   const toggleStudyHallStatus = async (studyHallId: string, currentStatus: string) => {
     try {
@@ -159,6 +205,14 @@ const StudyHallsTable = () => {
               </SelectContent>
             </Select>
 
+            <Button 
+              onClick={() => setShowCreateForm(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Study Hall
+            </Button>
+
             <ExportButtons
               data={exportData}
               filename="study-halls"
@@ -274,6 +328,14 @@ const StudyHallsTable = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Study Hall Creation Form */}
+      <StudyHallForm
+        isOpen={showCreateForm}
+        onClose={() => setShowCreateForm(false)}
+        onSubmit={handleCreateStudyHall}
+        isAdmin={true}
+      />
     </div>
   );
 };
