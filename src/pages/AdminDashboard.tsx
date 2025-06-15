@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,7 @@ import {
 import AdminSidebar from "@/components/AdminSidebar";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("students");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const handleToggleExpand = (itemId: string) => {
@@ -64,6 +63,60 @@ const AdminDashboard = () => {
 
   const renderModuleContent = () => {
     switch (activeTab) {
+      case "dashboard":
+        return (
+          <div className="space-y-6">
+            {/* Dashboard Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {stats.map((stat, index) => (
+                <Card key={index} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                        <p className={`text-sm ${stat.color} flex items-center mt-1`}>
+                          {stat.change} from last month
+                        </p>
+                      </div>
+                      <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
+                        {stat.icon}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button variant="outline" className="h-20 flex-col">
+                    <Users className="h-6 w-6 mb-2" />
+                    View Students
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <Building2 className="h-6 w-6 mb-2" />
+                    Manage Merchants
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <DollarSign className="h-6 w-6 mb-2" />
+                    Process Payouts
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <TrendingUp className="h-6 w-6 mb-2" />
+                    View Reports
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       case "students":
         return (
           <div className="space-y-6">

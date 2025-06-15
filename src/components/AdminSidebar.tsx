@@ -13,7 +13,8 @@ import {
   UserPlus, 
   TrendingUp,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  LayoutDashboard
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -36,6 +37,11 @@ interface AdminSidebarProps {
 }
 
 const sidebarItems: AdminSidebarItem[] = [
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: <LayoutDashboard className="h-5 w-5" />
+  },
   {
     id: "students",
     label: "Students",
