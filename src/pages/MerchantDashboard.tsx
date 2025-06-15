@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, Calendar, TrendingUp, Building2, MapPin, Star, Eye, Plus, UserPlus } from "lucide-react";
+import { Users, DollarSign, Calendar, TrendingUp, Building2, MapPin, Star, Eye, Plus, UserPlus, Edit } from "lucide-react";
 import StudyHallForm from "@/components/admin/StudyHallForm";
 import StudyHallView from "@/components/admin/StudyHallView";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +25,8 @@ const MerchantDashboard = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
+  const [editingStudyHall, setEditingStudyHall] = useState<any>(null);
+  
   const [studyHalls, setStudyHalls] = useState([
     {
       id: 1,
@@ -111,6 +113,7 @@ const MerchantDashboard = () => {
       qrCode: data.qrCode || `${window.location.origin}/book/${Date.now()}`
     };
     setStudyHalls(prev => [...prev, newStudyHall]);
+    setEditingStudyHall(null);
     toast({
       title: "Success",
       description: "Study hall created successfully",
@@ -118,10 +121,11 @@ const MerchantDashboard = () => {
   };
 
   const handleEditStudyHall = (data: any) => {
-    if (!selectedStudyHall) return;
+    if (!editingStudyHall) return;
     setStudyHalls(prev => prev.map(hall => 
-      hall.id === selectedStudyHall.id ? { ...hall, ...data } : hall
+      hall.id === editingStudyHall.id ? { ...hall, ...data } : hall
     ));
+    setEditingStudyHall(null);
     toast({
       title: "Success",
       description: "Study hall updated successfully",
@@ -131,6 +135,16 @@ const MerchantDashboard = () => {
   const openViewModal = (hall: any) => {
     setSelectedStudyHall(hall);
     setIsViewOpen(true);
+  };
+
+  const openEditModal = (hall: any) => {
+    setEditingStudyHall(hall);
+    setIsFormOpen(true);
+  };
+
+  const closeFormModal = () => {
+    setIsFormOpen(false);
+    setEditingStudyHall(null);
   };
 
   const renderDashboardContent = () => {
@@ -353,7 +367,8 @@ const MerchantDashboard = () => {
                           <Eye className="h-4 w-4 mr-1" />
                           View Details
                         </Button>
-                        <Button size="sm" variant="outline">
+                        <Button size="sm" variant="outline" onClick={() => openEditModal(hall)}>
+                          <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Button>
                       </div>
@@ -469,9 +484,9 @@ const MerchantDashboard = () => {
         {/* Study Hall Form Modal */}
         <StudyHallForm
           isOpen={isFormOpen}
-          onClose={() => setIsFormOpen(false)}
-          onSubmit={handleAddStudyHall}
-          editData={null}
+          onClose={closeFormModal}
+          onSubmit={editingStudyHall ? handleEditStudyHall : handleAddStudyHall}
+          editData={editingStudyHall}
           isAdmin={false}
           currentMerchant={currentMerchant}
         />
@@ -484,7 +499,7 @@ const MerchantDashboard = () => {
             onClose={() => setIsViewOpen(false)}
             onEdit={() => {
               setIsViewOpen(false);
-              // Open edit modal functionality can be added here
+              openEditModal(selectedStudyHall);
             }}
           />
         )}
