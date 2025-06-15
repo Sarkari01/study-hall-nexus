@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock, FileText, User, CreditCard } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock, FileText, User, CreditCard, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import MerchantDetailsModal from "./MerchantDetailsModal";
@@ -27,6 +27,10 @@ interface MerchantProfile {
   business_address: AddressData;
   full_name: string;
   contact_number: string;
+  incharge_name?: string;
+  incharge_designation?: string;
+  incharge_phone?: string;
+  incharge_email?: string;
   approval_status: 'pending' | 'approved' | 'rejected' | 'suspended';
   verification_status: 'unverified' | 'pending' | 'verified';
   onboarding_completed: boolean;
@@ -203,7 +207,8 @@ const MerchantsTable = () => {
       merchant.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       merchant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       merchant.business_phone.includes(searchTerm) ||
-      merchant.contact_number.includes(searchTerm);
+      merchant.contact_number.includes(searchTerm) ||
+      (merchant.incharge_name && merchant.incharge_name.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || merchant.approval_status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -287,7 +292,7 @@ const MerchantsTable = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search merchants by name, business, or phone..."
+                  placeholder="Search merchants by name, business, phone, or incharge..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -330,6 +335,7 @@ const MerchantsTable = () => {
                 <TableRow>
                   <TableHead>Business Info</TableHead>
                   <TableHead>Owner Details</TableHead>
+                  <TableHead>Incharge Details</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Approval Status</TableHead>
@@ -358,6 +364,19 @@ const MerchantsTable = () => {
                       <div>
                         <div className="font-medium">{merchant.full_name}</div>
                         <div className="text-sm text-gray-500">{merchant.contact_number}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        {merchant.incharge_name ? (
+                          <>
+                            <div className="font-medium">{merchant.incharge_name}</div>
+                            <div className="text-sm text-gray-500">{merchant.incharge_designation}</div>
+                            <div className="text-sm text-gray-500">{merchant.incharge_phone}</div>
+                          </>
+                        ) : (
+                          <span className="text-sm text-gray-400">Not specified</span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -446,7 +465,7 @@ const MerchantsTable = () => {
                 ))}
                 {filteredMerchants.length === 0 && !loading && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <div className="flex flex-col items-center">
                         <Building2 className="h-12 w-12 text-gray-400 mb-4" />
                         <p className="text-gray-500">No merchants found</p>

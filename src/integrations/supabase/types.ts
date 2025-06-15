@@ -498,6 +498,11 @@ export type Database = {
           created_by: string | null
           full_name: string
           id: string
+          incharge_address: Json | null
+          incharge_designation: string | null
+          incharge_email: string | null
+          incharge_name: string | null
+          incharge_phone: string | null
           notes: string | null
           onboarding_completed: boolean | null
           refundable_security_deposit: number | null
@@ -522,6 +527,11 @@ export type Database = {
           created_by?: string | null
           full_name: string
           id?: string
+          incharge_address?: Json | null
+          incharge_designation?: string | null
+          incharge_email?: string | null
+          incharge_name?: string | null
+          incharge_phone?: string | null
           notes?: string | null
           onboarding_completed?: boolean | null
           refundable_security_deposit?: number | null
@@ -546,6 +556,11 @@ export type Database = {
           created_by?: string | null
           full_name?: string
           id?: string
+          incharge_address?: Json | null
+          incharge_designation?: string | null
+          incharge_email?: string | null
+          incharge_name?: string | null
+          incharge_phone?: string | null
           notes?: string | null
           onboarding_completed?: boolean | null
           refundable_security_deposit?: number | null
