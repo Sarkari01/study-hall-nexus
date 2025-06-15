@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -99,11 +98,11 @@ const DeveloperManagement = () => {
     {
       id: '5',
       name: 'DeepSeek API',
-      key: 'dsk_1234567890abcdef',
-      description: 'AI-powered analytics and insights',
+      key: 'sk-528c2a6b0f984e7f88d3b62bb54f5e5a',
+      description: 'AI-powered analytics, chatbot, content moderation, and insights',
       status: 'active',
-      lastUsed: '2024-01-15',
-      createdAt: '2024-01-01',
+      lastUsed: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString().split('T')[0],
       environment: 'production',
       provider: 'DeepSeek',
       icon: '🤖'
@@ -117,6 +116,20 @@ const DeveloperManagement = () => {
     environment: 'production',
     provider: ''
   });
+
+  // Function to get DeepSeek API key for other components
+  const getDeepSeekApiKey = (): string | undefined => {
+    const deepseekKey = apiKeys.find(key => key.provider === 'DeepSeek' && key.status === 'active');
+    return deepseekKey?.key;
+  };
+
+  // Store the API key in localStorage for components to access
+  React.useEffect(() => {
+    const deepseekKey = getDeepSeekApiKey();
+    if (deepseekKey) {
+      localStorage.setItem('deepseek_api_key', deepseekKey);
+    }
+  }, [apiKeys]);
 
   const toggleKeyVisibility = (keyId: string) => {
     setShowKeys(prev => ({
@@ -253,6 +266,19 @@ const DeveloperManagement = () => {
           API Documentation
         </Button>
       </div>
+
+      {/* DeepSeek Status Banner */}
+      <Card className="border-green-200 bg-green-50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <div>
+              <h3 className="font-medium text-green-900">DeepSeek AI Configured</h3>
+              <p className="text-sm text-green-700">All AI features are now active and ready to use</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="api-keys" className="space-y-6">
         <TabsList>

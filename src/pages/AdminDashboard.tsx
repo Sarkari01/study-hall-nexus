@@ -286,9 +286,8 @@ const AdminDashboard = () => {
   };
 
   const getDeepSeekApiKey = (): string | undefined => {
-    // In a real app, this would fetch from your secure storage/environment
-    // For now, we'll return undefined - users need to configure it in Developer Management
-    return undefined;
+    // Get the API key from localStorage (set by DeveloperManagement component)
+    return localStorage.getItem('deepseek_api_key') || undefined;
   };
 
   return (
