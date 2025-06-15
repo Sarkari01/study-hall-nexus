@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -114,8 +115,8 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
         account_holder_name: ''
       },
       refundable_security_deposit: 0,
-      approval_status: 'pending',
-      verification_status: 'unverified',
+      approval_status: 'pending' as const,
+      verification_status: 'unverified' as const,
       notes: ''
     }
   });
@@ -230,9 +231,9 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
         business_phone: data.business_phone,
         full_name: data.full_name,
         contact_number: data.contact_number,
-        business_address: data.business_address as Json,
-        communication_address: data.communication_address as Json,
-        bank_account_details: data.bank_account_details as Json,
+        business_address: data.business_address as unknown as Json,
+        communication_address: data.communication_address as unknown as Json,
+        bank_account_details: data.bank_account_details as unknown as Json,
         refundable_security_deposit: data.refundable_security_deposit,
         approval_status: data.approval_status,
         verification_status: data.verification_status,
@@ -710,3 +711,4 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
 };
 
 export default MerchantDetailsModal;
+
