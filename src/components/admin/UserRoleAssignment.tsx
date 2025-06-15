@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,7 @@ interface UserRole {
   user_profiles: {
     full_name: string;
     avatar_url: string;
-  } | null; // Made nullable to match actual data structure
+  } | null;
 }
 
 interface Role {
@@ -58,13 +57,20 @@ const UserRoleAssignment = () => {
         .from('user_roles')
         .select(`
           *,
-          custom_roles (name, color, description),
+          custom_roles!inner (name, color, description),
           user_profiles (full_name, avatar_url)
         `)
         .order('assigned_at', { ascending: false });
 
       if (error) throw error;
-      setUserRoles(data || []);
+      
+      // Type assertion to ensure the data matches our interface
+      const typedData = (data || []).map(item => ({
+        ...item,
+        user_profiles: item.user_profiles || null
+      })) as UserRole[];
+      
+      setUserRoles(typedData);
       setLoading(false);
     } catch (error) {
       toast({
