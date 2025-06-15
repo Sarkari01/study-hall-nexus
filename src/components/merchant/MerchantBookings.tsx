@@ -16,6 +16,7 @@ import { format, addDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import ExportButtons from "@/components/shared/ExportButtons";
 import BookingDetailsModal from "./BookingDetailsModal";
+import type { DateRange } from "react-day-picker";
 
 interface Booking {
   id: string;
@@ -40,10 +41,7 @@ const MerchantBookings = () => {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
   const [studyHallFilter, setStudyHallFilter] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<{from: Date | undefined, to: Date | undefined}>({
-    from: undefined,
-    to: undefined
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -191,12 +189,16 @@ const MerchantBookings = () => {
     }
   };
 
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+  };
+
   const clearAllFilters = () => {
     setSearchTerm('');
     setStatusFilter([]);
     setPaymentStatusFilter('all');
     setStudyHallFilter('all');
-    setDateRange({ from: undefined, to: undefined });
+    setDateRange(undefined);
   };
 
   const getStatusColor = (status: string) => {
@@ -231,8 +233,8 @@ const MerchantBookings = () => {
     
     const bookingDate = new Date(booking.booking_date);
     const matchesDateRange = 
-      (!dateRange.from || bookingDate >= dateRange.from) &&
-      (!dateRange.to || bookingDate <= dateRange.to);
+      (!dateRange?.from || bookingDate >= dateRange.from) &&
+      (!dateRange?.to || bookingDate <= dateRange.to);
     
     return matchesSearch && matchesStatus && matchesPaymentStatus && matchesStudyHall && matchesDateRange;
   }).sort((a, b) => {
@@ -407,7 +409,7 @@ const MerchantBookings = () => {
                       mode="range"
                       defaultMonth={dateRange?.from}
                       selected={dateRange}
-                      onSelect={setDateRange}
+                      onSelect={handleDateRangeChange}
                       numberOfMonths={2}
                     />
                   </PopoverContent>

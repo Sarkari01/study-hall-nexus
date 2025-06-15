@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import ExportButtons from "@/components/shared/ExportButtons";
+import type { DateRange } from "react-day-picker";
 
 interface Transaction {
   id: string;
@@ -41,10 +42,7 @@ const MerchantTransactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<{from: Date | undefined, to: Date | undefined}>({
-    from: undefined,
-    to: undefined
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [sortField, setSortField] = useState<string>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const { toast } = useToast();
@@ -162,11 +160,15 @@ const MerchantTransactions = () => {
     }
   };
 
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+  };
+
   const clearAllFilters = () => {
     setSearchTerm('');
     setTypeFilter('all');
     setStatusFilter('all');
-    setDateRange({ from: undefined, to: undefined });
+    setDateRange(undefined);
   };
 
   const getStatusColor = (status: string) => {
@@ -202,8 +204,8 @@ const MerchantTransactions = () => {
     
     const transactionDate = new Date(transaction.created_at);
     const matchesDateRange = 
-      (!dateRange.from || transactionDate >= dateRange.from) &&
-      (!dateRange.to || transactionDate <= dateRange.to);
+      (!dateRange?.from || transactionDate >= dateRange.from) &&
+      (!dateRange?.to || transactionDate <= dateRange.to);
     
     return matchesSearch && matchesType && matchesStatus && matchesDateRange;
   }).sort((a, b) => {
@@ -361,7 +363,7 @@ const MerchantTransactions = () => {
                           mode="range"
                           defaultMonth={dateRange?.from}
                           selected={dateRange}
-                          onSelect={setDateRange}
+                          onSelect={handleDateRangeChange}
                           numberOfMonths={2}
                         />
                       </PopoverContent>
