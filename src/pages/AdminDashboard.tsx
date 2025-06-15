@@ -11,7 +11,6 @@ import StudentsTable from "@/components/admin/StudentsTable";
 import MerchantsTable from "@/components/admin/MerchantsTable";
 import StudyHallsTable from "@/components/admin/StudyHallsTable";
 import BookingsTable from "@/components/admin/BookingsTable";
-import PaymentsTable from "@/components/admin/PaymentsTable";
 import TransactionsTable from "@/components/admin/TransactionsTable";
 import SettleNowTable from "@/components/admin/SettleNowTable";
 import LocationsTable from "@/components/admin/LocationsTable";
@@ -84,9 +83,9 @@ const AdminDashboard = () => {
               <Building2 className="h-6 w-6 mb-2" />
               Manage Merchants
             </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("payments")}>
+            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("transactions")}>
               <DollarSign className="h-6 w-6 mb-2" />
-              View Payments
+              View Transactions
             </Button>
             <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("study-halls")}>
               <Calendar className="h-6 w-6 mb-2" />
@@ -169,13 +168,6 @@ const AdminDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">Wallet Management</h2>
             </div>
             <WalletManagement />
-          </div>;
-      case "payments":
-        return <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Payment Transactions</h2>
-            </div>
-            <PaymentsTable />
           </div>;
       case "transactions":
         return <div className="space-y-6">
