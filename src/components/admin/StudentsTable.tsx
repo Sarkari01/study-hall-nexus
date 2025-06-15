@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import StudentDetailsModal from "./StudentDetailsModal";
-import PermissionChecker from "./PermissionChecker";
 
 interface Student {
   id: number;
@@ -194,14 +194,6 @@ const StudentsTable = () => {
     });
   };
 
-  const handleBulkAction = (action: string, selectedIds: number[]) => {
-    // TODO: Implement bulk actions
-    toast({
-      title: "Bulk Action",
-      description: `${action} applied to ${selectedIds.length} students`,
-    });
-  };
-
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -323,12 +315,10 @@ const StudentsTable = () => {
               </SelectContent>
             </Select>
 
-            <PermissionChecker permission="students.export">
-              <Button onClick={handleExportStudents} variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </PermissionChecker>
+            <Button onClick={handleExportStudents} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -389,34 +379,30 @@ const StudentsTable = () => {
                     <TableCell>{student.lastBooking || 'Never'}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <PermissionChecker permission="students.read">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewStudent(student)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </PermissionChecker>
-                        <PermissionChecker permission="students.write">
-                          <Button
-                            variant={student.status === 'active' ? 'destructive' : 'default'}
-                            size="sm"
-                            onClick={() => toggleStudentStatus(student.id, student.status)}
-                          >
-                            {student.status === 'active' ? (
-                              <>
-                                <Ban className="h-4 w-4 mr-1" />
-                                Disable
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Enable
-                              </>
-                            )}
-                          </Button>
-                        </PermissionChecker>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewStudent(student)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant={student.status === 'active' ? 'destructive' : 'default'}
+                          size="sm"
+                          onClick={() => toggleStudentStatus(student.id, student.status)}
+                        >
+                          {student.status === 'active' ? (
+                            <>
+                              <Ban className="h-4 w-4 mr-1" />
+                              Disable
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Enable
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

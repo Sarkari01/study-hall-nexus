@@ -284,102 +284,6 @@ export type Database = {
         }
         Relationships: []
       }
-      custom_roles: {
-        Row: {
-          color: string | null
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          is_system_role: boolean | null
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          color?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_system_role?: boolean | null
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          color?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          is_system_role?: boolean | null
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      permissions: {
-        Row: {
-          action: string
-          created_at: string
-          description: string | null
-          id: string
-          module: string
-          name: string
-        }
-        Insert: {
-          action: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          module: string
-          name: string
-        }
-        Update: {
-          action?: string
-          created_at?: string
-          description?: string | null
-          id?: string
-          module?: string
-          name?: string
-        }
-        Relationships: []
-      }
-      role_permissions: {
-        Row: {
-          created_at: string
-          id: string
-          permission_id: string | null
-          role_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          permission_id?: string | null
-          role_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          permission_id?: string | null
-          role_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "role_permissions_permission_id_fkey"
-            columns: ["permission_id"]
-            isOneToOne: false
-            referencedRelation: "permissions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "role_permissions_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "custom_roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_profiles: {
         Row: {
           avatar_url: string | null
@@ -422,65 +326,15 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          assigned_at: string
-          assigned_by: string | null
-          expires_at: string | null
-          id: string
-          is_active: boolean | null
-          role_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          assigned_at?: string
-          assigned_by?: string | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          role_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          assigned_at?: string
-          assigned_by?: string | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          role_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_roles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "custom_roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_user_permissions: {
-        Args: { user_id: string }
-        Returns: {
-          permission_name: string
-          permission_description: string
-          module: string
-          action: string
-        }[]
-      }
-      user_has_permission: {
-        Args: { user_id: string; permission_name: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
-      system_role: "super_admin" | "admin" | "moderator" | "editor" | "viewer"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -595,8 +449,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      system_role: ["super_admin", "admin", "moderator", "editor", "viewer"],
-    },
+    Enums: {},
   },
 } as const
