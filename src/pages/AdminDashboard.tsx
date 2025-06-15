@@ -9,37 +9,8 @@ import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus,
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdminSidebar from "@/components/AdminSidebar";
-import StudentsTable from "@/components/admin/StudentsTable";
-import MerchantsTable from "@/components/admin/MerchantsTable";
-import StudyHallsTable from "@/components/admin/StudyHallsTable";
-import BookingsTable from "@/components/admin/BookingsTable";
-import TransactionsTable from "@/components/admin/TransactionsTable";
-import SettleNowTable from "@/components/admin/SettleNowTable";
-import LocationsTable from "@/components/admin/LocationsTable";
-import LeadsTable from "@/components/admin/LeadsTable";
-import RevenueReports from "@/components/admin/RevenueReports";
-import BannerManager from "@/components/banners/BannerManager";
-import CommunityFeed from "@/components/community/CommunityFeed";
-import ChatSystem from "@/components/chat/ChatSystem";
-import DeveloperManagement from "@/components/admin/DeveloperManagement";
-import AIChatbot from "@/components/ai/AIChatbot";
-import ContentModerator from "@/components/ai/ContentModerator";
-import SmartTextAssistant from "@/components/ai/SmartTextAssistant";
-import AIAnalyticsDashboard from "@/components/ai/AIAnalyticsDashboard";
-import SubscriptionPlansTable from "@/components/admin/SubscriptionPlansTable";
-import MerchantSubscriptionsTable from "@/components/admin/MerchantSubscriptionsTable";
-import PaymentHistoryTable from "@/components/admin/PaymentHistoryTable";
-import CouponsTable from "@/components/admin/CouponsTable";
-import RewardRulesTable from "@/components/admin/RewardRulesTable";
-import WalletManagement from "@/components/admin/WalletManagement";
-import NotificationManager from "@/components/notifications/NotificationManager";
-import DashboardStats from "@/components/admin/DashboardStats";
-import DashboardCharts from "@/components/admin/DashboardCharts";
-import RecentActivities from "@/components/admin/RecentActivities";
-import UpcomingMerchants from "@/components/admin/UpcomingMerchants";
-import GeneralSettings from "@/components/admin/GeneralSettings";
-import { useNotifications } from "@/hooks/useNotifications";
-import { useToast } from "@/hooks/use-toast";
+import Footer from "@/components/Footer";
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -230,75 +201,81 @@ const AdminDashboard = () => {
         return renderDashboardContent();
     }
   };
-  return <div className="flex min-h-screen bg-gray-50">
+  return <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <AdminSidebar activeItem={activeTab} onItemClick={setActiveTab} expandedItems={expandedItems} onToggleExpand={handleToggleExpand} />
       
-      <main className="flex-1 p-6 overflow-auto">
-        {/* Header with title and profile section */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'general-settings' ? 'General Settings' : activeTab === 'bookings' ? 'Bookings Management' : 'Management Console'}
-            </h1>
-            <p className="text-gray-600">
-              {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 'Advanced administrative controls and monitoring'}
-            </p>
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 p-6 overflow-auto">
+          {/* Enhanced Header with modern styling */}
+          <div className="flex justify-between items-center mb-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'general-settings' ? 'General Settings' : activeTab === 'bookings' ? 'Bookings Management' : 'Management Console'}
+              </h1>
+              <p className="text-gray-600 mt-1">
+                {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 'Advanced administrative controls and monitoring'}
+              </p>
+            </div>
+
+            {/* Enhanced Profile and Notifications Section */}
+            <div className="flex items-center space-x-4">
+              {/* Enhanced Notifications Button */}
+              <Button variant="outline" size="icon" className="relative hover:bg-blue-50 border-gray-200 transition-all duration-200 hover:scale-105">
+                <Bell className="h-4 w-4" />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-gradient-to-r from-red-500 to-pink-500 animate-pulse">
+                  3
+                </Badge>
+              </Button>
+
+              {/* Enhanced Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-blue-50 transition-all duration-200 hover:scale-105">
+                    <Avatar className="h-10 w-10 ring-2 ring-blue-100">
+                      <AvatarImage src="" alt="Admin" />
+                      <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                        <User className="h-5 w-5" />
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 shadow-lg border-gray-200" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">Admin User</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        admin@sarkarininja.com
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer hover:bg-blue-50">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setActiveTab("general-settings")} className="cursor-pointer hover:bg-blue-50">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 hover:bg-red-50">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
-          {/* Profile and Notifications Section */}
-          <div className="flex items-center space-x-4">
-            {/* Notifications Button */}
-            <Button variant="outline" size="icon" className="relative">
-              <Bell className="h-4 w-4" />
-              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
-                3
-              </Badge>
-            </Button>
-
-            {/* Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="" alt="Admin" />
-                    <AvatarFallback className="bg-blue-600 text-white">
-                      <User className="h-5 w-5" />
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Admin User</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      admin@sarkarininja.com
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setActiveTab("general-settings")} className="cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="max-w-full">
+            {renderModuleContent()}
           </div>
-        </div>
+        </main>
 
-        <div className="max-w-full">
-          {renderModuleContent()}
-        </div>
-      </main>
+        {/* Add Footer */}
+        <Footer />
+      </div>
     </div>;
 };
+
 export default AdminDashboard;
