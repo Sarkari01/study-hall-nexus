@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,61 +65,67 @@ const AdminDashboard = () => {
     }
   ];
 
+  const getDeepSeekApiKey = (): string | undefined => {
+    return localStorage.getItem('deepseek_api_key') || undefined;
+  };
+
+  const renderDashboardContent = () => (
+    <div className="space-y-6">
+      {/* Dashboard Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
+          <Card key={index} className="hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className={`text-sm ${stat.color} flex items-center mt-1`}>
+                    {stat.change} from last month
+                  </p>
+                </div>
+                <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
+                  {stat.icon}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("students")}>
+              <Users className="h-6 w-6 mb-2" />
+              View Students
+            </Button>
+            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("merchants")}>
+              <Building2 className="h-6 w-6 mb-2" />
+              Manage Merchants
+            </Button>
+            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("payments")}>
+              <DollarSign className="h-6 w-6 mb-2" />
+              View Payments
+            </Button>
+            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("study-halls")}>
+              <Calendar className="h-6 w-6 mb-2" />
+              Study Halls
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   const renderModuleContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return (
-          <div className="space-y-6">
-            {/* Dashboard Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                        <p className={`text-sm ${stat.color} flex items-center mt-1`}>
-                          {stat.change} from last month
-                        </p>
-                      </div>
-                      <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
-                        {stat.icon}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("students")}>
-                    <Users className="h-6 w-6 mb-2" />
-                    View Students
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("merchants")}>
-                    <Building2 className="h-6 w-6 mb-2" />
-                    Manage Merchants
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("payments")}>
-                    <DollarSign className="h-6 w-6 mb-2" />
-                    View Payments
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("study-halls")}>
-                    <Calendar className="h-6 w-6 mb-2" />
-                    Study Halls
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return renderDashboardContent();
       case "students":
         return (
           <div className="space-y-6">
@@ -229,65 +236,23 @@ const AdminDashboard = () => {
             <RevenueReports reportType={activeTab} />
           </div>
         );
-      default:
+      case "general-settings":
         return (
           <div className="space-y-6">
-            {/* Dashboard Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                        <p className={`text-sm ${stat.color} flex items-center mt-1`}>
-                          {stat.change} from last month
-                        </p>
-                      </div>
-                      <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
-                        {stat.icon}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Quick Actions */}
+            <h2 className="text-2xl font-bold text-gray-900">General Settings</h2>
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle>System Configuration</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-20 flex-col">
-                    <Users className="h-6 w-6 mb-2" />
-                    View Students
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col">
-                    <Building2 className="h-6 w-6 mb-2" />
-                    Manage Merchants
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col">
-                    <DollarSign className="h-6 w-6 mb-2" />
-                    Process Payouts
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col">
-                    <TrendingUp className="h-6 w-6 mb-2" />
-                    View Reports
-                  </Button>
-                </div>
+                <p className="text-gray-600">General settings will be available here.</p>
               </CardContent>
             </Card>
           </div>
         );
+      default:
+        return renderDashboardContent();
     }
-  };
-
-  const getDeepSeekApiKey = (): string | undefined => {
-    // Get the API key from localStorage (set by DeveloperManagement component)
-    return localStorage.getItem('deepseek_api_key') || undefined;
   };
 
   return (

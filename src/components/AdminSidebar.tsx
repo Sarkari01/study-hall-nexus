@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -188,15 +189,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {sidebarItems.map(item => (
           <div key={item.id}>
             {item.hasSubmenu ? (
-              <Collapsible>
+              <Collapsible open={expandedItems.includes(item.id)} onOpenChange={() => onToggleExpand(item.id)}>
                 <CollapsibleTrigger asChild>
                   <Button 
                     variant="ghost" 
                     className={cn(
                       "w-full justify-between text-left", 
                       expandedItems.includes(item.id) && "bg-gray-100"
-                    )} 
-                    onClick={() => onToggleExpand(item.id)}
+                    )}
                   >
                     <div className="flex items-center">
                       {item.icon}
