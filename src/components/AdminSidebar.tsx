@@ -20,7 +20,10 @@ import {
   Users2,
   Settings,
   Code,
-  Package
+  Package,
+  Gift,
+  Wallet,
+  Percent
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -80,6 +83,26 @@ const sidebarItems: AdminSidebarItem[] = [
       {
         id: "payment-history",
         label: "Payment History"
+      }
+    ]
+  },
+  {
+    id: "promotions",
+    label: "Promotions & Rewards",
+    icon: <Gift className="h-5 w-5" />,
+    hasSubmenu: true,
+    submenu: [
+      {
+        id: "coupons",
+        label: "Coupon Management"
+      },
+      {
+        id: "reward-rules",
+        label: "Reward Rules"
+      },
+      {
+        id: "wallet-management",
+        label: "Wallet Management"
       }
     ]
   },

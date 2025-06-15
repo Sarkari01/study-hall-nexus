@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +27,9 @@ import AIAnalyticsDashboard from "@/components/ai/AIAnalyticsDashboard";
 import SubscriptionPlansTable from "@/components/admin/SubscriptionPlansTable";
 import MerchantSubscriptionsTable from "@/components/admin/MerchantSubscriptionsTable";
 import PaymentHistoryTable from "@/components/admin/PaymentHistoryTable";
+import CouponsTable from "@/components/admin/CouponsTable";
+import RewardRulesTable from "@/components/admin/RewardRulesTable";
+import WalletManagement from "@/components/admin/WalletManagement";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -177,6 +179,33 @@ const AdminDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">Payment History</h2>
             </div>
             <PaymentHistoryTable />
+          </div>
+        );
+      case "coupons":
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Coupon Management</h2>
+            </div>
+            <CouponsTable />
+          </div>
+        );
+      case "reward-rules":
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Reward Rules</h2>
+            </div>
+            <RewardRulesTable />
+          </div>
+        );
+      case "wallet-management":
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Wallet Management</h2>
+            </div>
+            <WalletManagement />
           </div>
         );
       case "payments":

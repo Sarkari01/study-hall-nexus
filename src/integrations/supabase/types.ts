@@ -284,6 +284,116 @@ export type Database = {
         }
         Relationships: []
       }
+      coupon_usage: {
+        Row: {
+          coupon_id: string
+          discount_amount: number
+          final_amount: number
+          id: string
+          order_id: string | null
+          original_amount: number
+          subscription_id: string | null
+          used_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_id: string
+          discount_amount: number
+          final_amount: number
+          id?: string
+          order_id?: string | null
+          original_amount: number
+          subscription_id?: string | null
+          used_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_id?: string
+          discount_amount?: number
+          final_amount?: number
+          id?: string
+          order_id?: string | null
+          original_amount?: number
+          subscription_id?: string | null
+          used_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupon_usage_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          eligible_plan_ids: string[] | null
+          eligible_user_types: string[] | null
+          id: string
+          is_active: boolean | null
+          maximum_discount: number | null
+          minimum_amount: number | null
+          name: string
+          updated_at: string
+          usage_limit_per_user: number | null
+          usage_limit_total: number | null
+          used_count: number | null
+          valid_from: string
+          valid_until: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          eligible_plan_ids?: string[] | null
+          eligible_user_types?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          maximum_discount?: number | null
+          minimum_amount?: number | null
+          name: string
+          updated_at?: string
+          usage_limit_per_user?: number | null
+          usage_limit_total?: number | null
+          used_count?: number | null
+          valid_from: string
+          valid_until: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          eligible_plan_ids?: string[] | null
+          eligible_user_types?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          maximum_discount?: number | null
+          minimum_amount?: number | null
+          name?: string
+          updated_at?: string
+          usage_limit_per_user?: number | null
+          usage_limit_total?: number | null
+          used_count?: number | null
+          valid_from?: string
+          valid_until?: string
+        }
+        Relationships: []
+      }
       custom_roles: {
         Row: {
           color: string | null
@@ -314,6 +424,101 @@ export type Database = {
           is_system_role?: boolean | null
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reward_history: {
+        Row: {
+          amount_earned: number | null
+          created_at: string
+          id: string
+          points_earned: number
+          processed_at: string | null
+          processed_by: string | null
+          rule_id: string
+          status: string
+          trigger_data: Json | null
+          user_id: string
+        }
+        Insert: {
+          amount_earned?: number | null
+          created_at?: string
+          id?: string
+          points_earned: number
+          processed_at?: string | null
+          processed_by?: string | null
+          rule_id: string
+          status?: string
+          trigger_data?: Json | null
+          user_id: string
+        }
+        Update: {
+          amount_earned?: number | null
+          created_at?: string
+          id?: string
+          points_earned?: number
+          processed_at?: string | null
+          processed_by?: string | null
+          rule_id?: string
+          status?: string
+          trigger_data?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_history_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "reward_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward_rules: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          reward_amount: number | null
+          reward_points: number
+          trigger_condition: Json | null
+          trigger_type: string
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          reward_amount?: number | null
+          reward_points: number
+          trigger_condition?: Json | null
+          trigger_type: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          reward_amount?: number | null
+          reward_points?: number
+          trigger_condition?: Json | null
+          trigger_type?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Relationships: []
       }
@@ -393,6 +598,92 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          reward_points: number
+          total_earned: number
+          total_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          reward_points?: number
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          reward_points?: number
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          points: number | null
+          reference_id: string | null
+          reference_type: string | null
+          status: string
+          transaction_type: string
+          user_id: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          points?: number | null
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          transaction_type: string
+          user_id: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          points?: number | null
+          reference_id?: string | null
+          reference_type?: string | null
+          status?: string
+          transaction_type?: string
+          user_id?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "user_wallets"
             referencedColumns: ["id"]
           },
         ]
