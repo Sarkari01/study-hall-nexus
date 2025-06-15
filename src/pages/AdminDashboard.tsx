@@ -40,6 +40,12 @@ import UpcomingMerchants from "@/components/admin/UpcomingMerchants";
 import GeneralSettings from "@/components/admin/GeneralSettings";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useToast } from "@/hooks/use-toast";
+import AdminStats from "@/components/admin/AdminStats";
+import QuickActions from "@/components/admin/QuickActions";
+import RecentBookings from "@/components/admin/RecentBookings";
+import SystemHealth from "@/components/admin/SystemHealth";
+import GlobalSearch from "@/components/admin/GlobalSearch";
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -71,9 +77,19 @@ const AdminDashboard = () => {
       description: "Profile settings coming soon!"
     });
   };
-  const renderDashboardContent = () => <div className="space-y-6">
+  const renderDashboardContent = () => (
+    <div className="space-y-6">
       {/* Enhanced Statistics Cards */}
-      <DashboardStats />
+      <AdminStats />
+
+      {/* Quick Actions Section */}
+      <QuickActions />
+
+      {/* Recent Activities and System Health */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RecentBookings />
+        <SystemHealth />
+      </div>
 
       {/* Interactive Charts and Graphs */}
       <DashboardCharts />
@@ -87,10 +103,8 @@ const AdminDashboard = () => {
           <RecentActivities />
         </div>
       </div>
-
-      {/* Quick Actions */}
-      
-    </div>;
+    </div>
+  );
   const renderModuleContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -230,23 +244,40 @@ const AdminDashboard = () => {
         return renderDashboardContent();
     }
   };
-  return <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar activeItem={activeTab} onItemClick={setActiveTab} expandedItems={expandedItems} onToggleExpand={handleToggleExpand} />
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar 
+        activeItem={activeTab} 
+        onItemClick={setActiveTab} 
+        expandedItems={expandedItems} 
+        onToggleExpand={handleToggleExpand} 
+      />
       
       <main className="flex-1 p-6 overflow-auto">
-        {/* Header with title and profile section */}
+        {/* Header with title, search, and profile section */}
         <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'general-settings' ? 'General Settings' : activeTab === 'bookings' ? 'Bookings Management' : 'Management Console'}
-            </h1>
-            <p className="text-gray-600">
-              {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 'Advanced administrative controls and monitoring'}
-            </p>
+          <div className="flex-1 max-w-2xl">
+            <div className="mb-4">
+              <h1 className="text-3xl font-bold text-gray-900">
+                {activeTab === 'dashboard' ? 'Dashboard' : 
+                 activeTab === 'general-settings' ? 'General Settings' : 
+                 activeTab === 'bookings' ? 'Bookings Management' : 
+                 'Management Console'}
+              </h1>
+              <p className="text-gray-600">
+                {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : 
+                 activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : 
+                 activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 
+                 'Advanced administrative controls and monitoring'}
+              </p>
+            </div>
+            
+            {/* Global Search */}
+            <GlobalSearch />
           </div>
 
           {/* Profile and Notifications Section */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 ml-6">
             {/* Notifications Button */}
             <Button variant="outline" size="icon" className="relative">
               <Bell className="h-4 w-4" />
@@ -299,6 +330,7 @@ const AdminDashboard = () => {
           {renderModuleContent()}
         </div>
       </main>
-    </div>;
+    </div>
+  );
 };
 export default AdminDashboard;
