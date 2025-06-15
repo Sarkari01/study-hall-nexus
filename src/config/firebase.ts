@@ -18,25 +18,38 @@ const missingKeys = requiredKeys.filter(key => !firebaseConfig[key as keyof type
 if (missingKeys.length > 0) {
   console.error('Missing Firebase configuration keys:', missingKeys);
   console.error('Please check your environment variables in Supabase secrets');
-  throw new Error(`Missing Firebase configuration: ${missingKeys.join(', ')}`);
+  console.error('Make sure your Supabase secrets are named with VITE_ prefix:');
+  console.error('- VITE_FIREBASE_API_KEY');
+  console.error('- VITE_FIREBASE_AUTH_DOMAIN'); 
+  console.error('- VITE_FIREBASE_PROJECT_ID');
+  console.error('- VITE_FIREBASE_STORAGE_BUCKET');
+  console.error('- VITE_FIREBASE_MESSAGING_SENDER_ID');
+  console.error('- VITE_FIREBASE_APP_ID');
+  console.error('- VITE_FIREBASE_VAPID_KEY');
+  
+  // Don't throw error in development to prevent app from crashing
+  console.warn('Firebase features will be disabled until configuration is fixed');
 }
 
-const app = initializeApp(firebaseConfig);
-
-// Only initialize messaging if we have a valid configuration
+let app: ReturnType<typeof initializeApp> | null = null;
 let messaging: ReturnType<typeof getMessaging> | null = null;
 
-try {
-  messaging = getMessaging(app);
-} catch (error) {
-  console.error('Failed to initialize Firebase messaging:', error);
+// Only initialize if we have valid configuration
+if (missingKeys.length === 0) {
+  try {
+    app = initializeApp(firebaseConfig);
+    messaging = getMessaging(app);
+    console.log('Firebase initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Firebase:', error);
+  }
 }
 
 export { messaging };
 
 export const requestNotificationPermission = async () => {
   if (!messaging) {
-    console.error('Firebase messaging not initialized');
+    console.error('Firebase messaging not initialized - check your configuration');
     return null;
   }
 
@@ -45,7 +58,7 @@ export const requestNotificationPermission = async () => {
     if (permission === 'granted') {
       const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
       if (!vapidKey) {
-        console.error('VAPID Key is missing');
+        console.error('VAPID Key is missing - add VITE_FIREBASE_VAPID_KEY to Supabase secrets');
         return null;
       }
       
