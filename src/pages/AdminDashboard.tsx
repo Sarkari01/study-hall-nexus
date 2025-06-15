@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,11 @@ import StudentsTable from "@/components/admin/StudentsTable";
 import MerchantsTable from "@/components/admin/MerchantsTable";
 import StudyHallsTable from "@/components/admin/StudyHallsTable";
 import PaymentsTable from "@/components/admin/PaymentsTable";
+import TransactionsTable from "@/components/admin/TransactionsTable";
+import SettleNowTable from "@/components/admin/SettleNowTable";
+import LocationsTable from "@/components/admin/LocationsTable";
+import LeadsTable from "@/components/admin/LeadsTable";
+import RevenueReports from "@/components/admin/RevenueReports";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -154,14 +158,7 @@ const AdminDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">Transaction Ledger</h2>
               <Button>Export Transactions</Button>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>All Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Transactions module will be implemented in Step 6</p>
-              </CardContent>
-            </Card>
+            <TransactionsTable />
           </div>
         );
       case "settle-now":
@@ -169,16 +166,9 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Settle Now (Payouts)</h2>
-              <Button>Process All Payouts</Button>
+              <Button>Process All Eligible</Button>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Pending Payouts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Settle Now module will be implemented in Step 7</p>
-              </CardContent>
-            </Card>
+            <SettleNowTable />
           </div>
         );
       case "locations":
@@ -188,14 +178,7 @@ const AdminDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">Locations Management</h2>
               <Button>Add New Location</Button>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>All Locations</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Locations module will be implemented in Step 8</p>
-              </CardContent>
-            </Card>
+            <LocationsTable />
           </div>
         );
       case "leads":
@@ -205,14 +188,7 @@ const AdminDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">Leads Management</h2>
               <Button>Export Leads</Button>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>All Leads</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Leads module will be implemented in Step 9</p>
-              </CardContent>
-            </Card>
+            <LeadsTable />
           </div>
         );
       case "daily-revenue":
@@ -223,17 +199,10 @@ const AdminDashboard = () => {
         return (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Revenue Reports</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Revenue Reports & Analytics</h2>
               <Button>Export Report</Button>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Analytics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Revenue module will be implemented in Step 10</p>
-              </CardContent>
-            </Card>
+            <RevenueReports reportType={activeTab} />
           </div>
         );
       default:

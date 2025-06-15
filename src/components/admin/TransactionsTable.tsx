@@ -1,0 +1,345 @@
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, Download, Filter, ArrowUpDown, Eye, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Transaction {
+  id: number;
+  transactionId: string;
+  type: 'payment' | 'refund' | 'payout' | 'fee';
+  amount: number;
+  currency: string;
+  status: 'completed' | 'pending' | 'failed' | 'cancelled';
+  fromAccount: string;
+  toAccount: string;
+  description: string;
+  timestamp: string;
+  feeAmount: number;
+  netAmount: number;
+  referenceId?: string;
+}
+
+const TransactionsTable = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortField, setSortField] = useState<string>('timestamp');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const { toast } = useToast();
+
+  const mockTransactions: Transaction[] = [
+    {
+      id: 1,
+      transactionId: "TXN001234567890",
+      type: 'payment',
+      amount: 150,
+      currency: 'INR',
+      status: 'completed',
+      fromAccount: "Student: Rajesh Kumar",
+      toAccount: "Merchant: Sneha Patel",
+      description: "Study hall booking payment",
+      timestamp: "2024-06-14 10:30:25",
+      feeAmount: 7.50,
+      netAmount: 142.50,
+      referenceId: "BOOK_001"
+    },
+    {
+      id: 2,
+      transactionId: "TXN001234567891",
+      type: 'payout',
+      amount: 1250,
+      currency: 'INR',
+      status: 'completed',
+      fromAccount: "Platform: Sarkari Ninja",
+      toAccount: "Merchant: Rajesh Kumar",
+      description: "Weekly settlement payout",
+      timestamp: "2024-06-14 09:15:10",
+      feeAmount: 25,
+      netAmount: 1225,
+      referenceId: "PAYOUT_W24_001"
+    },
+    {
+      id: 3,
+      transactionId: "TXN001234567892",
+      type: 'refund',
+      amount: 75,
+      currency: 'INR',
+      status: 'pending',
+      fromAccount: "Merchant: Amit Singh",
+      toAccount: "Student: Vikram Yadav",
+      description: "Booking cancellation refund",
+      timestamp: "2024-06-14 08:45:33",
+      feeAmount: 0,
+      netAmount: 75,
+      referenceId: "REF_001"
+    },
+    {
+      id: 4,
+      transactionId: "TXN001234567893",
+      type: 'fee',
+      amount: 50,
+      currency: 'INR',
+      status: 'completed',
+      fromAccount: "Merchant: Sneha Patel",
+      toAccount: "Platform: Sarkari Ninja",
+      description: "Platform commission fee",
+      timestamp: "2024-06-13 14:20:45",
+      feeAmount: 0,
+      netAmount: 50,
+      referenceId: "FEE_001"
+    },
+    {
+      id: 5,
+      transactionId: "TXN001234567894",
+      type: 'payment',
+      amount: 300,
+      currency: 'INR',
+      status: 'failed',
+      fromAccount: "Student: Anita Desai",
+      toAccount: "Merchant: Kumar Study Centers",
+      description: "Study hall booking payment",
+      timestamp: "2024-06-13 11:30:12",
+      feeAmount: 15,
+      netAmount: 285,
+      referenceId: "BOOK_002"
+    }
+  ];
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    setLoading(true);
+    try {
+      setTimeout(() => {
+        setTransactions(mockTransactions);
+        setLoading(false);
+      }, 1000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch transactions",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'default';
+      case 'pending': return 'secondary';
+      case 'failed': return 'destructive';
+      case 'cancelled': return 'outline';
+      default: return 'secondary';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'payment': return 'bg-green-100 text-green-800';
+      case 'refund': return 'bg-orange-100 text-orange-800';
+      case 'payout': return 'bg-blue-100 text-blue-800';
+      case 'fee': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const filteredTransactions = transactions
+    .filter(transaction => {
+      const matchesSearch = transaction.transactionId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           transaction.fromAccount.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           transaction.toAccount.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = typeFilter === 'all' || transaction.type === typeFilter;
+      const matchesStatus = statusFilter === 'all' || transaction.status === statusFilter;
+      return matchesSearch && matchesType && matchesStatus;
+    })
+    .sort((a, b) => {
+      const aValue = a[sortField as keyof Transaction];
+      const bValue = b[sortField as keyof Transaction];
+      const multiplier = sortOrder === 'asc' ? 1 : -1;
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return aValue.localeCompare(bValue) * multiplier;
+      }
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return (aValue - bValue) * multiplier;
+      }
+      return 0;
+    });
+
+  const exportTransactions = () => {
+    toast({
+      title: "Export Started",
+      description: "Transaction export will be available shortly",
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Filters and Controls */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search transactions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="payment">Payment</SelectItem>
+                <SelectItem value="refund">Refund</SelectItem>
+                <SelectItem value="payout">Payout</SelectItem>
+                <SelectItem value="fee">Fee</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={exportTransactions} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button onClick={fetchTransactions} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Transactions Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Transaction Ledger ({filteredTransactions.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('transactionId')}>
+                    Transaction ID <ArrowUpDown className="h-4 w-4 inline ml-1" />
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('type')}>
+                    Type <ArrowUpDown className="h-4 w-4 inline ml-1" />
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('amount')}>
+                    Amount <ArrowUpDown className="h-4 w-4 inline ml-1" />
+                  </TableHead>
+                  <TableHead>From / To</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
+                    Status <ArrowUpDown className="h-4 w-4 inline ml-1" />
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('timestamp')}>
+                    Date <ArrowUpDown className="h-4 w-4 inline ml-1" />
+                  </TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell>
+                      <div className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                        {transaction.transactionId}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getTypeColor(transaction.type)}>
+                        {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">₹{transaction.amount.toLocaleString()}</div>
+                        {transaction.feeAmount > 0 && (
+                          <div className="text-xs text-gray-500">
+                            Fee: ₹{transaction.feeAmount} | Net: ₹{transaction.netAmount}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div className="text-gray-600">From: {transaction.fromAccount}</div>
+                        <div className="text-gray-600">To: {transaction.toAccount}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-xs">
+                        <div className="text-sm">{transaction.description}</div>
+                        {transaction.referenceId && (
+                          <div className="text-xs text-gray-500">Ref: {transaction.referenceId}</div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(transaction.status)}>
+                        {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">{transaction.timestamp}</div>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default TransactionsTable;
