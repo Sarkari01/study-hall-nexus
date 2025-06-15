@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -179,7 +180,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   return <div className="w-72 bg-white border-r border-gray-200 min-h-screen flex flex-col">
       <div className="p-6">
         <div className="mb-8">
-          <h2 className="text-gray-900 font-bold text-4xl">Sarkari Ninja</h2>
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Building2 className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="text-gray-900 font-bold text-4xl">Sarkari Ninja</h2>
+          </div>
           <p className="text-sm text-gray-600">Advanced Management System</p>
         </div>
         
