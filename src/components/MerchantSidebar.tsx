@@ -51,7 +51,7 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
   return <Sidebar>
       <SidebarHeader className="p-6">
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-gray-900">Sarkari Ninja Merchant Portal</h2>
+          <h2 className="text-gray-900 text-3xl font-semibold text-left">Sarkari Ninja</h2>
           <div className="space-y-1">
             <p className="text-sm font-medium text-gray-700">{merchantName}</p>
             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
