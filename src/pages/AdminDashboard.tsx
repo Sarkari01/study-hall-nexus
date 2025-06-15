@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,56 +24,44 @@ import AIChatbot from "@/components/ai/AIChatbot";
 import ContentModerator from "@/components/ai/ContentModerator";
 import SmartTextAssistant from "@/components/ai/SmartTextAssistant";
 import AIAnalyticsDashboard from "@/components/ai/AIAnalyticsDashboard";
-
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-
   const handleToggleExpand = (itemId: string) => {
     setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
   };
-
-  const stats = [
-    {
-      title: "Total Students",
-      value: "2,350",
-      change: "+15.3%",
-      icon: <Users className="h-5 w-5" />,
-      color: "text-purple-600"
-    },
-    {
-      title: "Active Merchants",
-      value: "186",
-      change: "+8.2%",
-      icon: <Building2 className="h-5 w-5" />,
-      color: "text-blue-600"
-    },
-    {
-      title: "Total Revenue",
-      value: "₹2,45,680",
-      change: "+12.5%",
-      icon: <DollarSign className="h-5 w-5" />,
-      color: "text-green-600"
-    },
-    {
-      title: "Growth Rate",
-      value: "23.1%",
-      change: "+2.4%",
-      icon: <TrendingUp className="h-5 w-5" />,
-      color: "text-orange-600"
-    }
-  ];
-
+  const stats = [{
+    title: "Total Students",
+    value: "2,350",
+    change: "+15.3%",
+    icon: <Users className="h-5 w-5" />,
+    color: "text-purple-600"
+  }, {
+    title: "Active Merchants",
+    value: "186",
+    change: "+8.2%",
+    icon: <Building2 className="h-5 w-5" />,
+    color: "text-blue-600"
+  }, {
+    title: "Total Revenue",
+    value: "₹2,45,680",
+    change: "+12.5%",
+    icon: <DollarSign className="h-5 w-5" />,
+    color: "text-green-600"
+  }, {
+    title: "Growth Rate",
+    value: "23.1%",
+    change: "+2.4%",
+    icon: <TrendingUp className="h-5 w-5" />,
+    color: "text-orange-600"
+  }];
   const getDeepSeekApiKey = (): string | undefined => {
     return localStorage.getItem('deepseek_api_key') || undefined;
   };
-
-  const renderDashboardContent = () => (
-    <div className="space-y-6">
+  const renderDashboardContent = () => <div className="space-y-6">
       {/* Dashboard Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
+        {stats.map((stat, index) => <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -89,8 +76,7 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </CardContent>
-          </Card>
-        ))}
+          </Card>)}
       </div>
 
       {/* Quick Actions */}
@@ -119,93 +105,75 @@ const AdminDashboard = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-
+    </div>;
   const renderModuleContent = () => {
     switch (activeTab) {
       case "dashboard":
         return renderDashboardContent();
       case "students":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Students Management</h2>
               <Button>Add New Student</Button>
             </div>
             <StudentsTable />
-          </div>
-        );
+          </div>;
       case "merchants":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Merchants Management</h2>
-              <Button>Add New Merchant</Button>
+              
             </div>
             <MerchantsTable />
-          </div>
-        );
+          </div>;
       case "study-halls":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
               <Button>Add New Study Hall</Button>
             </div>
             <StudyHallsTable />
-          </div>
-        );
+          </div>;
       case "payments":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Payment Transactions</h2>
               <Button>Export Payments</Button>
             </div>
             <PaymentsTable />
-          </div>
-        );
+          </div>;
       case "transactions":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Transaction Ledger</h2>
               <Button>Export Transactions</Button>
             </div>
             <TransactionsTable />
-          </div>
-        );
+          </div>;
       case "settle-now":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Settle Now (Payouts)</h2>
               <Button>Process All Eligible</Button>
             </div>
             <SettleNowTable />
-          </div>
-        );
+          </div>;
       case "locations":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Locations Management</h2>
               <Button>Add New Location</Button>
             </div>
             <LocationsTable />
-          </div>
-        );
+          </div>;
       case "leads":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Leads Management</h2>
               <Button>Export Leads</Button>
             </div>
             <LeadsTable />
-          </div>
-        );
+          </div>;
       case "banners":
         return <BannerManager />;
       case "community":
@@ -227,18 +195,15 @@ const AdminDashboard = () => {
       case "monthly-revenue":
       case "merchant-revenue":
       case "location-revenue":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Revenue Reports & Analytics</h2>
               <Button>Export Report</Button>
             </div>
             <RevenueReports reportType={activeTab} />
-          </div>
-        );
+          </div>;
       case "general-settings":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">General Settings</h2>
             <Card>
               <CardHeader>
@@ -248,21 +213,13 @@ const AdminDashboard = () => {
                 <p className="text-gray-600">General settings will be available here.</p>
               </CardContent>
             </Card>
-          </div>
-        );
+          </div>;
       default:
         return renderDashboardContent();
     }
   };
-
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar 
-        activeItem={activeTab} 
-        onItemClick={setActiveTab} 
-        expandedItems={expandedItems} 
-        onToggleExpand={handleToggleExpand} 
-      />
+  return <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar activeItem={activeTab} onItemClick={setActiveTab} expandedItems={expandedItems} onToggleExpand={handleToggleExpand} />
       
       <main className="flex-1 p-6">
         <div className="mb-6">
@@ -272,8 +229,6 @@ const AdminDashboard = () => {
 
         {renderModuleContent()}
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminDashboard;
