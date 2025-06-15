@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, Calendar, TrendingUp, Building2, MapPin, Star, Eye, Plus } from "lucide-react";
+import { Users, DollarSign, Calendar, TrendingUp, Building2, MapPin, Star, Eye, Plus, UserPlus } from "lucide-react";
 import StudyHallForm from "@/components/admin/StudyHallForm";
 import StudyHallView from "@/components/admin/StudyHallView";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ import MerchantPayments from "@/components/merchant/MerchantPayments";
 import MerchantProfile from "@/components/merchant/MerchantProfile";
 import MerchantSettings from "@/components/merchant/MerchantSettings";
 import SubscriptionStatus from "@/components/merchant/SubscriptionStatus";
+import TeamManagement from "@/components/merchant/TeamManagement";
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -373,18 +374,8 @@ const MerchantDashboard = () => {
       case "analytics":
         return <MerchantAnalytics />;
 
-      case "payments":
-        return <MerchantPayments />;
-
-      case "subscription":
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Subscription Management</h2>
-            </div>
-            <SubscriptionStatus merchantId={currentMerchant.id.toString()} />
-          </div>
-        );
+      case "team":
+        return <TeamManagement />;
 
       case "community":
         return (
@@ -419,7 +410,7 @@ const MerchantDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="min-h-screen flex w-full bg-gray-50">
         <MerchantSidebar 
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -428,19 +419,48 @@ const MerchantDashboard = () => {
         />
         <SidebarInset>
           <div className="flex flex-col min-h-screen">
-            {/* Header */}
-            <div className="bg-white border-b p-4">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">Merchant Dashboard</h1>
-                  <p className="text-gray-600">Welcome back, {currentMerchant.name}</p>
+            {/* Enhanced Header */}
+            <div className="bg-white border-b shadow-sm">
+              <div className="flex items-center justify-between p-6">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger className="lg:hidden" />
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      {activeTab === 'overview' && 'Dashboard Overview'}
+                      {activeTab === 'study-halls' && 'Study Halls Management'}
+                      {activeTab === 'bookings' && 'Bookings Management'}
+                      {activeTab === 'transactions' && 'Transaction History'}
+                      {activeTab === 'analytics' && 'Analytics & Insights'}
+                      {activeTab === 'team' && 'Team Management'}
+                      {activeTab === 'community' && 'Community Feed'}
+                      {activeTab === 'chat' && 'Messages & Support'}
+                      {activeTab === 'profile' && 'Business Profile'}
+                      {activeTab === 'settings' && 'Account Settings'}
+                    </h1>
+                    <p className="text-gray-600">Welcome back, {currentMerchant.name}</p>
+                  </div>
+                </div>
+                
+                {/* Quick Action Buttons */}
+                <div className="flex items-center space-x-3">
+                  {activeTab === 'overview' && (
+                    <Button onClick={() => setIsFormOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Study Hall
+                    </Button>
+                  )}
+                  {activeTab === 'team' && (
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Invite Member
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 p-6 bg-gray-50">
+            <div className="flex-1 p-6">
               {renderTabContent()}
             </div>
           </div>
