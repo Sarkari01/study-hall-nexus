@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import {
-  ColumnDef,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -19,89 +19,13 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Trash2, Filter } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { useStudyHalls } from "@/hooks/useStudyHalls";
 import StudyHallForm from './StudyHallForm';
 import StudyHallView from './StudyHallView';
-
-interface StudyHall {
-  id: string;
-  name: string;
-  merchant_id?: string;
-  description?: string;
-  location: string;
-  capacity: number;
-  price_per_day: number;
-  price_per_week?: number;
-  price_per_month?: number;
-  amenities: string[];
-  status: 'draft' | 'active' | 'inactive' | 'maintenance';
-  rating: number;
-  total_bookings: number;
-  total_revenue: number;
-  is_featured: boolean;
-  operating_hours?: any;
-  created_at: string;
-  updated_at: string;
-}
-
-interface StudyHallFormData {
-  id?: number;
-  name: string;
-  merchantId: string;
-  merchantName: string;
-  description: string;
-  location: string;
-  gpsLocation: { lat: number; lng: number };
-  capacity: number;
-  rows: number;
-  seatsPerRow: number;
-  layout: string[];
-  pricePerDay: string;
-  pricePerWeek: string;
-  pricePerMonth: string;
-  amenities: string[];
-  customAmenities: string[];
-  status: 'draft' | 'active' | 'inactive';
-  images: string[];
-  mainImage: string;
-  operatingHours: {
-    open: string;
-    close: string;
-    days: string[];
-  };
-  qrCode?: string;
-}
-
-// Interface for StudyHallView component
-interface StudyHallViewData {
-  id: number;
-  name: string;
-  merchantId: number;
-  merchantName: string;
-  location: string;
-  gpsLocation: { lat: number; lng: number };
-  capacity: number;
-  rows: number;
-  seatsPerRow: number;
-  layout: Array<{ id: string; status: 'available' | 'occupied' | 'maintenance' | 'disabled' }>;
-  pricePerDay: number;
-  pricePerWeek: number;
-  pricePerMonth: number;
-  amenities: string[];
-  customAmenities?: string[];
-  status: 'draft' | 'active' | 'inactive';
-  rating: number;
-  totalBookings: number;
-  description: string;
-  images: string[];
-  mainImage: string;
-  qrCode?: string;
-}
+import { StudyHall, StudyHallFormData } from "@/types/studyHall";
+import { convertToFormData, convertToViewData } from "@/utils/studyHallConverters";
+import { createStudyHallColumns } from "./studyHalls/StudyHallTableColumns";
 
 interface DataTableProps {
   data: StudyHall[];
@@ -117,134 +41,34 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
   const { toast } = useToast();
   const { deleteStudyHall, updateStudyHall } = useStudyHalls();
 
-  const columns: ColumnDef<StudyHall>[] = [
-    {
-      accessorKey: "name",
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Name
-            {column.getIsSorted() === "asc" ? (
-              " 🔽"
-            ) : column.getIsSorted() === "desc" ? (
-              " 🔼"
-            ) : null}
-          </Button>
-        )
-      },
-      cell: ({ row }) => (
-        <div className="font-bold">{row.getValue("name")}</div>
-      ),
-    },
-    {
-      accessorKey: "location",
-      header: "Location",
-    },
-    {
-      accessorKey: "capacity",
-      header: "Capacity",
-    },
-    {
-      accessorKey: "price_per_day",
-      header: "Price (Per Day)",
-      cell: ({ row }) => `₹${row.getValue("price_per_day")}`,
-    },
-    {
-      accessorKey: "rating",
-      header: "Rating",
-      cell: ({ row }) => (
-        <div className="flex items-center">
-          {row.getValue("rating")}
-          <svg className="w-4 h-4 text-yellow-500 fill-current ml-1" viewBox="0 0 24 24">
-            <path d="M12,17.27L18.18,21L16.86,13.81L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.14,13.81L5.82,21L12,17.27Z" />
-          </svg>
-        </div>
-      ),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as 'draft' | 'active' | 'inactive';
-        let badgeColor = "bg-gray-200 text-gray-700";
-        if (status === "active") {
-          badgeColor = "bg-green-200 text-green-700";
-        } else if (status === "inactive") {
-          badgeColor = "bg-red-200 text-red-700";
-        }
-        return <Badge className={badgeColor}>{status}</Badge>;
-      },
-      filterFn: (row, id, value: string) => {
-        return value === 'all' || row.getValue(id) === value
-      },
-      enableSorting: false,
-    },
-    {
-      accessorKey: "is_featured",
-      header: () => <div className="text-center">Featured</div>,
-      cell: ({ row }) => (
-        <div className="text-center">
-          <Checkbox
-            checked={Boolean(row.original.is_featured)}
-            onCheckedChange={(checked) => {
-              updateStudyHall(row.original.id, { is_featured: Boolean(checked) });
-              toast({
-                title: "Success",
-                description: `Study hall ${checked ? 'featured' : 'unfeatured'} successfully`,
-              });
-            }}
-          />
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: true,
-    },
-    {
-      id: "actions",
-      header: () => <div className="text-right">Actions</div>,
-      cell: ({ row }) => (
-        <div className="text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => {
-                setEditingStudyHall(row.original);
-                setShowAddStudyHall(true);
-              }}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                setViewingStudyHall(row.original);
-                setShowViewStudyHall(true);
-              }}>
-                <Edit className="h-4 w-4 mr-2" />
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={async () => {
-                const studyHallId = row.original.id;
-                await deleteStudyHall(studyHallId);
-              }}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ]
+  const handleEdit = (studyHall: StudyHall) => {
+    setEditingStudyHall(studyHall);
+    setShowAddStudyHall(true);
+  };
+
+  const handleView = (studyHall: StudyHall) => {
+    setViewingStudyHall(studyHall);
+    setShowViewStudyHall(true);
+  };
+
+  const handleDelete = async (studyHallId: string) => {
+    await deleteStudyHall(studyHallId);
+  };
+
+  const handleToggleFeatured = (studyHall: StudyHall, featured: boolean) => {
+    updateStudyHall(studyHall.id, { is_featured: featured });
+    toast({
+      title: "Success",
+      description: `Study hall ${featured ? 'featured' : 'unfeatured'} successfully`,
+    });
+  };
+
+  const columns = createStudyHallColumns({
+    onEdit: handleEdit,
+    onView: handleView,
+    onDelete: handleDelete,
+    onToggleFeatured: handleToggleFeatured,
+  });
 
   const table = useReactTable({
     data,
@@ -263,70 +87,6 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
   const handleAddStudyHall = async (data: StudyHallFormData) => {
     // TODO: Implement add study hall logic here
     console.log("Adding study hall:", data);
-  };
-
-  // Helper function to convert StudyHall to StudyHallViewData
-  const convertToViewData = (studyHall: StudyHall): StudyHallViewData => {
-    return {
-      id: parseInt(studyHall.id),
-      name: studyHall.name || '',
-      merchantId: parseInt(studyHall.merchant_id || '1'),
-      merchantName: 'Default Merchant',
-      description: studyHall.description || '',
-      location: studyHall.location || '',
-      gpsLocation: { lat: 28.6139, lng: 77.2090 },
-      capacity: studyHall.capacity || 30,
-      rows: 5,
-      seatsPerRow: 6,
-      layout: Array.from({ length: studyHall.capacity || 30 }, (_, i) => ({
-        id: `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`,
-        status: Math.random() > 0.7 ? 'occupied' : 'available' as 'available' | 'occupied' | 'maintenance' | 'disabled'
-      })),
-      pricePerDay: studyHall.price_per_day || 0,
-      pricePerWeek: studyHall.price_per_week || 0,
-      pricePerMonth: studyHall.price_per_month || 0,
-      amenities: studyHall.amenities || [],
-      customAmenities: [],
-      status: (studyHall.status === 'maintenance' ? 'inactive' : studyHall.status) as 'draft' | 'active' | 'inactive',
-      images: [],
-      mainImage: '',
-      qrCode: '',
-      rating: studyHall.rating,
-      totalBookings: studyHall.total_bookings
-    };
-  };
-
-  // Helper function to convert StudyHall to StudyHallFormData
-  const convertToFormData = (studyHall: StudyHall): StudyHallFormData => {
-    return {
-      id: parseInt(studyHall.id),
-      name: studyHall.name || '',
-      merchantId: studyHall.merchant_id?.toString() || '',
-      merchantName: 'Default Merchant',
-      description: studyHall.description || '',
-      location: studyHall.location || '',
-      gpsLocation: { lat: 28.6139, lng: 77.2090 },
-      capacity: studyHall.capacity || 30,
-      rows: 5,
-      seatsPerRow: 6,
-      layout: Array.from({ length: studyHall.capacity || 30 }, (_, i) => 
-        `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`
-      ),
-      pricePerDay: studyHall.price_per_day?.toString() || '',
-      pricePerWeek: studyHall.price_per_week?.toString() || '',
-      pricePerMonth: studyHall.price_per_month?.toString() || '',
-      amenities: studyHall.amenities || [],
-      customAmenities: [],
-      status: (studyHall.status === 'maintenance' ? 'inactive' : studyHall.status) as 'draft' | 'active' | 'inactive',
-      images: [],
-      mainImage: '',
-      operatingHours: {
-        open: '09:00',
-        close: '21:00',
-        days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-      },
-      qrCode: ''
-    };
   };
 
   // Get editData with proper type conversion
