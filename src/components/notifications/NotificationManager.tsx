@@ -6,14 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Send, Users, Building2, UserCheck } from "lucide-react";
+import { Bell, Send, Users, Building2, UserCheck, Image as ImageIcon, X } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
+import ImageUploader from '@/components/shared/ImageUploader';
 
 const NotificationManager = () => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [targetAudience, setTargetAudience] = useState('all');
+  const [notificationImages, setNotificationImages] = useState<string[]>([]);
+  const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const { toast } = useToast();
 
@@ -44,7 +48,8 @@ const NotificationManager = () => {
         body: {
           title,
           message,
-          targetAudience
+          targetAudience,
+          images: notificationImages
         },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -62,6 +67,7 @@ const NotificationManager = () => {
       
       setTitle('');
       setMessage('');
+      setNotificationImages([]);
       setTargetAudience('all');
     } catch (error: any) {
       toast({
@@ -74,13 +80,17 @@ const NotificationManager = () => {
     }
   };
 
+  const removeImage = (indexToRemove: number) => {
+    setNotificationImages(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Bell className="h-8 w-8 text-blue-600" />
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Push Notifications</h1>
-          <p className="text-gray-600">Send real-time notifications to users</p>
+          <p className="text-gray-600">Send real-time notifications with images to users</p>
         </div>
       </div>
 
@@ -108,6 +118,45 @@ const NotificationManager = () => {
               placeholder="Enter notification message"
               rows={4}
             />
+          </div>
+
+          <div>
+            <Label>Notification Images</Label>
+            <div className="space-y-3">
+              {/* Image Preview Grid */}
+              {notificationImages.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {notificationImages.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Notification ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsImageUploaderOpen(true)}
+                className="w-full"
+              >
+                <ImageIcon className="h-4 w-4 mr-2" />
+                Add Images ({notificationImages.length}/3)
+              </Button>
+            </div>
           </div>
 
           <div>
@@ -155,6 +204,25 @@ const NotificationManager = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {/* Image Uploader Dialog */}
+      <Dialog open={isImageUploaderOpen} onOpenChange={setIsImageUploaderOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Images to Notification</DialogTitle>
+          </DialogHeader>
+          
+          <ImageUploader
+            onImagesUploaded={(urls) => {
+              setNotificationImages(prev => [...prev, ...urls].slice(0, 3)); // Limit to 3 images
+              setIsImageUploaderOpen(false);
+            }}
+            currentImages={notificationImages}
+            maxImages={3}
+            folder="notifications"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

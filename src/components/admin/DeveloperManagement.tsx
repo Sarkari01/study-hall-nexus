@@ -17,7 +17,8 @@ import {
   Copy,
   ExternalLink,
   Edit,
-  X
+  X,
+  Bell
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -42,11 +43,49 @@ interface NewApiKey {
   provider: string;
 }
 
+interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+  vapidKey: string;
+  environment: 'production' | 'sandbox' | 'development';
+}
+
 const DeveloperManagement = () => {
   const { toast } = useToast();
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const [editingKeys, setEditingKeys] = useState<Record<string, boolean>>({});
   const [editValues, setEditValues] = useState<Record<string, Partial<APIKey>>>({});
+  const [showFirebaseKeys, setShowFirebaseKeys] = useState<Record<string, boolean>>({});
+  const [editingFirebase, setEditingFirebase] = useState(false);
+  
+  const [firebaseConfigs, setFirebaseConfigs] = useState<FirebaseConfig[]>([
+    {
+      apiKey: 'AIza***************************',
+      authDomain: 'your-project.firebaseapp.com',
+      projectId: 'your-project-id',
+      storageBucket: 'your-project.appspot.com',
+      messagingSenderId: '123456789012',
+      appId: '1:123456789012:web:abcdef123456',
+      vapidKey: 'BL***************************',
+      environment: 'production'
+    }
+  ]);
+
+  const [editingFirebaseConfig, setEditingFirebaseConfig] = useState<FirebaseConfig>({
+    apiKey: '',
+    authDomain: '',
+    projectId: '',
+    storageBucket: '',
+    messagingSenderId: '',
+    appId: '',
+    vapidKey: '',
+    environment: 'production'
+  });
+
   const [apiKeys, setApiKeys] = useState<APIKey[]>([
     {
       id: '1',
@@ -116,6 +155,77 @@ const DeveloperManagement = () => {
     environment: 'production',
     provider: ''
   });
+
+  // Firebase configuration functions
+  const startEditingFirebase = () => {
+    setEditingFirebase(true);
+    setEditingFirebaseConfig(firebaseConfigs[0] || {
+      apiKey: '',
+      authDomain: '',
+      projectId: '',
+      storageBucket: '',
+      messagingSenderId: '',
+      appId: '',
+      vapidKey: '',
+      environment: 'production'
+    });
+  };
+
+  const saveFirebaseConfig = () => {
+    if (!editingFirebaseConfig.apiKey || !editingFirebaseConfig.projectId) {
+      toast({
+        title: "Error",
+        description: "Please fill in required fields (API Key and Project ID)",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setFirebaseConfigs([editingFirebaseConfig]);
+    setEditingFirebase(false);
+    
+    // Store in localStorage for other components to access
+    localStorage.setItem('firebase_config', JSON.stringify(editingFirebaseConfig));
+    
+    toast({
+      title: "Success",
+      description: "Firebase configuration has been saved successfully",
+    });
+  };
+
+  const cancelFirebaseEdit = () => {
+    setEditingFirebase(false);
+    setEditingFirebaseConfig({
+      apiKey: '',
+      authDomain: '',
+      projectId: '',
+      storageBucket: '',
+      messagingSenderId: '',
+      appId: '',
+      vapidKey: '',
+      environment: 'production'
+    });
+  };
+
+  const toggleFirebaseKeyVisibility = (field: string) => {
+    setShowFirebaseKeys(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  const copyFirebaseKey = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Copied to clipboard",
+      description: "Firebase configuration value has been copied",
+    });
+  };
+
+  const maskKey = (key: string) => {
+    if (key.length <= 8) return key;
+    return key.substring(0, 4) + '•'.repeat(key.length - 8) + key.substring(key.length - 4);
+  };
 
   // Function to get DeepSeek API key for other components
   const getDeepSeekApiKey = (): string | undefined => {
@@ -259,7 +369,7 @@ const DeveloperManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Developer Management</h2>
-          <p className="text-gray-600">Manage API keys and integrations</p>
+          <p className="text-gray-600">Manage API keys, Firebase configuration, and integrations</p>
         </div>
         <Button variant="outline">
           <ExternalLink className="h-4 w-4 mr-2" />
@@ -267,26 +377,215 @@ const DeveloperManagement = () => {
         </Button>
       </div>
 
-      {/* DeepSeek Status Banner */}
-      <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <div>
-              <h3 className="font-medium text-green-900">DeepSeek AI Configured</h3>
-              <p className="text-sm text-green-700">All AI features are now active and ready to use</p>
+      {/* Status Banners */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <h3 className="font-medium text-green-900">DeepSeek AI Configured</h3>
+                <p className="text-sm text-green-700">All AI features are active</p>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Bell className="h-5 w-5 text-blue-600" />
+              <div>
+                <h3 className="font-medium text-blue-900">Firebase Push Notifications</h3>
+                <p className="text-sm text-blue-700">Real-time messaging configured</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Tabs defaultValue="api-keys" className="space-y-6">
         <TabsList>
           <TabsTrigger value="api-keys">API Keys</TabsTrigger>
+          <TabsTrigger value="firebase">Firebase Config</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="rate-limits">Rate Limits</TabsTrigger>
           <TabsTrigger value="logs">API Logs</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="firebase" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Firebase Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!editingFirebase ? (
+                <div className="space-y-4">
+                  {firebaseConfigs.length > 0 ? (
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(firebaseConfigs[0]).map(([key, value]) => {
+                          if (key === 'environment') {
+                            return (
+                              <div key={key} className="col-span-full">
+                                <Label className="text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</Label>
+                                <Badge className={getEnvironmentColor(value as string)}>
+                                  {value}
+                                </Badge>
+                              </div>
+                            );
+                          }
+                          
+                          const isSecretKey = ['apiKey', 'vapidKey'].includes(key);
+                          return (
+                            <div key={key}>
+                              <Label className="text-sm font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</Label>
+                              <div className="flex items-center gap-2 mt-1">
+                                <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono flex-1">
+                                  {isSecretKey && !showFirebaseKeys[key] ? maskKey(value as string) : value}
+                                </code>
+                                {isSecretKey && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => toggleFirebaseKeyVisibility(key)}
+                                  >
+                                    {showFirebaseKeys[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copyFirebaseKey(value as string)}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex gap-2 mt-4">
+                        <Button onClick={startEditingFirebase}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit Configuration
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-600">No Firebase Configuration</h3>
+                      <p className="text-gray-500 mb-4">Set up Firebase for push notifications</p>
+                      <Button onClick={startEditingFirebase}>
+                        Add Firebase Configuration
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firebase-api-key">API Key *</Label>
+                      <Input
+                        id="firebase-api-key"
+                        type="password"
+                        placeholder="AIza..."
+                        value={editingFirebaseConfig.apiKey}
+                        onChange={(e) => setEditingFirebaseConfig(prev => ({ ...prev, apiKey: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="auth-domain">Auth Domain</Label>
+                      <Input
+                        id="auth-domain"
+                        placeholder="your-project.firebaseapp.com"
+                        value={editingFirebaseConfig.authDomain}
+                        onChange={(e) => setEditingFirebaseConfig(prev => ({ ...prev, authDomain: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="project-id">Project ID *</Label>
+                      <Input
+                        id="project-id"
+                        placeholder="your-project-id"
+                        value={editingFirebaseConfig.projectId}
+                        onChange={(e) => setEditingFirebaseConfig(prev => ({ ...prev, projectId: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="storage-bucket">Storage Bucket</Label>
+                      <Input
+                        id="storage-bucket"
+                        placeholder="your-project.appspot.com"
+                        value={editingFirebaseConfig.storageBucket}
+                        onChange={(e) => setEditingFirebaseConfig(prev => ({ ...prev, storageBucket: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="messaging-sender-id">Messaging Sender ID</Label>
+                      <Input
+                        id="messaging-sender-id"
+                        placeholder="123456789012"
+                        value={editingFirebaseConfig.messagingSenderId}
+                        onChange={(e) => setEditingFirebaseConfig(prev => ({ ...prev, messagingSenderId: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="app-id">App ID</Label>
+                      <Input
+                        id="app-id"
+                        placeholder="1:123456789012:web:abcdef123456"
+                        value={editingFirebaseConfig.appId}
+                        onChange={(e) => setEditingFirebaseConfig(prev => ({ ...prev, appId: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="vapid-key">VAPID Key</Label>
+                      <Input
+                        id="vapid-key"
+                        type="password"
+                        placeholder="BL..."
+                        value={editingFirebaseConfig.vapidKey}
+                        onChange={(e) => setEditingFirebaseConfig(prev => ({ ...prev, vapidKey: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="environment">Environment</Label>
+                      <select
+                        id="environment"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={editingFirebaseConfig.environment}
+                        onChange={(e) => setEditingFirebaseConfig(prev => ({ 
+                          ...prev, 
+                          environment: e.target.value as 'production' | 'sandbox' | 'development'
+                        }))}
+                      >
+                        <option value="production">Production</option>
+                        <option value="sandbox">Sandbox</option>
+                        <option value="development">Development</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button onClick={saveFirebaseConfig}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Configuration
+                    </Button>
+                    <Button variant="outline" onClick={cancelFirebaseEdit}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="api-keys" className="space-y-6">
           {/* Add New API Key */}

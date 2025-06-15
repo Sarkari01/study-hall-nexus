@@ -11,6 +11,7 @@ interface NotificationRequest {
   title: string;
   message: string;
   targetAudience: 'all' | 'students' | 'merchants' | 'admins';
+  images?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -43,7 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response('Forbidden', { status: 403, headers: corsHeaders });
     }
 
-    const { title, message, targetAudience }: NotificationRequest = await req.json();
+    const { title, message, targetAudience, images = [] }: NotificationRequest = await req.json();
 
     // Log the notification attempt
     const { data: notificationLog } = await supabaseClient
@@ -90,29 +91,46 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // In a real implementation, you would use Firebase Admin SDK here
-    // For now, we'll simulate the notification sending
+    // For now, we'll simulate the notification sending with image support
     const tokens = targetUsers.data.map(user => user.fcm_token);
     
-    // Simulate sending notifications
+    // Simulate sending notifications with image support
     let successCount = 0;
     let failureCount = 0;
 
     for (const token of tokens) {
       try {
-        // In real implementation, use Firebase Admin SDK:
-        // await admin.messaging().send({
+        // In real implementation, use Firebase Admin SDK with image support:
+        // const notificationPayload = {
         //   token: token,
-        //   notification: { title, body: message },
+        //   notification: { 
+        //     title, 
+        //     body: message,
+        //     image: images.length > 0 ? images[0] : undefined // First image as main notification image
+        //   },
         //   webpush: {
         //     notification: {
         //       title,
         //       body: message,
-        //       icon: '/favicon.ico'
+        //       icon: '/favicon.ico',
+        //       image: images.length > 0 ? images[0] : undefined,
+        //       data: {
+        //         images: JSON.stringify(images) // All images in data payload
+        //       }
         //     }
         //   }
-        // });
+        // };
+        // 
+        // await admin.messaging().send(notificationPayload);
         
-        // For now, simulate success
+        // For now, simulate success with image handling
+        console.log(`Sending notification to ${token}:`, {
+          title,
+          message,
+          hasImages: images.length > 0,
+          imageCount: images.length
+        });
+        
         successCount++;
       } catch (error) {
         console.error('Failed to send notification:', error);
@@ -134,7 +152,8 @@ const handler = async (req: Request): Promise<Response> => {
       success: true, 
       message: 'Notifications sent successfully',
       sent_count: successCount,
-      failed_count: failureCount
+      failed_count: failureCount,
+      images_included: images.length > 0 ? images.length : 0
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
