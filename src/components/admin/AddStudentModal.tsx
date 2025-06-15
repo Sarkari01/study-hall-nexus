@@ -7,19 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Student {
-  id: number;
-  name: string;
+  id: string;
+  student_id: string;
+  full_name: string;
   email: string;
   phone: string;
-  bookingsCount: number;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  lastBooking?: string;
-  totalSpent?: string;
-  averageSessionDuration?: string;
-  preferredStudyHalls?: string[];
+  total_bookings: number;
+  status: 'active' | 'inactive' | 'suspended';
+  created_at: string;
+  last_booking_date?: string;
+  total_spent?: string;
+  average_session_duration?: string;
+  preferred_study_halls?: string[];
 }
 
 interface AddStudentModalProps {
@@ -34,10 +36,10 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({
   onStudentAdded
 }) => {
   const [formData, setFormData] = useState({
-    name: '',
+    full_name: '',
     email: '',
     phone: '',
-    status: 'active' as 'active' | 'inactive'
+    status: 'active' as 'active' | 'inactive' | 'suspended'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -47,21 +49,34 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual API call
-      // await axios.post('/api/admin/students', formData);
-      
-      // Mock implementation
+      // Insert into students table
+      const { data: student, error } = await supabase
+        .from('students')
+        .insert([{
+          full_name: formData.full_name,
+          email: formData.email,
+          phone: formData.phone,
+          status: formData.status,
+          total_bookings: 0,
+          total_spent: 0
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
       const newStudent: Student = {
-        id: Date.now(), // Mock ID
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        bookingsCount: 0,
-        status: formData.status,
-        createdAt: new Date().toISOString(),
-        totalSpent: "₹0",
-        averageSessionDuration: "0h",
-        preferredStudyHalls: []
+        id: student.id,
+        student_id: student.student_id,
+        full_name: student.full_name,
+        email: student.email,
+        phone: student.phone,
+        total_bookings: student.total_bookings,
+        status: student.status,
+        created_at: student.created_at,
+        total_spent: `₹${student.total_spent}`,
+        average_session_duration: "0h",
+        preferred_study_halls: []
       };
 
       onStudentAdded(newStudent);
@@ -73,7 +88,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({
 
       // Reset form
       setFormData({
-        name: '',
+        full_name: '',
         email: '',
         phone: '',
         status: 'active'
@@ -114,12 +129,12 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="full_name">Full Name</Label>
             <Input
-              id="name"
+              id="full_name"
               type="text"
-              value={formData.name}
-              onChange={(e) => handleChange('name', e.target.value)}
+              value={formData.full_name}
+              onChange={(e) => handleChange('full_name', e.target.value)}
               placeholder="Enter student's full name"
               required
             />
@@ -161,6 +176,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({
               <SelectContent>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
               </SelectContent>
             </Select>
           </div>
