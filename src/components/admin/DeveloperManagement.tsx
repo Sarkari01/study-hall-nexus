@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,9 @@ import {
   AlertTriangle,
   CheckCircle,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Edit,
+  X
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -43,6 +46,8 @@ interface NewApiKey {
 const DeveloperManagement = () => {
   const { toast } = useToast();
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+  const [editingKeys, setEditingKeys] = useState<Record<string, boolean>>({});
+  const [editValues, setEditValues] = useState<Record<string, Partial<APIKey>>>({});
   const [apiKeys, setApiKeys] = useState<APIKey[]>([
     {
       id: '1',
@@ -131,6 +136,59 @@ const DeveloperManagement = () => {
   const maskApiKey = (key: string) => {
     if (key.length <= 8) return key;
     return key.substring(0, 4) + '•'.repeat(key.length - 8) + key.substring(key.length - 4);
+  };
+
+  const startEditing = (keyId: string) => {
+    const apiKey = apiKeys.find(k => k.id === keyId);
+    if (apiKey) {
+      setEditingKeys(prev => ({ ...prev, [keyId]: true }));
+      setEditValues(prev => ({ ...prev, [keyId]: { ...apiKey } }));
+    }
+  };
+
+  const cancelEditing = (keyId: string) => {
+    setEditingKeys(prev => ({ ...prev, [keyId]: false }));
+    setEditValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[keyId];
+      return newValues;
+    });
+  };
+
+  const saveApiKeyEdit = (keyId: string) => {
+    const editedValues = editValues[keyId];
+    if (!editedValues || !editedValues.name || !editedValues.key) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setApiKeys(prev => prev.map(key => 
+      key.id === keyId ? { ...key, ...editedValues } : key
+    ));
+
+    setEditingKeys(prev => ({ ...prev, [keyId]: false }));
+    setEditValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[keyId];
+      return newValues;
+    });
+
+    toast({
+      title: "Success",
+      description: "API key has been updated successfully",
+    });
+  };
+
+  const deleteApiKey = (keyId: string) => {
+    setApiKeys(prev => prev.filter(key => key.id !== keyId));
+    toast({
+      title: "Success",
+      description: "API key has been deleted successfully",
+    });
   };
 
   const handleSaveApiKey = () => {
@@ -294,20 +352,73 @@ const DeveloperManagement = () => {
                         <div className="flex items-center gap-3 mb-2">
                           <span className="text-2xl">{apiKey.icon}</span>
                           <div>
-                            <h3 className="font-medium text-gray-900">{apiKey.name}</h3>
-                            <p className="text-sm text-gray-600">{apiKey.provider}</p>
+                            {editingKeys[apiKey.id] ? (
+                              <div className="space-y-2">
+                                <Input
+                                  value={editValues[apiKey.id]?.name || ''}
+                                  onChange={(e) => setEditValues(prev => ({
+                                    ...prev,
+                                    [apiKey.id]: { ...prev[apiKey.id], name: e.target.value }
+                                  }))}
+                                  placeholder="API Name"
+                                />
+                                <Input
+                                  value={editValues[apiKey.id]?.provider || ''}
+                                  onChange={(e) => setEditValues(prev => ({
+                                    ...prev,
+                                    [apiKey.id]: { ...prev[apiKey.id], provider: e.target.value }
+                                  }))}
+                                  placeholder="Provider"
+                                />
+                              </div>
+                            ) : (
+                              <>
+                                <h3 className="font-medium text-gray-900">{apiKey.name}</h3>
+                                <p className="text-sm text-gray-600">{apiKey.provider}</p>
+                              </>
+                            )}
                           </div>
                         </div>
                         
-                        <p className="text-sm text-gray-600 mb-3">{apiKey.description}</p>
+                        {editingKeys[apiKey.id] ? (
+                          <Textarea
+                            value={editValues[apiKey.id]?.description || ''}
+                            onChange={(e) => setEditValues(prev => ({
+                              ...prev,
+                              [apiKey.id]: { ...prev[apiKey.id], description: e.target.value }
+                            }))}
+                            placeholder="Description"
+                            className="mb-3"
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-600 mb-3">{apiKey.description}</p>
+                        )}
                         
                         <div className="flex items-center gap-2 mb-3">
                           <Badge className={getStatusColor(apiKey.status)}>
                             {apiKey.status}
                           </Badge>
-                          <Badge className={getEnvironmentColor(apiKey.environment)}>
-                            {apiKey.environment}
-                          </Badge>
+                          {editingKeys[apiKey.id] ? (
+                            <select
+                              value={editValues[apiKey.id]?.environment || apiKey.environment}
+                              onChange={(e) => setEditValues(prev => ({
+                                ...prev,
+                                [apiKey.id]: { 
+                                  ...prev[apiKey.id], 
+                                  environment: e.target.value as 'production' | 'sandbox' | 'development'
+                                }
+                              }))}
+                              className="px-2 py-1 text-xs rounded border"
+                            >
+                              <option value="production">Production</option>
+                              <option value="sandbox">Sandbox</option>
+                              <option value="development">Development</option>
+                            </select>
+                          ) : (
+                            <Badge className={getEnvironmentColor(apiKey.environment)}>
+                              {apiKey.environment}
+                            </Badge>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -320,35 +431,82 @@ const DeveloperManagement = () => {
 
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2">
-                          <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
-                            {showKeys[apiKey.id] ? apiKey.key : maskApiKey(apiKey.key)}
-                          </code>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleKeyVisibility(apiKey.id)}
-                          >
-                            {showKeys[apiKey.id] ? 
-                              <EyeOff className="h-4 w-4" /> : 
-                              <Eye className="h-4 w-4" />
-                            }
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyToClipboard(apiKey.key)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
+                          {editingKeys[apiKey.id] ? (
+                            <Input
+                              type="password"
+                              value={editValues[apiKey.id]?.key || ''}
+                              onChange={(e) => setEditValues(prev => ({
+                                ...prev,
+                                [apiKey.id]: { ...prev[apiKey.id], key: e.target.value }
+                              }))}
+                              placeholder="API Key"
+                              className="font-mono text-sm"
+                            />
+                          ) : (
+                            <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                              {showKeys[apiKey.id] ? apiKey.key : maskApiKey(apiKey.key)}
+                            </code>
+                          )}
+                          
+                          {!editingKeys[apiKey.id] && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleKeyVisibility(apiKey.id)}
+                              >
+                                {showKeys[apiKey.id] ? 
+                                  <EyeOff className="h-4 w-4" /> : 
+                                  <Eye className="h-4 w-4" />
+                                }
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyToClipboard(apiKey.key)}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                         
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            Edit
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
+                          {editingKeys[apiKey.id] ? (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => saveApiKeyEdit(apiKey.id)}
+                              >
+                                <Save className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => cancelEditing(apiKey.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => startEditing(apiKey.id)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => deleteApiKey(apiKey.id)}
+                              >
+                                <RefreshCw className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
