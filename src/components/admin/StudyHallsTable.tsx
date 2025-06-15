@@ -14,6 +14,13 @@ import { useToast } from "@/hooks/use-toast";
 import StudyHallForm from './StudyHallForm';
 import StudyHallView from './StudyHallView';
 
+interface Merchant {
+  id: number;
+  name: string;
+  businessName: string;
+  status: string;
+}
+
 interface StudyHall {
   id: number;
   name: string;
@@ -29,6 +36,7 @@ interface StudyHall {
   pricePerWeek: number;
   pricePerMonth: number;
   amenities: string[];
+  customAmenities?: string[];
   status: 'draft' | 'active' | 'inactive';
   rating: number;
   totalBookings: number;
@@ -79,6 +87,7 @@ const StudyHallsTable = () => {
       pricePerWeek: 300,
       pricePerMonth: 1000,
       amenities: ["AC", "Wi-Fi", "Parking"],
+      customAmenities: [],
       status: 'active',
       rating: 4.5,
       totalBookings: 156,
@@ -112,6 +121,7 @@ const StudyHallsTable = () => {
       pricePerWeek: 240,
       pricePerMonth: 800,
       amenities: ["AC", "Water Cooler"],
+      customAmenities: [],
       status: 'active',
       rating: 4.2,
       totalBookings: 89,
@@ -160,6 +170,7 @@ const StudyHallsTable = () => {
       id: Date.now(),
       rating: 0,
       totalBookings: 0,
+      customAmenities: data.customAmenities || [],
       qrCode: data.qrCode || `${window.location.origin}/book/${Date.now()}`
     };
     setStudyHalls(prev => [...prev, newStudyHall]);
@@ -167,8 +178,13 @@ const StudyHallsTable = () => {
 
   const handleEditStudyHall = (data: any) => {
     if (!selectedStudyHall) return;
+    const updatedStudyHall = {
+      ...selectedStudyHall,
+      ...data,
+      customAmenities: data.customAmenities || []
+    };
     setStudyHalls(prev => prev.map(hall => 
-      hall.id === selectedStudyHall.id ? { ...hall, ...data } : hall
+      hall.id === selectedStudyHall.id ? updatedStudyHall : hall
     ));
   };
 
@@ -208,6 +224,18 @@ const StudyHallsTable = () => {
     setSelectedStudyHall(null);
     setIsEditing(false);
     setIsFormOpen(true);
+  };
+
+  // Convert StudyHall to StudyHallFormData format
+  const convertToFormData = (hall: StudyHall) => {
+    return {
+      ...hall,
+      merchantId: hall.merchantId.toString(),
+      pricePerDay: hall.pricePerDay.toString(),
+      pricePerWeek: hall.pricePerWeek.toString(),
+      pricePerMonth: hall.pricePerMonth.toString(),
+      customAmenities: hall.customAmenities || []
+    };
   };
 
   const filteredStudyHalls = studyHalls.filter(hall => {
@@ -441,7 +469,7 @@ const StudyHallsTable = () => {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={isEditing ? handleEditStudyHall : handleAddStudyHall}
-        editData={isEditing ? selectedStudyHall : null}
+        editData={isEditing ? convertToFormData(selectedStudyHall!) : null}
         isAdmin={true}
       />
 
