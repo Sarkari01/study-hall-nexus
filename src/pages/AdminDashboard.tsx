@@ -20,6 +20,7 @@ import RevenueReports from "@/components/admin/RevenueReports";
 import BannerManager from "@/components/banners/BannerManager";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import ChatSystem from "@/components/chat/ChatSystem";
+import DeveloperManagement from "@/components/admin/DeveloperManagement";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -201,6 +202,19 @@ const AdminDashboard = () => {
         return <CommunityFeed />;
       case "chat":
         return <ChatSystem />;
+      case "general-settings":
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>General Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500 text-center py-8">General settings configuration coming soon...</p>
+            </CardContent>
+          </Card>
+        );
+      case "developer-management":
+        return <DeveloperManagement />;
       case "daily-revenue":
       case "weekly-revenue":
       case "monthly-revenue":
