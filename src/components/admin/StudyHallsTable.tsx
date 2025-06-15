@@ -13,6 +13,7 @@ import { Search, Plus, Edit, Trash2, MapPin, Users, DollarSign, CheckCircle, XCi
 import { useToast } from "@/hooks/use-toast";
 import StudyHallForm from './StudyHallForm';
 import StudyHallView from './StudyHallView';
+import ExportButtons from "@/components/shared/ExportButtons";
 
 interface Merchant {
   id: number;
@@ -249,6 +250,35 @@ const StudyHallsTable = () => {
 
   const uniqueLocations = Array.from(new Set(studyHalls.map(h => h.location.split(',')[1]?.trim() || h.location)));
 
+  // Prepare data for export
+  const exportData = filteredStudyHalls.map(hall => ({
+    'Study Hall ID': hall.id,
+    'Name': hall.name,
+    'Merchant': hall.merchantName,
+    'Location': hall.location,
+    'GPS Coordinates': `${hall.gpsLocation.lat}, ${hall.gpsLocation.lng}`,
+    'Capacity': hall.capacity,
+    'Layout': `${hall.rows}×${hall.seatsPerRow}`,
+    'Available Seats': hall.layout.filter(s => s.status === 'available').length,
+    'Occupied Seats': hall.layout.filter(s => s.status === 'occupied').length,
+    'Price Per Day': `₹${hall.pricePerDay}`,
+    'Price Per Week': hall.pricePerWeek > 0 ? `₹${hall.pricePerWeek}` : 'Not Available',
+    'Price Per Month': hall.pricePerMonth > 0 ? `₹${hall.pricePerMonth}` : 'Not Available',
+    'Amenities': hall.amenities.join(', '),
+    'Custom Amenities': hall.customAmenities?.join(', ') || 'None',
+    'Status': hall.status,
+    'Rating': hall.rating,
+    'Total Bookings': hall.totalBookings,
+    'Description': hall.description
+  }));
+
+  const exportColumns = [
+    'Study Hall ID', 'Name', 'Merchant', 'Location', 'GPS Coordinates', 'Capacity',
+    'Layout', 'Available Seats', 'Occupied Seats', 'Price Per Day', 'Price Per Week',
+    'Price Per Month', 'Amenities', 'Custom Amenities', 'Status', 'Rating',
+    'Total Bookings', 'Description'
+  ];
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -340,6 +370,12 @@ const StudyHallsTable = () => {
               <Plus className="h-4 w-4 mr-2" />
               Add Study Hall
             </Button>
+            <ExportButtons
+              data={exportData}
+              filename="study_halls"
+              title="Study Halls Report"
+              columns={exportColumns}
+            />
           </div>
         </CardContent>
       </Card>

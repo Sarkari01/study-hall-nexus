@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Search, Eye, Edit, Trash2, Plus, Package, IndianRupee } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ExportButtons from "@/components/shared/ExportButtons";
 
 interface SubscriptionPlan {
   id: string;
@@ -259,6 +259,31 @@ const SubscriptionPlansTable = () => {
     plan.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Prepare data for export
+  const exportData = filteredPlans.map(plan => ({
+    'Plan ID': plan.id,
+    'Plan Name': plan.name,
+    'Description': plan.description || 'No description',
+    'Price': `₹${plan.price}`,
+    'Billing Period': plan.billing_period,
+    'Validity (Days)': plan.validity_days,
+    'Max Study Halls': plan.max_study_halls === -1 ? 'Unlimited' : plan.max_study_halls || 'Not specified',
+    'Max Cabins': plan.max_cabins === -1 ? 'Unlimited' : plan.max_cabins || 'Not specified',
+    'Analytics Included': plan.has_analytics ? 'Yes' : 'No',
+    'Chat Support': plan.has_chat_support ? 'Yes' : 'No',
+    'Auto Renew': plan.auto_renew_enabled ? 'Enabled' : 'Disabled',
+    'Status': plan.is_active ? 'Active' : 'Inactive',
+    'Trial Plan': plan.is_trial ? 'Yes' : 'No',
+    'Trial Days': plan.trial_days || 0,
+    'Created Date': new Date(plan.created_at).toLocaleDateString()
+  }));
+
+  const exportColumns = [
+    'Plan ID', 'Plan Name', 'Description', 'Price', 'Billing Period', 'Validity (Days)',
+    'Max Study Halls', 'Max Cabins', 'Analytics Included', 'Chat Support', 'Auto Renew',
+    'Status', 'Trial Plan', 'Trial Days', 'Created Date'
+  ];
+
   const renderPlanModal = (isEdit: boolean) => (
     <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
       <DialogHeader>
@@ -449,6 +474,28 @@ const SubscriptionPlansTable = () => {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Package className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Trial Plans</p>
+                <p className="text-2xl font-bold">{plans.filter(p => p.is_trial).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <IndianRupee className="h-8 w-8 text-orange-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Avg Price</p>
+                <p className="text-2xl font-bold">₹{Math.round(plans.reduce((sum, p) => sum + p.price, 0) / plans.length)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters and Add Button */}
@@ -475,6 +522,12 @@ const SubscriptionPlansTable = () => {
               </DialogTrigger>
               {renderPlanModal(false)}
             </Dialog>
+            <ExportButtons
+              data={exportData}
+              filename="subscription_plans"
+              title="Subscription Plans Report"
+              columns={exportColumns}
+            />
           </div>
         </CardContent>
       </Card>
