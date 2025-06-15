@@ -36,6 +36,7 @@ import DashboardStats from "@/components/admin/DashboardStats";
 import DashboardCharts from "@/components/admin/DashboardCharts";
 import RecentActivities from "@/components/admin/RecentActivities";
 import UpcomingMerchants from "@/components/admin/UpcomingMerchants";
+import GeneralSettings from "@/components/admin/GeneralSettings";
 import { useNotifications } from "@/hooks/useNotifications";
 
 const AdminDashboard = () => {
@@ -250,6 +251,8 @@ const AdminDashboard = () => {
         return <DeveloperManagement />;
       case "notifications":
         return <NotificationManager />;
+      case "general-settings":
+        return <GeneralSettings />;
       case "daily-revenue":
       case "weekly-revenue":
       case "monthly-revenue":
@@ -261,20 +264,6 @@ const AdminDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">Revenue Reports & Analytics</h2>
             </div>
             <RevenueReports reportType={activeTab} />
-          </div>
-        );
-      case "general-settings":
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">General Settings</h2>
-            <Card>
-              <CardHeader>
-                <CardTitle>System Configuration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">General settings will be available here.</p>
-              </CardContent>
-            </Card>
           </div>
         );
       default:
@@ -291,13 +280,23 @@ const AdminDashboard = () => {
         onToggleExpand={handleToggleExpand} 
       />
       
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 overflow-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Comprehensive management system for study halls platform</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {activeTab === 'dashboard' ? 'Dashboard' : 
+             activeTab === 'general-settings' ? 'General Settings' :
+             'Management Console'}
+          </h1>
+          <p className="text-gray-600">
+            {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' :
+             activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' :
+             'Advanced administrative controls and monitoring'}
+          </p>
         </div>
 
-        {renderModuleContent()}
+        <div className="max-w-full">
+          {renderModuleContent()}
+        </div>
       </main>
     </div>
   );

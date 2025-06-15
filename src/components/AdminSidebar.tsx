@@ -24,9 +24,12 @@ import {
   Gift,
   Wallet,
   Percent,
-  Bell
+  Bell,
+  LogOut,
+  User
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminSidebarItem {
   id: string;
@@ -228,68 +231,107 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   expandedItems,
   onToggleExpand
 }) => {
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    // Simulate logout
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+    });
+    // In a real app, you would clear the session and redirect
+    window.location.href = '/';
+  };
+
   return (
-    <div className="w-72 bg-white border-r border-gray-200 min-h-screen p-6">
-      <div className="mb-8">
-        <h2 className="text-xl font-bold text-gray-900">Sarkari Ninja</h2>
-        <p className="text-sm text-gray-600">Advanced Management System</p>
-      </div>
-      
-      <nav className="space-y-2">
-        {sidebarItems.map(item => (
-          <div key={item.id}>
-            {item.hasSubmenu ? (
-              <Collapsible open={expandedItems.includes(item.id)} onOpenChange={() => onToggleExpand(item.id)}>
-                <CollapsibleTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className={cn(
-                      "w-full justify-between text-left", 
-                      expandedItems.includes(item.id) && "bg-gray-100"
-                    )}
-                  >
-                    <div className="flex items-center">
-                      {item.icon}
-                      <span className="ml-3">{item.label}</span>
-                    </div>
-                    {expandedItems.includes(item.id) ? 
-                      <ChevronDown className="h-4 w-4" /> : 
-                      <ChevronRight className="h-4 w-4" />
-                    }
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="ml-6 mt-1 space-y-1">
-                  {item.submenu?.map(subItem => (
+    <div className="w-72 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+      <div className="p-6">
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-gray-900">Sarkari Ninja</h2>
+          <p className="text-sm text-gray-600">Advanced Management System</p>
+        </div>
+        
+        <nav className="space-y-2 flex-1">
+          {sidebarItems.map(item => (
+            <div key={item.id}>
+              {item.hasSubmenu ? (
+                <Collapsible open={expandedItems.includes(item.id)} onOpenChange={() => onToggleExpand(item.id)}>
+                  <CollapsibleTrigger asChild>
                     <Button 
-                      key={subItem.id} 
-                      variant={activeItem === subItem.id ? "default" : "ghost"} 
+                      variant="ghost" 
                       className={cn(
-                        "w-full justify-start text-sm", 
-                        activeItem === subItem.id && "bg-blue-600 text-white hover:bg-blue-700"
-                      )} 
-                      onClick={() => onItemClick(subItem.id)}
+                        "w-full justify-between text-left", 
+                        expandedItems.includes(item.id) && "bg-gray-100"
+                      )}
                     >
-                      {subItem.label}
+                      <div className="flex items-center">
+                        {item.icon}
+                        <span className="ml-3">{item.label}</span>
+                      </div>
+                      {expandedItems.includes(item.id) ? 
+                        <ChevronDown className="h-4 w-4" /> : 
+                        <ChevronRight className="h-4 w-4" />
+                      }
                     </Button>
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
-            ) : (
-              <Button 
-                variant={activeItem === item.id ? "default" : "ghost"} 
-                className={cn(
-                  "w-full justify-start", 
-                  activeItem === item.id && "bg-blue-600 text-white hover:bg-blue-700"
-                )} 
-                onClick={() => onItemClick(item.id)}
-              >
-                {item.icon}
-                <span className="ml-3">{item.label}</span>
-              </Button>
-            )}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="ml-6 mt-1 space-y-1">
+                    {item.submenu?.map(subItem => (
+                      <Button 
+                        key={subItem.id} 
+                        variant={activeItem === subItem.id ? "default" : "ghost"} 
+                        className={cn(
+                          "w-full justify-start text-sm", 
+                          activeItem === subItem.id && "bg-blue-600 text-white hover:bg-blue-700"
+                        )} 
+                        onClick={() => onItemClick(subItem.id)}
+                      >
+                        {subItem.label}
+                      </Button>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : (
+                <Button 
+                  variant={activeItem === item.id ? "default" : "ghost"} 
+                  className={cn(
+                    "w-full justify-start", 
+                    activeItem === item.id && "bg-blue-600 text-white hover:bg-blue-700"
+                  )} 
+                  onClick={() => onItemClick(item.id)}
+                >
+                  {item.icon}
+                  <span className="ml-3">{item.label}</span>
+                </Button>
+              )}
+            </div>
+          ))}
+        </nav>
+      </div>
+
+      {/* Admin Profile & Logout Section */}
+      <div className="mt-auto border-t border-gray-200 p-4">
+        <div className="flex items-center space-x-3 mb-4 p-2 rounded-lg bg-gray-50">
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+            <User className="h-4 w-4 text-white" />
           </div>
-        ))}
-      </nav>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              Admin User
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              admin@sarkarininja.com
+            </p>
+          </div>
+        </div>
+        <Button 
+          variant="outline" 
+          className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
+      </div>
     </div>
   );
 };
