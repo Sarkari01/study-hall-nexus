@@ -19,7 +19,8 @@ import {
   MessageSquare,
   Users2,
   Settings,
-  Code
+  Code,
+  Package
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -61,6 +62,26 @@ const sidebarItems: AdminSidebarItem[] = [
     id: "study-halls",
     label: "Study Halls",
     icon: <Calendar className="h-5 w-5" />
+  },
+  {
+    id: "subscriptions",
+    label: "Subscription Management",
+    icon: <Package className="h-5 w-5" />,
+    hasSubmenu: true,
+    submenu: [
+      {
+        id: "subscription-plans",
+        label: "Subscription Plans"
+      },
+      {
+        id: "merchant-subscriptions",
+        label: "Merchant Subscriptions"
+      },
+      {
+        id: "payment-history",
+        label: "Payment History"
+      }
+    ]
   },
   {
     id: "payments",
