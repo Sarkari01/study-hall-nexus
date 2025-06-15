@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -53,24 +54,42 @@ const UserRoleAssignment = () => {
 
   const fetchUserRoles = async () => {
     try {
-      const { data, error } = await supabase
+      // First get user_roles with custom_roles
+      const { data: userRolesData, error: userRolesError } = await supabase
         .from('user_roles')
         .select(`
           *,
-          custom_roles!inner (name, color, description),
-          user_profiles (full_name, avatar_url)
+          custom_roles!inner (name, color, description)
         `)
         .order('assigned_at', { ascending: false });
 
-      if (error) throw error;
-      
-      // Type assertion to ensure the data matches our interface
-      const typedData = (data || []).map(item => ({
-        ...item,
-        user_profiles: item.user_profiles || null
-      })) as UserRole[];
-      
-      setUserRoles(typedData);
+      if (userRolesError) throw userRolesError;
+
+      // Then get user profiles separately and merge
+      const userIds = userRolesData?.map(ur => ur.user_id) || [];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('user_profiles')
+        .select('user_id, full_name, avatar_url')
+        .in('user_id', userIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map of user profiles for easy lookup
+      const profilesMap = new Map();
+      profilesData?.forEach(profile => {
+        profilesMap.set(profile.user_id, {
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url
+        });
+      });
+
+      // Merge the data
+      const mergedData = userRolesData?.map(userRole => ({
+        ...userRole,
+        user_profiles: profilesMap.get(userRole.user_id) || null
+      })) || [];
+
+      setUserRoles(mergedData as UserRole[]);
       setLoading(false);
     } catch (error) {
       toast({
