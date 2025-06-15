@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -263,6 +262,18 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
   const onSubmit = async (data: MerchantFormData) => {
     setLoading(true);
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "You must be logged in to perform this action",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Convert form data to Supabase-compatible format
       const supabaseData = {
         business_name: data.business_name,
@@ -284,9 +295,15 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
       };
 
       if (mode === 'create') {
+        // Add user_id for new merchants to satisfy RLS policies
+        const insertData = {
+          ...supabaseData,
+          user_id: user.id
+        };
+
         const { error } = await supabase
           .from('merchant_profiles')
-          .insert(supabaseData);
+          .insert(insertData);
 
         if (error) throw error;
 
