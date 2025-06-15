@@ -32,6 +32,14 @@ interface APIKey {
   icon?: string;
 }
 
+interface NewApiKey {
+  name: string;
+  key: string;
+  description: string;
+  environment: 'production' | 'sandbox' | 'development';
+  provider: string;
+}
+
 const DeveloperManagement = () => {
   const { toast } = useToast();
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
@@ -97,11 +105,11 @@ const DeveloperManagement = () => {
     }
   ]);
 
-  const [newApiKey, setNewApiKey] = useState({
+  const [newApiKey, setNewApiKey] = useState<NewApiKey>({
     name: '',
     key: '',
     description: '',
-    environment: 'production' as const,
+    environment: 'production',
     provider: ''
   });
 
