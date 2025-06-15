@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -223,10 +222,25 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
   const onSubmit = async (data: MerchantFormData) => {
     setLoading(true);
     try {
+      // Convert form data to Supabase-compatible format
+      const supabaseData = {
+        business_name: data.business_name,
+        business_phone: data.business_phone,
+        full_name: data.full_name,
+        contact_number: data.contact_number,
+        business_address: data.business_address,
+        communication_address: data.communication_address,
+        bank_account_details: data.bank_account_details,
+        refundable_security_deposit: data.refundable_security_deposit,
+        approval_status: data.approval_status,
+        verification_status: data.verification_status,
+        notes: data.notes
+      };
+
       if (mode === 'create') {
         const { error } = await supabase
           .from('merchant_profiles')
-          .insert([data]);
+          .insert(supabaseData);
 
         if (error) throw error;
 
@@ -237,7 +251,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
       } else {
         const { error } = await supabase
           .from('merchant_profiles')
-          .update(data)
+          .update(supabaseData)
           .eq('id', merchantId);
 
         if (error) throw error;
