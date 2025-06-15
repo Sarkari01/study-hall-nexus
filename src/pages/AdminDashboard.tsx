@@ -130,7 +130,7 @@ const AdminDashboard = () => {
         return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
-              <Button>Add New Study Hall</Button>
+              
             </div>
             <StudyHallsTable />
           </div>;
