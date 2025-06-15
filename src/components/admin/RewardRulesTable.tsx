@@ -65,7 +65,14 @@ const RewardRulesTable = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRewardRules(data || []);
+      
+      // Type cast the data to match our interface
+      const typedRules = (data || []).map(rule => ({
+        ...rule,
+        trigger_type: rule.trigger_type as RewardRule['trigger_type']
+      }));
+      
+      setRewardRules(typedRules);
     } catch (error: any) {
       console.error('Error fetching reward rules:', error);
       toast({

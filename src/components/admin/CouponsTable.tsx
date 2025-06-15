@@ -74,7 +74,14 @@ const CouponsTable = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setCoupons(data || []);
+      
+      // Type cast the data to match our interface
+      const typedCoupons = (data || []).map(coupon => ({
+        ...coupon,
+        discount_type: coupon.discount_type as 'percentage' | 'fixed'
+      }));
+      
+      setCoupons(typedCoupons);
     } catch (error: any) {
       console.error('Error fetching coupons:', error);
       toast({
