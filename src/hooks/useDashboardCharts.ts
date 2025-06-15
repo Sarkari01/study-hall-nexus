@@ -89,7 +89,7 @@ export const useDashboardCharts = () => {
       // Fetch merchants separately
       const { data: merchants, error: merchantsError } = await supabase
         .from('merchant_profiles')
-        .select('full_name, business_name')
+        .select('id, full_name, business_name')
         .limit(5);
 
       if (merchantsError) throw merchantsError;
