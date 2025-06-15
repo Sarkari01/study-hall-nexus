@@ -78,7 +78,7 @@ const MerchantSettings = () => {
         business: {
           ...prev.business,
           [parent]: {
-            ...prev.business[parent as keyof typeof prev.business],
+            ...(prev.business[parent as keyof typeof prev.business] as object),
             [child]: value
           }
         }

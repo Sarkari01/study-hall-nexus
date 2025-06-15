@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarContent, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Building2, MapPin, Phone, Mail, Edit, Save, X, Camera, Shield, CreditCard, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -83,7 +82,7 @@ const MerchantProfile = () => {
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Avatar className="w-20 h-20">
-                  <AvatarContent src="/placeholder.svg" alt={profile.personalInfo.fullName} />
+                  <AvatarImage src="/placeholder.svg" alt={profile.personalInfo.fullName} />
                   <AvatarFallback className="text-2xl">
                     {profile.personalInfo.fullName.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
