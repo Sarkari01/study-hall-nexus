@@ -26,7 +26,7 @@ interface UserRole {
   user_profiles: {
     full_name: string;
     avatar_url: string;
-  } | null;
+  } | null; // Made nullable to match actual data structure
 }
 
 interface Role {
