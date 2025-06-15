@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface StudyHall {
@@ -23,30 +24,6 @@ interface StudyHall {
   updated_at: string;
 }
 
-// Mock data
-const mockStudyHalls: StudyHall[] = [
-  {
-    id: '1',
-    name: 'Central Study Hub',
-    merchant_id: '1',
-    description: 'Premium study space with modern amenities',
-    location: 'Connaught Place, Delhi',
-    capacity: 50,
-    price_per_day: 250,
-    price_per_week: 1500,
-    price_per_month: 5000,
-    amenities: ['WiFi', 'AC', 'Parking', 'Library'],
-    status: 'active',
-    rating: 4.5,
-    total_bookings: 1250,
-    total_revenue: 125000,
-    is_featured: true,
-    operating_hours: { open: '06:00', close: '23:00' },
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-06-01T00:00:00Z'
-  }
-];
-
 export const useStudyHalls = () => {
   const [studyHalls, setStudyHalls] = useState<StudyHall[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,17 +33,15 @@ export const useStudyHalls = () => {
   const fetchStudyHalls = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual Supabase call once types are updated
-      // const { data, error } = await supabase
-      //   .from('study_halls')
-      //   .select('*')
-      //   .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('study_halls')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      setTimeout(() => {
-        setStudyHalls(mockStudyHalls);
-        setError(null);
-        setLoading(false);
-      }, 1000);
+      if (error) throw error;
+
+      setStudyHalls(data || []);
+      setError(null);
     } catch (err) {
       console.error('Error fetching study halls:', err);
       setError('Failed to fetch study halls');
@@ -75,13 +50,20 @@ export const useStudyHalls = () => {
         description: "Failed to fetch study halls",
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
 
   const deleteStudyHall = async (studyHallId: string) => {
     try {
-      // TODO: Replace with actual Supabase call
+      const { error } = await supabase
+        .from('study_halls')
+        .delete()
+        .eq('id', studyHallId);
+
+      if (error) throw error;
+
       setStudyHalls(prev => prev.filter(hall => hall.id !== studyHallId));
       toast({
         title: "Success",
@@ -99,7 +81,13 @@ export const useStudyHalls = () => {
 
   const updateStudyHall = async (studyHallId: string, updates: Partial<StudyHall>) => {
     try {
-      // TODO: Replace with actual Supabase call
+      const { error } = await supabase
+        .from('study_halls')
+        .update(updates)
+        .eq('id', studyHallId);
+
+      if (error) throw error;
+
       setStudyHalls(prev => prev.map(hall => 
         hall.id === studyHallId 
           ? { ...hall, ...updates }

@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface Student {
@@ -17,38 +18,6 @@ interface Student {
   preferred_study_halls?: string[];
 }
 
-// Mock data for now until Supabase types are updated
-const mockStudents: Student[] = [
-  {
-    id: '1',
-    student_id: 'STU000001',
-    full_name: 'Rajesh Kumar',
-    email: 'rajesh.kumar@email.com',
-    phone: '+91 9876543210',
-    total_bookings: 15,
-    status: 'active',
-    created_at: '2024-01-15T00:00:00Z',
-    last_booking_date: '2024-06-10T00:00:00Z',
-    total_spent: '₹3,750',
-    average_session_duration: '4.2h',
-    preferred_study_halls: ['Central Study Hub', 'Elite Library']
-  },
-  {
-    id: '2',
-    student_id: 'STU000002',
-    full_name: 'Priya Sharma',
-    email: 'priya.sharma@email.com',
-    phone: '+91 9876543211',
-    total_bookings: 8,
-    status: 'active',
-    created_at: '2024-02-20T00:00:00Z',
-    last_booking_date: '2024-06-12T00:00:00Z',
-    total_spent: '₹2,160',
-    average_session_duration: '3.5h',
-    preferred_study_halls: ['Study Zone Pro']
-  }
-];
-
 export const useStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,18 +27,30 @@ export const useStudents = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual Supabase call once types are updated
-      // const { data, error } = await supabase
-      //   .from('students')
-      //   .select('*')
-      //   .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      // Mock API delay
-      setTimeout(() => {
-        setStudents(mockStudents);
-        setError(null);
-        setLoading(false);
-      }, 1000);
+      if (error) throw error;
+
+      const formattedStudents: Student[] = data.map(student => ({
+        id: student.id,
+        student_id: student.student_id,
+        full_name: student.full_name,
+        email: student.email,
+        phone: student.phone,
+        total_bookings: student.total_bookings || 0,
+        status: student.status,
+        created_at: student.created_at,
+        last_booking_date: student.last_booking_date,
+        total_spent: `₹${student.total_spent || 0}`,
+        average_session_duration: student.average_session_duration || "0h",
+        preferred_study_halls: student.preferred_study_halls || []
+      }));
+
+      setStudents(formattedStudents);
+      setError(null);
     } catch (err) {
       console.error('Error fetching students:', err);
       setError('Failed to fetch students');
@@ -78,17 +59,19 @@ export const useStudents = () => {
         description: "Failed to fetch students",
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
 
   const deleteStudent = async (studentId: string) => {
     try {
-      // TODO: Replace with actual Supabase call
-      // const { error } = await supabase
-      //   .from('students')
-      //   .delete()
-      //   .eq('id', studentId);
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .eq('id', studentId);
+
+      if (error) throw error;
 
       setStudents(prev => prev.filter(student => student.id !== studentId));
       toast({
@@ -107,11 +90,12 @@ export const useStudents = () => {
 
   const updateStudent = async (studentId: string, updates: Partial<Student>) => {
     try {
-      // TODO: Replace with actual Supabase call
-      // const { error } = await supabase
-      //   .from('students')
-      //   .update(updates)
-      //   .eq('id', studentId);
+      const { error } = await supabase
+        .from('students')
+        .update(updates)
+        .eq('id', studentId);
+
+      if (error) throw error;
 
       setStudents(prev => prev.map(student => 
         student.id === studentId 

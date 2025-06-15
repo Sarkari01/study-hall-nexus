@@ -18,29 +18,27 @@ import {
   UserPlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useStudents } from "@/hooks/useStudents";
 import StudentDetailsModal from "./StudentDetailsModal";
 import AddStudentModal from "./AddStudentModal";
 import ExportButtons from "@/components/shared/ExportButtons";
 
-// Updated Student interface to match the hook
 interface Student {
-  id: string;
-  student_id: string;
-  full_name: string;
+  id: number;
+  name: string;
   email: string;
   phone: string;
-  total_bookings: number;
-  status: 'active' | 'inactive' | 'suspended';
-  created_at: string;
-  last_booking_date?: string;
-  total_spent?: string;
-  average_session_duration?: string;
-  preferred_study_halls?: string[];
+  bookingsCount: number;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  lastBooking?: string;
+  totalSpent?: string;
+  averageSessionDuration?: string;
+  preferredStudyHalls?: string[];
 }
 
 const StudentsTable = () => {
-  const { students, loading, addStudent } = useStudents();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [bookingFilter, setBookingFilter] = useState<string>('all');
@@ -49,11 +47,128 @@ const StudentsTable = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const toggleStudentStatus = async (studentId: string, currentStatus: string) => {
+  // Enhanced mock data with more details
+  const mockStudents: Student[] = [
+    {
+      id: 1,
+      name: "Rajesh Kumar",
+      email: "rajesh.kumar@email.com",
+      phone: "+91 9876543210",
+      bookingsCount: 15,
+      status: 'active',
+      createdAt: "2024-01-15",
+      lastBooking: "2024-06-10",
+      totalSpent: "₹3,750",
+      averageSessionDuration: "4.2h",
+      preferredStudyHalls: ["Central Study Hub", "Elite Library"]
+    },
+    {
+      id: 2,
+      name: "Priya Sharma",
+      email: "priya.sharma@email.com",
+      phone: "+91 9876543211",
+      bookingsCount: 8,
+      status: 'active',
+      createdAt: "2024-02-20",
+      lastBooking: "2024-06-12",
+      totalSpent: "₹2,160",
+      averageSessionDuration: "3.5h",
+      preferredStudyHalls: ["Study Zone Pro"]
+    },
+    {
+      id: 3,
+      name: "Amit Singh",
+      email: "amit.singh@email.com",
+      phone: "+91 9876543212",
+      bookingsCount: 3,
+      status: 'inactive',
+      createdAt: "2024-03-10",
+      lastBooking: "2024-05-15",
+      totalSpent: "₹810",
+      averageSessionDuration: "2.8h",
+      preferredStudyHalls: ["Central Study Hub"]
+    },
+    {
+      id: 4,
+      name: "Sneha Patel",
+      email: "sneha.patel@email.com",
+      phone: "+91 9876543213",
+      bookingsCount: 22,
+      status: 'active',
+      createdAt: "2024-01-05",
+      lastBooking: "2024-06-14",
+      totalSpent: "₹5,940",
+      averageSessionDuration: "5.1h",
+      preferredStudyHalls: ["Elite Library", "Study Zone Pro", "Central Study Hub"]
+    },
+    {
+      id: 5,
+      name: "Arjun Reddy",
+      email: "arjun.reddy@email.com",
+      phone: "+91 9876543214",
+      bookingsCount: 12,
+      status: 'active',
+      createdAt: "2024-02-01",
+      lastBooking: "2024-06-13",
+      totalSpent: "₹3,240",
+      averageSessionDuration: "4.0h",
+      preferredStudyHalls: ["Central Study Hub"]
+    },
+    {
+      id: 6,
+      name: "Kavya Nair",
+      email: "kavya.nair@email.com",
+      phone: "+91 9876543215",
+      bookingsCount: 0,
+      status: 'active',
+      createdAt: "2024-06-10",
+      lastBooking: undefined,
+      totalSpent: "₹0",
+      averageSessionDuration: "0h",
+      preferredStudyHalls: []
+    }
+  ];
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    setLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      // const response = await axios.get('/api/admin/students');
+      // setStudents(response.data);
+      
+      // Mock API delay
+      setTimeout(() => {
+        setStudents(mockStudents);
+        setLoading(false);
+      }, 1000);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch students data",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+
+  const toggleStudentStatus = async (studentId: number, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
       
-      // TODO: Replace with actual status update once Supabase types are ready
+      // TODO: Replace with actual API call
+      // await axios.patch(`/api/admin/students/${studentId}/status`, { status: newStatus });
+      
+      setStudents(students.map(student => 
+        student.id === studentId 
+          ? { ...student, status: newStatus as 'active' | 'inactive' }
+          : student
+      ));
+
       toast({
         title: "Success",
         description: `Student account ${newStatus === 'active' ? 'enabled' : 'disabled'}`,
@@ -74,25 +189,25 @@ const StudentsTable = () => {
   };
 
   const handleAddStudent = (newStudent: Student) => {
-    addStudent(newStudent);
+    setStudents(prev => [newStudent, ...prev]);
   };
 
   // Memoized filtered students for better performance
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
-      const matchesSearch = student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            student.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
       
       let matchesBookings = true;
       if (bookingFilter === 'high') {
-        matchesBookings = student.total_bookings >= 10;
+        matchesBookings = student.bookingsCount >= 10;
       } else if (bookingFilter === 'medium') {
-        matchesBookings = student.total_bookings >= 5 && student.total_bookings < 10;
+        matchesBookings = student.bookingsCount >= 5 && student.bookingsCount < 10;
       } else if (bookingFilter === 'low') {
-        matchesBookings = student.total_bookings > 0 && student.total_bookings < 5;
+        matchesBookings = student.bookingsCount > 0 && student.bookingsCount < 5;
       } else if (bookingFilter === 'none') {
-        matchesBookings = student.total_bookings === 0;
+        matchesBookings = student.bookingsCount === 0;
       }
       
       return matchesSearch && matchesStatus && matchesBookings;
@@ -103,9 +218,9 @@ const StudentsTable = () => {
   const statistics = useMemo(() => {
     const totalStudents = students.length;
     const activeStudents = students.filter(s => s.status === 'active').length;
-    const totalBookings = students.reduce((sum, s) => sum + s.total_bookings, 0);
+    const totalBookings = students.reduce((sum, s) => sum + s.bookingsCount, 0);
     const totalRevenue = students.reduce((sum, s) => {
-      const amount = parseFloat(s.total_spent?.replace('₹', '').replace(',', '') || '0');
+      const amount = parseFloat(s.totalSpent?.replace('₹', '').replace(',', '') || '0');
       return sum + amount;
     }, 0);
 
@@ -115,17 +230,17 @@ const StudentsTable = () => {
   // Prepare data for export
   const exportData = useMemo(() => {
     return filteredStudents.map(student => ({
-      'Student ID': student.student_id,
-      'Name': student.full_name,
+      'Student ID': student.id,
+      'Name': student.name,
       'Email': student.email,
       'Phone': student.phone,
-      'Bookings': student.total_bookings,
-      'Total Spent': student.total_spent,
-      'Average Session Duration': student.average_session_duration,
+      'Bookings': student.bookingsCount,
+      'Total Spent': student.totalSpent,
+      'Average Session Duration': student.averageSessionDuration,
       'Status': student.status,
-      'Member Since': student.created_at,
-      'Last Booking': student.last_booking_date || 'Never',
-      'Preferred Study Halls': student.preferred_study_halls?.join(', ') || 'None'
+      'Member Since': student.createdAt,
+      'Last Booking': student.lastBooking || 'Never',
+      'Preferred Study Halls': student.preferredStudyHalls?.join(', ') || 'None'
     }));
   }, [filteredStudents]);
 
@@ -271,14 +386,14 @@ const StudentsTable = () => {
                 <TableBody>
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id}>
-                      <TableCell className="font-medium">{student.full_name}</TableCell>
+                      <TableCell className="font-medium">{student.name}</TableCell>
                       <TableCell>{student.email}</TableCell>
                       <TableCell>{student.phone}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{student.total_bookings}</Badge>
+                        <Badge variant="secondary">{student.bookingsCount}</Badge>
                       </TableCell>
-                      <TableCell className="font-medium">{student.total_spent}</TableCell>
-                      <TableCell>{student.average_session_duration}</TableCell>
+                      <TableCell className="font-medium">{student.totalSpent}</TableCell>
+                      <TableCell>{student.averageSessionDuration}</TableCell>
                       <TableCell>
                         <Badge 
                           variant={student.status === 'active' ? 'default' : 'destructive'}
@@ -296,7 +411,7 @@ const StudentsTable = () => {
                           )}
                         </Badge>
                       </TableCell>
-                      <TableCell>{student.last_booking_date || 'Never'}</TableCell>
+                      <TableCell>{student.lastBooking || 'Never'}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button 

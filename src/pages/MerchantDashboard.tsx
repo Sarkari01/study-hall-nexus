@@ -26,7 +26,6 @@ const MerchantDashboard = () => {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
   const [editingStudyHall, setEditingStudyHall] = useState<any>(null);
-  const [showAddStudyHall, setShowAddStudyHall] = useState(false);
   
   const [studyHalls, setStudyHalls] = useState([
     {
@@ -183,7 +182,7 @@ const MerchantDashboard = () => {
               <Button 
                 variant="outline" 
                 className="h-20 flex-col"
-                onClick={() => setShowAddStudyHall(true)}
+                onClick={() => setIsFormOpen(true)}
               >
                 <Plus className="h-6 w-6 mb-2" />
                 Add Study Hall
@@ -272,7 +271,7 @@ const MerchantDashboard = () => {
                     <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">No Study Halls Yet</h3>
                     <p className="text-gray-600 mb-4">Create your first study hall to start accepting bookings</p>
-                    <Button onClick={() => setShowAddStudyHall(true)}>
+                    <Button onClick={() => setIsFormOpen(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Create Study Hall
                     </Button>
@@ -460,7 +459,7 @@ const MerchantDashboard = () => {
                 {/* Quick Action Buttons */}
                 <div className="flex items-center space-x-3">
                   {activeTab === 'overview' && (
-                    <Button onClick={() => setShowAddStudyHall(true)} className="bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => setIsFormOpen(true)} className="bg-blue-600 hover:bg-blue-700">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Study Hall
                     </Button>
@@ -484,11 +483,12 @@ const MerchantDashboard = () => {
 
         {/* Study Hall Form Modal */}
         <StudyHallForm
-          isOpen={showAddStudyHall}
-          onClose={() => setShowAddStudyHall(false)}
-          onSubmit={handleAddStudyHall}
+          isOpen={isFormOpen}
+          onClose={closeFormModal}
+          onSubmit={editingStudyHall ? handleEditStudyHall : handleAddStudyHall}
           editData={editingStudyHall}
           isAdmin={false}
+          currentMerchant={currentMerchant}
         />
 
         {/* Study Hall View Modal */}

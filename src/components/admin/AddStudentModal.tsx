@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { UserPlus } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Student {
   id: string;
@@ -48,32 +49,33 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual Supabase call once types are updated
-      // const { data: student, error } = await supabase
-      //   .from('students')
-      //   .insert([{
-      //     full_name: formData.full_name,
-      //     email: formData.email,
-      //     phone: formData.phone,
-      //     status: formData.status,
-      //     total_bookings: 0,
-      //     total_spent: 0
-      //   }])
-      //   .select()
-      //   .single();
+      // Insert into students table
+      const { data: student, error } = await supabase
+        .from('students')
+        .insert([{
+          full_name: formData.full_name,
+          email: formData.email,
+          phone: formData.phone,
+          status: formData.status,
+          total_bookings: 0,
+          total_spent: 0
+        }])
+        .select()
+        .single();
 
-      // Mock student creation
+      if (error) throw error;
+
       const newStudent: Student = {
-        id: Date.now().toString(),
-        student_id: `STU${String(Date.now()).slice(-6)}`,
-        full_name: formData.full_name,
-        email: formData.email,
-        phone: formData.phone,
-        total_bookings: 0,
-        status: formData.status,
-        created_at: new Date().toISOString(),
-        total_spent: '₹0',
-        average_session_duration: '0h',
+        id: student.id,
+        student_id: student.student_id,
+        full_name: student.full_name,
+        email: student.email,
+        phone: student.phone,
+        total_bookings: student.total_bookings,
+        status: student.status,
+        created_at: student.created_at,
+        total_spent: `₹${student.total_spent}`,
+        average_session_duration: "0h",
         preferred_study_halls: []
       };
 
