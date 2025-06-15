@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus, FileText, Bell } from "lucide-react";
+import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus, FileText, Bell, MessageSquare, Megaphone } from "lucide-react";
 import AdminSidebar from "@/components/AdminSidebar";
 import StudentsTable from "@/components/admin/StudentsTable";
 import MerchantsTable from "@/components/admin/MerchantsTable";
@@ -16,6 +17,9 @@ import SettleNowTable from "@/components/admin/SettleNowTable";
 import LocationsTable from "@/components/admin/LocationsTable";
 import LeadsTable from "@/components/admin/LeadsTable";
 import RevenueReports from "@/components/admin/RevenueReports";
+import BannerManager from "@/components/banners/BannerManager";
+import CommunityFeed from "@/components/community/CommunityFeed";
+import ChatSystem from "@/components/chat/ChatSystem";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -191,6 +195,12 @@ const AdminDashboard = () => {
             <LeadsTable />
           </div>
         );
+      case "banners":
+        return <BannerManager />;
+      case "community":
+        return <CommunityFeed />;
+      case "chat":
+        return <ChatSystem />;
       case "daily-revenue":
       case "weekly-revenue":
       case "monthly-revenue":
