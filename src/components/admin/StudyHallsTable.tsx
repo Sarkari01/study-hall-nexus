@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   ColumnDef,
@@ -54,6 +53,7 @@ interface StudyHallFormData {
   id?: number;
   name: string;
   merchantId: string;
+  merchantName: string;
   description: string;
   location: string;
   gpsLocation: { lat: number; lng: number };
@@ -74,6 +74,7 @@ interface StudyHallFormData {
     close: string;
     days: string[];
   };
+  qrCode?: string;
 }
 
 interface DataTableProps {
@@ -238,31 +239,33 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
     console.log("Adding study hall:", data);
   };
 
-  // Create proper editData when editingStudyHall exists
+  // Create proper editData when editingStudyHall exists with all required properties
   const editData: StudyHallFormData | null = editingStudyHall ? {
     id: parseInt(editingStudyHall.id),
     name: editingStudyHall.name || '',
     merchantId: editingStudyHall.merchant_id?.toString() || '',
+    merchantName: 'Default Merchant', // Add default value
     description: editingStudyHall.description || '',
     location: editingStudyHall.location || '',
-    gpsLocation: { lat: 28.6139, lng: 77.2090 },
+    gpsLocation: { lat: 28.6139, lng: 77.2090 }, // Add default GPS location
     capacity: editingStudyHall.capacity || 30,
-    rows: 5,
-    seatsPerRow: 6,
-    layout: Array.from({ length: 30 }, (_, i) => `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`),
+    rows: 5, // Add default value
+    seatsPerRow: 6, // Add default value
+    layout: Array.from({ length: 30 }, (_, i) => `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`), // Add default layout
     pricePerDay: editingStudyHall.price_per_day?.toString() || '',
     pricePerWeek: editingStudyHall.price_per_week?.toString() || '',
     pricePerMonth: editingStudyHall.price_per_month?.toString() || '',
     amenities: editingStudyHall.amenities || [],
-    customAmenities: [],
+    customAmenities: [], // Add default value
     status: editingStudyHall.status as 'draft' | 'active' | 'inactive' || 'draft',
-    images: [],
-    mainImage: '',
+    images: [], // Add default value
+    mainImage: '', // Add default value
     operatingHours: {
       open: '09:00',
       close: '21:00',
       days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    }
+    },
+    qrCode: '' // Add default value
   } : null;
 
   return (
