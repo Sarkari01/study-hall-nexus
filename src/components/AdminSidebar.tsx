@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { Users, Building2, Calendar, CreditCard, ArrowRightLeft, DollarSign, MapPin, UserPlus, TrendingUp, ChevronDown, ChevronRight, LayoutDashboard, Megaphone, MessageSquare, Users2, Settings, Code, Package, Gift, Wallet, Percent, Bell, LogOut, User, BookOpen } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-
 interface AdminSidebarItem {
   id: string;
   label: string;
@@ -182,8 +181,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div className="mb-8 flex items-center gap-3">
           <Building2 className="h-10 w-10 text-blue-600" />
           <div>
-            <h2 className="text-gray-900 font-bold text-2xl">Sarkari Ninja</h2>
-            <p className="text-zinc-950 font-extrabold text-xs">Advanced Management System</p>
+            <h2 className="text-gray-900 font-extrabold text-3xl">Sarkari Ninja</h2>
+            <p className="text-zinc-950 text-xs font-semibold">Advanced Management System</p>
           </div>
         </div>
         
