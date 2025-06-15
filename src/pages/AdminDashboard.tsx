@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,10 @@ import CouponsTable from "@/components/admin/CouponsTable";
 import RewardRulesTable from "@/components/admin/RewardRulesTable";
 import WalletManagement from "@/components/admin/WalletManagement";
 import NotificationManager from "@/components/notifications/NotificationManager";
+import DashboardStats from "@/components/admin/DashboardStats";
+import DashboardCharts from "@/components/admin/DashboardCharts";
+import RecentActivities from "@/components/admin/RecentActivities";
+import UpcomingMerchants from "@/components/admin/UpcomingMerchants";
 import { useNotifications } from "@/hooks/useNotifications";
 
 const AdminDashboard = () => {
@@ -44,58 +49,26 @@ const AdminDashboard = () => {
     setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
   };
   
-  const stats = [{
-    title: "Total Students",
-    value: "2,350",
-    change: "+15.3%",
-    icon: <Users className="h-5 w-5" />,
-    color: "text-purple-600"
-  }, {
-    title: "Active Merchants",
-    value: "186",
-    change: "+8.2%",
-    icon: <Building2 className="h-5 w-5" />,
-    color: "text-blue-600"
-  }, {
-    title: "Total Revenue",
-    value: "₹2,45,680",
-    change: "+12.5%",
-    icon: <DollarSign className="h-5 w-5" />,
-    color: "text-green-600"
-  }, {
-    title: "Growth Rate",
-    value: "23.1%",
-    change: "+2.4%",
-    icon: <TrendingUp className="h-5 w-5" />,
-    color: "text-orange-600"
-  }];
-  
   const getDeepSeekApiKey = (): string | undefined => {
     return localStorage.getItem('deepseek_api_key') || undefined;
   };
   
   const renderDashboardContent = () => (
     <div className="space-y-6">
-      {/* Dashboard Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                  <p className={`text-sm ${stat.color} flex items-center mt-1`}>
-                    {stat.change} from last month
-                  </p>
-                </div>
-                <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
-                  {stat.icon}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Enhanced Statistics Cards */}
+      <DashboardStats />
+
+      {/* Interactive Charts and Graphs */}
+      <DashboardCharts />
+
+      {/* Recent Activities and Merchant Management */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <UpcomingMerchants />
+        </div>
+        <div>
+          <RecentActivities />
+        </div>
       </div>
 
       {/* Quick Actions */}
