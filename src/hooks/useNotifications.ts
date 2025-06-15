@@ -32,7 +32,7 @@ export const useNotifications = () => {
           // Store token in database
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            await supabase
+            const { error } = await supabase
               .from('user_notification_tokens')
               .upsert({
                 user_id: user.id,
@@ -43,6 +43,10 @@ export const useNotifications = () => {
               }, {
                 onConflict: 'user_id,fcm_token'
               });
+
+            if (error) {
+              console.error('Error storing FCM token:', error);
+            }
           }
         }
       } catch (error) {

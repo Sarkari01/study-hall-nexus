@@ -427,6 +427,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_logs: {
+        Row: {
+          created_at: string | null
+          failure_count: number | null
+          id: string
+          message: string
+          sent_at: string | null
+          sent_by: string | null
+          status: string | null
+          success_count: number | null
+          target_audience: string
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          failure_count?: number | null
+          id?: string
+          message: string
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          success_count?: number | null
+          target_audience?: string
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          failure_count?: number | null
+          id?: string
+          message?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          success_count?: number | null
+          target_audience?: string
+          title?: string
+        }
+        Relationships: []
+      }
       reward_history: {
         Row: {
           amount_earned: number | null
@@ -519,6 +558,36 @@ export type Database = {
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      user_notification_tokens: {
+        Row: {
+          created_at: string | null
+          device_type: string | null
+          fcm_token: string
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          device_type?: string | null
+          fcm_token: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          device_type?: string | null
+          fcm_token?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
