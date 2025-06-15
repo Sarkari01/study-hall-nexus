@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin, Upload, X, Plus, Minus, QrCode, Download, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import SeatLayoutDesigner from './SeatLayoutDesigner';
 import QRCodeDisplay from './QRCodeDisplay';
 import GoogleMapsLocationPicker from './GoogleMapsLocationPicker';
@@ -73,12 +74,8 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
     status: 'draft'
   });
 
-  const [merchants] = useState([
-    { id: 1, name: "Sneha Patel", businessName: "StudySpace Pro" },
-    { id: 2, name: "Rajesh Kumar", businessName: "Quiet Zones" },
-    { id: 3, name: "Amit Singh", businessName: "Tech Study Hub" }
-  ]);
-
+  const [merchants, setMerchants] = useState([]);
+  const [loadingMerchants, setLoadingMerchants] = useState(false);
   const [newAmenity, setNewAmenity] = useState('');
   const [showQRCode, setShowQRCode] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -86,9 +83,38 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
 
   const defaultAmenities = ['AC', 'Wi-Fi', 'Parking', 'Power Outlets', 'Water Cooler', 'Washroom'];
 
+  // Fetch merchants from Supabase
+  useEffect(() => {
+    const fetchMerchants = async () => {
+      setLoadingMerchants(true);
+      try {
+        const { data, error } = await supabase
+          .from('merchant_profiles')
+          .select('id, full_name, business_name')
+          .eq('approval_status', 'approved')
+          .order('full_name');
+
+        if (error) throw error;
+        setMerchants(data || []);
+      } catch (error) {
+        console.error('Error fetching merchants:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load merchants",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingMerchants(false);
+      }
+    };
+
+    if (isAdmin) {
+      fetchMerchants();
+    }
+  }, [isAdmin, toast]);
+
   useEffect(() => {
     if (editData) {
-      // Ensure all required properties exist with proper defaults
       setFormData({
         ...editData,
         amenities: editData.amenities || [],
@@ -222,6 +248,15 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
       return;
     }
 
+    if (isAdmin && !formData.merchantId) {
+      toast({
+        title: "Error",
+        description: "Please select a merchant",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const finalData = {
       ...formData,
       qrCode: formData.qrCode || `${window.location.origin}/book/${Date.now()}`
@@ -270,21 +305,21 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
                     <Select
                       value={formData.merchantId}
                       onValueChange={(value) => {
-                        const merchant = merchants.find(m => m.id.toString() === value);
+                        const merchant = merchants.find((m: any) => m.id === value);
                         setFormData(prev => ({
                           ...prev,
                           merchantId: value,
-                          merchantName: merchant ? merchant.name : ''
+                          merchantName: merchant ? merchant.full_name : ''
                         }));
                       }}
                     >
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Choose merchant" />
+                        <SelectValue placeholder={loadingMerchants ? "Loading merchants..." : "Choose merchant"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {merchants.map(merchant => (
-                          <SelectItem key={merchant.id} value={merchant.id.toString()}>
-                            {merchant.name} - {merchant.businessName}
+                        {merchants.map((merchant: any) => (
+                          <SelectItem key={merchant.id} value={merchant.id}>
+                            {merchant.full_name} - {merchant.business_name}
                           </SelectItem>
                         ))}
                       </SelectContent>

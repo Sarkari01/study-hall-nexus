@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,11 +23,29 @@ const StudyHallsTable = () => {
     
     try {
       setIsSubmitting(true);
+      
+      // First, get the actual merchant profile ID based on the merchant selection
+      let actualMerchantId = null;
+      if (formData.merchantId) {
+        const { data: merchantProfile, error: merchantError } = await supabase
+          .from('merchant_profiles')
+          .select('id')
+          .eq('id', formData.merchantId)
+          .single();
+        
+        if (merchantError) {
+          console.error('Error finding merchant:', merchantError);
+          throw new Error('Selected merchant not found');
+        }
+        
+        actualMerchantId = merchantProfile?.id;
+      }
+
       const { data, error } = await supabase
         .from('study_halls')
         .insert({
           name: formData.name,
-          merchant_id: formData.merchantId,
+          merchant_id: actualMerchantId,
           location: formData.location,
           description: formData.description,
           capacity: formData.rows * formData.seatsPerRow,
@@ -65,7 +82,7 @@ const StudyHallsTable = () => {
       console.error('Error creating study hall:', error);
       toast({
         title: "Error",
-        description: "Failed to create study hall",
+        description: error instanceof Error ? error.message : "Failed to create study hall",
         variant: "destructive",
       });
     } finally {
