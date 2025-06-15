@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   ColumnDef,
@@ -47,6 +48,32 @@ interface StudyHall {
   operating_hours?: any;
   created_at: string;
   updated_at: string;
+}
+
+interface StudyHallFormData {
+  id?: number;
+  name: string;
+  merchantId: string;
+  description: string;
+  location: string;
+  gpsLocation: { lat: number; lng: number };
+  capacity: number;
+  rows: number;
+  seatsPerRow: number;
+  layout: string[];
+  pricePerDay: string;
+  pricePerWeek: string;
+  pricePerMonth: string;
+  amenities: string[];
+  customAmenities: string[];
+  status: 'draft' | 'active' | 'inactive';
+  images: string[];
+  mainImage: string;
+  operatingHours: {
+    open: string;
+    close: string;
+    days: string[];
+  };
 }
 
 interface DataTableProps {
@@ -127,17 +154,6 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
         return value === 'all' || row.getValue(id) === value
       },
       enableSorting: false,
-      header: ({ column }) => (
-        <div className="relative">
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleVisibility()}
-          >
-            Status
-            <Filter className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-      ),
     },
     {
       accessorKey: "is_featured",
@@ -145,9 +161,9 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
       cell: ({ row }) => (
         <div className="text-center">
           <Checkbox
-            checked={row.original.is_featured}
+            checked={Boolean(row.original.is_featured)}
             onCheckedChange={(checked) => {
-              updateStudyHall(row.original.id, { is_featured: checked });
+              updateStudyHall(row.original.id, { is_featured: Boolean(checked) });
               toast({
                 title: "Success",
                 description: `Study hall ${checked ? 'featured' : 'unfeatured'} successfully`,
@@ -217,45 +233,37 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
     },
   })
 
-  const handleAddStudyHall = async (data: any) => {
+  const handleAddStudyHall = async (data: StudyHallFormData) => {
     // TODO: Implement add study hall logic here
     console.log("Adding study hall:", data);
   };
 
-  // Update the editData object to include operatingHours
-  const editData = {
-    merchantId: data.find(studyHall => studyHall.id === editingStudyHall?.id)?.merchant_id?.toString() || '',
-    pricePerDay: data.find(studyHall => studyHall.id === editingStudyHall?.id)?.price_per_day?.toString() || '',
-    pricePerWeek: data.find(studyHall => studyHall.id === editingStudyHall?.id)?.price_per_week?.toString() || '',
-    pricePerMonth: data.find(studyHall => studyHall.id === editingStudyHall?.id)?.price_per_month?.toString() || '',
+  // Create proper editData when editingStudyHall exists
+  const editData: StudyHallFormData | null = editingStudyHall ? {
+    id: parseInt(editingStudyHall.id),
+    name: editingStudyHall.name || '',
+    merchantId: editingStudyHall.merchant_id?.toString() || '',
+    description: editingStudyHall.description || '',
+    location: editingStudyHall.location || '',
+    gpsLocation: { lat: 28.6139, lng: 77.2090 },
+    capacity: editingStudyHall.capacity || 30,
+    rows: 5,
+    seatsPerRow: 6,
+    layout: Array.from({ length: 30 }, (_, i) => `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`),
+    pricePerDay: editingStudyHall.price_per_day?.toString() || '',
+    pricePerWeek: editingStudyHall.price_per_week?.toString() || '',
+    pricePerMonth: editingStudyHall.price_per_month?.toString() || '',
+    amenities: editingStudyHall.amenities || [],
     customAmenities: [],
+    status: editingStudyHall.status as 'draft' | 'active' | 'inactive' || 'draft',
+    images: [],
+    mainImage: '',
     operatingHours: {
       open: '09:00',
       close: '21:00',
       days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    },
-    ...editingStudyHall,
-    id: parseInt(editingStudyHall?.id || '0'),
-    name: editingStudyHall?.name || '',
-    merchantName: `Merchant ${editingStudyHall?.merchant_id}`,
-    location: editingStudyHall?.location || '',
-    gpsLocation: { lat: 28.6139, lng: 77.2090 },
-    capacity: editingStudyHall?.capacity || 30,
-    rows: 5,
-    seatsPerRow: 6,
-    layout: Array.from({ length: 30 }, (_, i) => ({ 
-      id: `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`, 
-      status: Math.random() > 0.7 ? 'occupied' : 'available' as 'available' | 'occupied' | 'maintenance' | 'disabled'
-    })),
-    amenities: editingStudyHall?.amenities || [],
-    status: editingStudyHall?.status as 'draft' | 'active' | 'inactive' || 'draft',
-    rating: editingStudyHall?.rating || 4.2,
-    totalBookings: editingStudyHall?.total_bookings || 0,
-    description: editingStudyHall?.description || '',
-    images: [],
-    mainImage: '',
-    qrCode: editingStudyHall?.id
-  };
+    }
+  } : null;
 
   return (
     <div className="container mx-auto py-10">
@@ -325,7 +333,7 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
           setEditingStudyHall(null);
         }}
         onSubmit={handleAddStudyHall}
-        editData={editData as any}
+        editData={editData}
         isAdmin={true}
       />
 
