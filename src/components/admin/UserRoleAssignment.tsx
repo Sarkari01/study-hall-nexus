@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, UserPlus, Shield, Calendar, Users } from "lucide-react";
+import { Search, UserPlus, Shield, Calendar } from "lucide-react";
 
 interface UserRole {
   id: string;
@@ -36,84 +36,35 @@ interface Role {
   color: string;
 }
 
-interface UserProfile {
-  user_id: string;
-  full_name: string;
-  avatar_url: string;
-}
-
 const UserRoleAssignment = () => {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedRoleId, setSelectedRoleId] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    getCurrentUser();
     fetchUserRoles();
     fetchRoles();
-    fetchUserProfiles();
   }, []);
-
-  const getCurrentUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    setCurrentUser(user);
-  };
 
   const fetchUserRoles = async () => {
     try {
-      const { data: userRolesData, error: userRolesError } = await supabase
+      const { data, error } = await supabase
         .from('user_roles')
         .select(`
           *,
-          custom_roles!inner (name, color, description)
+          custom_roles (name, color, description),
+          user_profiles (full_name, avatar_url)
         `)
         .order('assigned_at', { ascending: false });
 
-      if (userRolesError) throw userRolesError;
-      return userRolesData || [];
-    } catch (error) {
-      console.error('Error fetching user roles:', error);
-      return [];
-    }
-  };
-
-  const fetchUserProfiles = async () => {
-    try {
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('user_id, full_name, avatar_url');
-
-      if (profilesError) throw profilesError;
-      setUserProfiles(profilesData || []);
-    } catch (error) {
-      console.error('Error fetching user profiles:', error);
-    }
-  };
-
-  const mergeUserRolesWithProfiles = async () => {
-    try {
-      const userRolesData = await fetchUserRoles();
-      
-      const mergedData = userRolesData.map(userRole => {
-        const profile = userProfiles.find(p => p.user_id === userRole.user_id);
-        return {
-          ...userRole,
-          user_profiles: profile ? {
-            full_name: profile.full_name || 'Unknown User',
-            avatar_url: profile.avatar_url || ''
-          } : null
-        };
-      });
-
-      setUserRoles(mergedData as UserRole[]);
+      if (error) throw error;
+      setUserRoles(data || []);
       setLoading(false);
     } catch (error) {
       toast({
@@ -124,12 +75,6 @@ const UserRoleAssignment = () => {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (userProfiles.length > 0) {
-      mergeUserRolesWithProfiles();
-    }
-  }, [userProfiles]);
 
   const fetchRoles = async () => {
     try {
@@ -146,14 +91,7 @@ const UserRoleAssignment = () => {
   };
 
   const handleAssignRole = async () => {
-    if (!selectedUserId || !selectedRoleId) {
-      toast({
-        title: "Error",
-        description: "Please select both user ID and role",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!selectedUserId || !selectedRoleId) return;
 
     try {
       const { error } = await supabase
@@ -162,7 +100,7 @@ const UserRoleAssignment = () => {
           user_id: selectedUserId,
           role_id: selectedRoleId,
           expires_at: expiryDate || null,
-          assigned_by: currentUser?.id
+          assigned_by: (await supabase.auth.getUser()).data.user?.id
         });
 
       if (error) throw error;
@@ -176,14 +114,11 @@ const UserRoleAssignment = () => {
       setSelectedUserId('');
       setSelectedRoleId('');
       setExpiryDate('');
-      
-      // Refresh data
-      await fetchUserProfiles();
-      await mergeUserRolesWithProfiles();
-    } catch (error: any) {
+      fetchUserRoles();
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message || "Failed to assign role",
+        description: "Failed to assign role",
         variant: "destructive",
       });
     }
@@ -203,7 +138,7 @@ const UserRoleAssignment = () => {
         description: `Role ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
       });
 
-      await mergeUserRolesWithProfiles();
+      fetchUserRoles();
     } catch (error) {
       toast({
         title: "Error",
@@ -215,8 +150,7 @@ const UserRoleAssignment = () => {
 
   const filteredUserRoles = userRoles.filter(userRole => 
     userRole.user_profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    userRole.custom_roles.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    userRole.user_id.toLowerCase().includes(searchTerm.toLowerCase())
+    userRole.custom_roles.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -244,11 +178,8 @@ const UserRoleAssignment = () => {
                 <Input
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(e.target.value)}
-                  placeholder="Enter user ID (get from auth.users table)"
+                  placeholder="Enter user ID"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Tip: You can find user IDs in the Supabase auth.users table
-                </p>
               </div>
               <div>
                 <label className="text-sm font-medium">Role</label>
@@ -292,83 +223,13 @@ const UserRoleAssignment = () => {
         </Dialog>
       </div>
 
-      {/* Quick assign current user as super admin */}
-      {currentUser && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Shield className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-medium text-blue-900">Quick Setup</p>
-                  <p className="text-sm text-blue-700">
-                    Assign yourself as Super Admin to access all features
-                  </p>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  setSelectedUserId(currentUser.id);
-                  const superAdminRole = roles.find(r => r.name === 'super_admin');
-                  if (superAdminRole) {
-                    setSelectedRoleId(superAdminRole.id);
-                    setIsAssignModalOpen(true);
-                  }
-                }}
-              >
-                Make Me Super Admin
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Assignments</p>
-                <p className="text-2xl font-bold">{userRoles.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Shield className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Active Roles</p>
-                <p className="text-2xl font-bold">{userRoles.filter(ur => ur.is_active).length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-8 w-8 text-orange-600" />
-              <div>
-                <p className="text-sm text-gray-600">With Expiry</p>
-                <p className="text-2xl font-bold">{userRoles.filter(ur => ur.expires_at).length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Search */}
       <Card>
         <CardContent className="p-4">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search by user name, role, or user ID..."
+              placeholder="Search by user name or role..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -453,13 +314,6 @@ const UserRoleAssignment = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-                {filteredUserRoles.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                      No role assignments found. Click "Assign Role" to get started.
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           )}

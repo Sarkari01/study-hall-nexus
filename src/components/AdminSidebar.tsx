@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,9 +18,7 @@ import {
   MessageSquare,
   Users2,
   Settings,
-  Code,
-  Shield,
-  UserCog
+  Code
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -103,22 +100,6 @@ const sidebarItems: AdminSidebarItem[] = [
     id: "chat",
     label: "Chat System",
     icon: <MessageSquare className="h-5 w-5" />
-  },
-  {
-    id: "user-management",
-    label: "User Management",
-    icon: <Shield className="h-5 w-5" />,
-    hasSubmenu: true,
-    submenu: [
-      {
-        id: "role-management",
-        label: "Role Management"
-      },
-      {
-        id: "user-roles",
-        label: "User Role Assignment"
-      }
-    ]
   },
   {
     id: "ai-features",
