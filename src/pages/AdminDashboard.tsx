@@ -7,44 +7,56 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus, FileText, Bell } from "lucide-react";
 import AdminSidebar from "@/components/AdminSidebar";
+import StudentsTable from "@/components/admin/StudentsTable";
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
   const handleToggleExpand = (itemId: string) => {
     setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
   };
-  const stats = [{
-    title: "Total Students",
-    value: "2,350",
-    change: "+15.3%",
-    icon: <Users className="h-5 w-5" />,
-    color: "text-purple-600"
-  }, {
-    title: "Active Merchants",
-    value: "186",
-    change: "+8.2%",
-    icon: <Building2 className="h-5 w-5" />,
-    color: "text-blue-600"
-  }, {
-    title: "Total Revenue",
-    value: "₹2,45,680",
-    change: "+12.5%",
-    icon: <DollarSign className="h-5 w-5" />,
-    color: "text-green-600"
-  }, {
-    title: "Growth Rate",
-    value: "23.1%",
-    change: "+2.4%",
-    icon: <TrendingUp className="h-5 w-5" />,
-    color: "text-orange-600"
-  }];
+
+  const stats = [
+    {
+      title: "Total Students",
+      value: "2,350",
+      change: "+15.3%",
+      icon: <Users className="h-5 w-5" />,
+      color: "text-purple-600"
+    },
+    {
+      title: "Active Merchants",
+      value: "186",
+      change: "+8.2%",
+      icon: <Building2 className="h-5 w-5" />,
+      color: "text-blue-600"
+    },
+    {
+      title: "Total Revenue",
+      value: "₹2,45,680",
+      change: "+12.5%",
+      icon: <DollarSign className="h-5 w-5" />,
+      color: "text-green-600"
+    },
+    {
+      title: "Growth Rate",
+      value: "23.1%",
+      change: "+2.4%",
+      icon: <TrendingUp className="h-5 w-5" />,
+      color: "text-orange-600"
+    }
+  ];
+
   const renderModuleContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <div className="space-y-6">
+        return (
+          <div className="space-y-6">
             {/* Dashboard Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => <Card key={index} className="hover:shadow-lg transition-shadow">
+              {stats.map((stat, index) => (
+                <Card key={index} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -59,7 +71,8 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </CardContent>
-                </Card>)}
+                </Card>
+              ))}
             </div>
 
             {/* Quick Actions */}
@@ -88,24 +101,21 @@ const AdminDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>;
+          </div>
+        );
       case "students":
-        return <div className="space-y-6">
+        return (
+          <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Students Management</h2>
               <Button>Add New Student</Button>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>All Students</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Students module will be implemented in Step 2</p>
-              </CardContent>
-            </Card>
-          </div>;
+            <StudentsTable />
+          </div>
+        );
       case "merchants":
-        return <div className="space-y-6">
+        return (
+          <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Merchants Management</h2>
               <Button>Add New Merchant</Button>
@@ -118,7 +128,8 @@ const AdminDashboard = () => {
                 <p className="text-gray-600">Merchants module will be implemented in Step 3</p>
               </CardContent>
             </Card>
-          </div>;
+          </div>
+        );
       case "study-halls":
         return <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -211,10 +222,12 @@ const AdminDashboard = () => {
             </Card>
           </div>;
       default:
-        return <div className="space-y-6">
+        return (
+          <div className="space-y-6">
             {/* Dashboard Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => <Card key={index} className="hover:shadow-lg transition-shadow">
+              {stats.map((stat, index) => (
+                <Card key={index} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
@@ -229,7 +242,8 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   </CardContent>
-                </Card>)}
+                </Card>
+              ))}
             </div>
 
             {/* Quick Actions */}
@@ -258,11 +272,19 @@ const AdminDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>;
+          </div>
+        );
     }
   };
-  return <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar activeItem={activeTab} onItemClick={setActiveTab} expandedItems={expandedItems} onToggleExpand={handleToggleExpand} />
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar 
+        activeItem={activeTab} 
+        onItemClick={setActiveTab} 
+        expandedItems={expandedItems} 
+        onToggleExpand={handleToggleExpand} 
+      />
       
       <main className="flex-1 p-6">
         <div className="mb-6">
@@ -272,6 +294,8 @@ const AdminDashboard = () => {
 
         {renderModuleContent()}
       </main>
-    </div>;
+    </div>
+  );
 };
+
 export default AdminDashboard;
