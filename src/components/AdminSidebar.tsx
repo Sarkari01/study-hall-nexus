@@ -180,7 +180,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <div className="p-6">
         <div className="mb-8">
           <h2 className="text-gray-900 font-bold text-4xl">Sarkari Ninja</h2>
-          <p className="text-zinc-950 font-extrabold text-3xl">Advanced Management System</p>
+          <p className="text-zinc-950 font-extrabold text-xs">Advanced Management System</p>
         </div>
         
         <nav className="space-y-2 flex-1">
