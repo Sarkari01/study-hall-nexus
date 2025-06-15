@@ -33,11 +33,11 @@ interface ChatMessage {
   attachments: string[];
   created_at: string;
   sender_id: string;
-  user_profiles: {
+  user_profiles?: {
     full_name: string;
     avatar_url?: string;
     role: string;
-  };
+  } | null;
 }
 
 const ChatSystem: React.FC = () => {
@@ -117,22 +117,33 @@ const ChatSystem: React.FC = () => {
 
   const fetchMessages = async (roomId: string) => {
     try {
-      const { data, error } = await supabase
+      // First get messages
+      const { data: messagesData, error: messagesError } = await supabase
         .from('chat_messages')
-        .select(`
-          *,
-          user_profiles (
-            full_name,
-            avatar_url,
-            role
-          )
-        `)
+        .select('*')
         .eq('room_id', roomId)
         .eq('is_deleted', false)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setMessages(data || []);
+      if (messagesError) throw messagesError;
+
+      // Then get user profiles for each message
+      const messagesWithProfiles = await Promise.all(
+        (messagesData || []).map(async (message) => {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('full_name, avatar_url, role')
+            .eq('user_id', message.sender_id)
+            .single();
+
+          return {
+            ...message,
+            user_profiles: profile
+          };
+        })
+      );
+
+      setMessages(messagesWithProfiles);
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -301,10 +312,12 @@ const ChatSystem: React.FC = () => {
                   </Avatar>
                   <div className="flex-1 max-w-lg">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{message.user_profiles?.full_name}</span>
-                      <Badge className={getRoleColor(message.user_profiles?.role)} variant="secondary" size="sm">
-                        {message.user_profiles?.role}
-                      </Badge>
+                      <span className="font-medium text-sm">{message.user_profiles?.full_name || 'Unknown User'}</span>
+                      {message.user_profiles?.role && (
+                        <Badge className={getRoleColor(message.user_profiles.role)} variant="secondary">
+                          {message.user_profiles.role}
+                        </Badge>
+                      )}
                       <span className="text-xs text-gray-500">
                         {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                       </span>

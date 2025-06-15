@@ -25,11 +25,11 @@ interface Post {
   likes_count: number;
   comments_count: number;
   created_at: string;
-  user_profiles: {
+  user_profiles?: {
     full_name: string;
     avatar_url?: string;
     role: string;
-  };
+  } | null;
 }
 
 interface Comment {
@@ -38,11 +38,11 @@ interface Comment {
   images: string[];
   likes_count: number;
   created_at: string;
-  user_profiles: {
+  user_profiles?: {
     full_name: string;
     avatar_url?: string;
     role: string;
-  };
+  } | null;
 }
 
 const CommunityFeed: React.FC = () => {
@@ -69,22 +69,33 @@ const CommunityFeed: React.FC = () => {
 
   const fetchPosts = async () => {
     try {
-      const { data, error } = await supabase
+      // First get posts
+      const { data: postsData, error: postsError } = await supabase
         .from('community_posts')
-        .select(`
-          *,
-          user_profiles (
-            full_name,
-            avatar_url,
-            role
-          )
-        `)
+        .select('*')
         .eq('is_approved', true)
         .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setPosts(data || []);
+      if (postsError) throw postsError;
+
+      // Then get user profiles for each post
+      const postsWithProfiles = await Promise.all(
+        (postsData || []).map(async (post) => {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('full_name, avatar_url, role')
+            .eq('user_id', post.user_id)
+            .single();
+
+          return {
+            ...post,
+            user_profiles: profile
+          };
+        })
+      );
+
+      setPosts(postsWithProfiles);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({
@@ -99,22 +110,33 @@ const CommunityFeed: React.FC = () => {
 
   const fetchComments = async (postId: string) => {
     try {
-      const { data, error } = await supabase
+      // First get comments
+      const { data: commentsData, error: commentsError } = await supabase
         .from('community_comments')
-        .select(`
-          *,
-          user_profiles (
-            full_name,
-            avatar_url,
-            role
-          )
-        `)
+        .select('*')
         .eq('post_id', postId)
         .eq('is_approved', true)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setComments(data || []);
+      if (commentsError) throw commentsError;
+
+      // Then get user profiles for each comment
+      const commentsWithProfiles = await Promise.all(
+        (commentsData || []).map(async (comment) => {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('full_name, avatar_url, role')
+            .eq('user_id', comment.user_id)
+            .single();
+
+          return {
+            ...comment,
+            user_profiles: profile
+          };
+        })
+      );
+
+      setComments(commentsWithProfiles);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
@@ -276,9 +298,11 @@ const CommunityFeed: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold">{post.user_profiles?.full_name || 'Anonymous'}</h4>
-                      <Badge className={getRoleColor(post.user_profiles?.role)} variant="secondary">
-                        {post.user_profiles?.role}
-                      </Badge>
+                      {post.user_profiles?.role && (
+                        <Badge className={getRoleColor(post.user_profiles.role)} variant="secondary">
+                          {post.user_profiles.role}
+                        </Badge>
+                      )}
                       {post.is_pinned && (
                         <Pin className="h-4 w-4 text-blue-600" />
                       )}
@@ -438,10 +462,12 @@ const CommunityFeed: React.FC = () => {
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">{selectedPost.user_profiles?.full_name}</h4>
-                      <Badge className={getRoleColor(selectedPost.user_profiles?.role)} variant="secondary">
-                        {selectedPost.user_profiles?.role}
-                      </Badge>
+                      <h4 className="font-semibold">{selectedPost.user_profiles?.full_name || 'Anonymous'}</h4>
+                      {selectedPost.user_profiles?.role && (
+                        <Badge className={getRoleColor(selectedPost.user_profiles.role)} variant="secondary">
+                          {selectedPost.user_profiles.role}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500">
                       {formatDistanceToNow(new Date(selectedPost.created_at), { addSuffix: true })}
@@ -504,10 +530,12 @@ const CommunityFeed: React.FC = () => {
                       </Avatar>
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{comment.user_profiles?.full_name}</span>
-                          <Badge className={getRoleColor(comment.user_profiles?.role)} variant="secondary" size="sm">
-                            {comment.user_profiles?.role}
-                          </Badge>
+                          <span className="font-medium text-sm">{comment.user_profiles?.full_name || 'Anonymous'}</span>
+                          {comment.user_profiles?.role && (
+                            <Badge className={getRoleColor(comment.user_profiles.role)} variant="secondary">
+                              {comment.user_profiles.role}
+                            </Badge>
+                          )}
                           <span className="text-xs text-gray-500">
                             {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                           </span>
