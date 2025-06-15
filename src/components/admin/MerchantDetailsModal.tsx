@@ -53,6 +53,20 @@ interface MerchantProfile {
   updated_at: string;
 }
 
+interface MerchantFormData {
+  business_name: string;
+  business_phone: string;
+  full_name: string;
+  contact_number: string;
+  business_address: AddressData;
+  communication_address: AddressData;
+  bank_account_details: BankAccountData;
+  refundable_security_deposit: number;
+  approval_status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  verification_status: 'unverified' | 'pending' | 'verified';
+  notes: string;
+}
+
 interface MerchantDetailsModalProps {
   merchantId?: string;
   isOpen: boolean;
@@ -72,7 +86,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
   const [merchant, setMerchant] = useState<MerchantProfile | null>(null);
   const { toast } = useToast();
   
-  const form = useForm({
+  const form = useForm<MerchantFormData>({
     defaultValues: {
       business_name: '',
       business_phone: '',
@@ -99,8 +113,8 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
         account_holder_name: ''
       },
       refundable_security_deposit: 0,
-      approval_status: 'pending' as const,
-      verification_status: 'unverified' as const,
+      approval_status: 'pending',
+      verification_status: 'unverified',
       notes: ''
     }
   });
@@ -166,7 +180,9 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
       };
 
       setMerchant(merchantData);
-      form.reset({
+      
+      // Reset form with proper type casting
+      const formData: MerchantFormData = {
         business_name: merchantData.business_name || '',
         business_phone: merchantData.business_phone || '',
         full_name: merchantData.full_name || '',
@@ -189,7 +205,9 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
         approval_status: merchantData.approval_status,
         verification_status: merchantData.verification_status,
         notes: merchantData.notes || ''
-      });
+      };
+      
+      form.reset(formData);
     } catch (error) {
       console.error('Error fetching merchant details:', error);
       toast({
@@ -202,7 +220,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
     }
   };
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: MerchantFormData) => {
     setLoading(true);
     try {
       if (mode === 'create') {
