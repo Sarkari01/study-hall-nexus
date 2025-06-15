@@ -1,133 +1,136 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Users, DollarSign, Calendar, TrendingUp, Building2, ShoppingCart, CreditCard, UserPlus } from "lucide-react";
-
-interface StatCardProps {
-  title: string;
-  value: string;
-  change: string;
-  changeType: 'positive' | 'negative' | 'neutral';
-  icon: React.ReactNode;
-  color: string;
-  subtitle?: string;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, change, changeType, icon, color, subtitle }) => {
-  const getChangeColor = () => {
-    switch (changeType) {
-      case 'positive': return 'text-green-600';
-      case 'negative': return 'text-red-600';
-      default: return 'text-gray-600';
-    }
-  };
-
-  return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <p className="text-sm text-gray-600 mb-1">{title}</p>
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
-            {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
-            <div className="flex items-center mt-2">
-              <span className={`text-sm font-medium ${getChangeColor()}`}>
-                {change}
-              </span>
-              <span className="text-sm text-gray-500 ml-1">vs last period</span>
-            </div>
-          </div>
-          <div className={`p-3 rounded-full bg-gray-100 ${color}`}>
-            {icon}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+import { Users, DollarSign, Calendar, Building2, TrendingUp, CheckCircle, Clock, Award } from "lucide-react";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 const DashboardStats = () => {
-  const stats = [
-    {
-      title: "Today's Bookings",
-      value: "147",
-      change: "+23.5%",
-      changeType: 'positive' as const,
-      icon: <Calendar className="h-5 w-5" />,
-      color: "text-blue-600",
-      subtitle: "Active sessions: 89"
-    },
-    {
-      title: "Today's Revenue",
-      value: "₹2,45,680",
-      change: "+15.3%",
-      changeType: 'positive' as const,
-      icon: <DollarSign className="h-5 w-5" />,
-      color: "text-green-600",
-      subtitle: "Avg per booking: ₹1,673"
-    },
-    {
-      title: "Active Merchants",
-      value: "186",
-      change: "+8.2%",
-      changeType: 'positive' as const,
-      icon: <Building2 className="h-5 w-5" />,
-      color: "text-purple-600",
-      subtitle: "Online now: 142"
-    },
-    {
-      title: "Total Students",
-      value: "2,350",
-      change: "+12.7%",
-      changeType: 'positive' as const,
-      icon: <Users className="h-5 w-5" />,
-      color: "text-orange-600",
-      subtitle: "Active today: 1,234"
-    },
-    {
-      title: "Pending Payments",
-      value: "₹45,320",
-      change: "-5.1%",
-      changeType: 'negative' as const,
-      icon: <CreditCard className="h-5 w-5" />,
-      color: "text-red-600",
-      subtitle: "23 transactions"
-    },
-    {
-      title: "New Registrations",
-      value: "34",
-      change: "+18.9%",
-      changeType: 'positive' as const,
-      icon: <UserPlus className="h-5 w-5" />,
-      color: "text-indigo-600",
-      subtitle: "This week"
-    },
-    {
-      title: "Success Rate",
-      value: "94.2%",
-      change: "+2.1%",
-      changeType: 'positive' as const,
-      icon: <TrendingUp className="h-5 w-5" />,
-      color: "text-emerald-600",
-      subtitle: "Payment success"
-    },
-    {
-      title: "Avg Session Time",
-      value: "2.4h",
-      change: "+0.3h",
-      changeType: 'positive' as const,
-      icon: <ShoppingCart className="h-5 w-5" />,
-      color: "text-cyan-600",
-      subtitle: "Per booking"
-    }
-  ];
+  const { stats, loading } = useDashboardStats();
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, index) => (
-        <StatCard key={index} {...stat} />
-      ))}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+          <Users className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalStudents.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            {stats.activeStudents} active
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Merchants</CardTitle>
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalMerchants.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            Registered merchants
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalBookings.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            {stats.completedBookings} completed
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">₹{stats.totalRevenue.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            From all bookings
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Active Study Halls</CardTitle>
+          <Award className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.activeStudyHalls.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            Currently available
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Pending Bookings</CardTitle>
+          <Clock className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.pendingBookings.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            Awaiting confirmation
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+          <CheckCircle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.activeStudents.toLocaleString()}</div>
+          <p className="text-xs text-muted-foreground">
+            Currently enrolled
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {stats.totalBookings > 0 ? Math.round((stats.completedBookings / stats.totalBookings) * 100) : 0}%
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Booking completion rate
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 };
