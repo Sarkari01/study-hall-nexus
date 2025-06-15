@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus, FileText, Bell, MessageSquare, Megaphone } from "lucide-react";
+import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus, FileText, Bell, MessageSquare, Megaphone, User, LogOut } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AdminSidebar from "@/components/AdminSidebar";
 import StudentsTable from "@/components/admin/StudentsTable";
 import MerchantsTable from "@/components/admin/MerchantsTable";
@@ -37,20 +39,42 @@ import RecentActivities from "@/components/admin/RecentActivities";
 import UpcomingMerchants from "@/components/admin/UpcomingMerchants";
 import GeneralSettings from "@/components/admin/GeneralSettings";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useToast } from "@/hooks/use-toast";
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const { toast } = useToast();
 
   // Initialize FCM
   const {
     fcmToken
   } = useNotifications();
+  
   const handleToggleExpand = (itemId: string) => {
     setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
   };
+  
   const getDeepSeekApiKey = (): string | undefined => {
     return localStorage.getItem('deepseek_api_key') || undefined;
   };
+
+  const handleLogout = () => {
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out."
+    });
+    // In a real app, you would clear the session and redirect
+    window.location.href = '/';
+  };
+
+  const handleProfileClick = () => {
+    toast({
+      title: "Profile",
+      description: "Profile settings coming soon!"
+    });
+  };
+
   const renderDashboardContent = () => <div className="space-y-6">
       {/* Enhanced Statistics Cards */}
       <DashboardStats />
@@ -95,6 +119,7 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
     </div>;
+
   const renderModuleContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -234,17 +259,70 @@ const AdminDashboard = () => {
         return renderDashboardContent();
     }
   };
+
   return <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar activeItem={activeTab} onItemClick={setActiveTab} expandedItems={expandedItems} onToggleExpand={handleToggleExpand} />
       
       <main className="flex-1 p-6 overflow-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'general-settings' ? 'General Settings' : activeTab === 'bookings' ? 'Bookings Management' : 'Management Console'}
-          </h1>
-          <p className="text-gray-600">
-            {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 'Advanced administrative controls and monitoring'}
-          </p>
+        {/* Header with title and profile section */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'general-settings' ? 'General Settings' : activeTab === 'bookings' ? 'Bookings Management' : 'Management Console'}
+            </h1>
+            <p className="text-gray-600">
+              {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 'Advanced administrative controls and monitoring'}
+            </p>
+          </div>
+
+          {/* Profile and Notifications Section */}
+          <div className="flex items-center space-x-4">
+            {/* Notifications Button */}
+            <Button variant="outline" size="icon" className="relative">
+              <Bell className="h-4 w-4" />
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
+                3
+              </Badge>
+            </Button>
+
+            {/* Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src="" alt="Admin" />
+                    <AvatarFallback className="bg-blue-600 text-white">
+                      <User className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">Admin User</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      admin@sarkarininja.com
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setActiveTab("general-settings")} className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <div className="max-w-full">
@@ -253,4 +331,5 @@ const AdminDashboard = () => {
       </main>
     </div>;
 };
+
 export default AdminDashboard;
