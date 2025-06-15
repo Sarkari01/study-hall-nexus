@@ -2,186 +2,112 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, DollarSign, Calendar, Users, Download, BarChart3, PieChart } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/calendar";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Building2, MapPin, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface RevenueData {
   period: string;
-  totalRevenue: number;
-  platformFee: number;
-  merchantRevenue: number;
-  transactionCount: number;
-  averageTransaction: number;
+  revenue: number;
+  bookings: number;
   growth: number;
 }
 
 interface MerchantRevenue {
-  merchantId: string;
-  merchantName: string;
+  name: string;
   revenue: number;
-  transactions: number;
   percentage: number;
-  growth: number;
+  bookings: number;
 }
 
 interface LocationRevenue {
   location: string;
   revenue: number;
+  growth: number;
   merchants: number;
-  transactions: number;
-  percentage: number;
 }
 
-const RevenueReports = ({ reportType }: { reportType: string }) => {
-  const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('30');
+interface RevenueReportsProps {
+  reportType: string;
+}
+
+const RevenueReports: React.FC<RevenueReportsProps> = ({ reportType }) => {
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [merchantData, setMerchantData] = useState<MerchantRevenue[]>([]);
   const [locationData, setLocationData] = useState<LocationRevenue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState('30');
+  const [selectedMerchant, setSelectedMerchant] = useState('all');
+  const [selectedLocation, setSelectedLocation] = useState('all');
   const { toast } = useToast();
 
-  const mockRevenueData: RevenueData[] = [
-    {
-      period: "2024-06-14",
-      totalRevenue: 45680,
-      platformFee: 4568,
-      merchantRevenue: 41112,
-      transactionCount: 156,
-      averageTransaction: 293,
-      growth: 12.5
-    },
-    {
-      period: "2024-06-13",
-      totalRevenue: 38900,
-      platformFee: 3890,
-      merchantRevenue: 35010,
-      transactionCount: 134,
-      averageTransaction: 290,
-      growth: 8.3
-    },
-    {
-      period: "2024-06-12",
-      totalRevenue: 52300,
-      platformFee: 5230,
-      merchantRevenue: 47070,
-      transactionCount: 178,
-      averageTransaction: 294,
-      growth: 15.7
-    },
-    {
-      period: "2024-06-11",
-      totalRevenue: 41200,
-      platformFee: 4120,
-      merchantRevenue: 37080,
-      transactionCount: 142,
-      averageTransaction: 290,
-      growth: 5.2
-    },
-    {
-      period: "2024-06-10",
-      totalRevenue: 47850,
-      platformFee: 4785,
-      merchantRevenue: 43065,
-      transactionCount: 165,
-      averageTransaction: 290,
-      growth: 9.8
-    }
+  const mockDailyData: RevenueData[] = [
+    { period: '2024-06-08', revenue: 15650, bookings: 23, growth: 12.5 },
+    { period: '2024-06-09', revenue: 18920, bookings: 28, growth: 15.2 },
+    { period: '2024-06-10', revenue: 16430, bookings: 25, growth: -8.1 },
+    { period: '2024-06-11', revenue: 21340, bookings: 32, growth: 18.7 },
+    { period: '2024-06-12', revenue: 19870, bookings: 29, growth: -2.3 },
+    { period: '2024-06-13', revenue: 23450, bookings: 35, growth: 22.1 },
+    { period: '2024-06-14', revenue: 25680, bookings: 38, growth: 15.8 }
+  ];
+
+  const mockWeeklyData: RevenueData[] = [
+    { period: 'Week 20', revenue: 89450, bookings: 134, growth: 8.5 },
+    { period: 'Week 21', revenue: 92340, bookings: 145, growth: 12.2 },
+    { period: 'Week 22', revenue: 87690, bookings: 128, growth: -5.1 },
+    { period: 'Week 23', revenue: 94570, bookings: 152, growth: 15.8 },
+    { period: 'Week 24', revenue: 102340, bookings: 168, growth: 18.9 }
+  ];
+
+  const mockMonthlyData: RevenueData[] = [
+    { period: 'Jan 2024', revenue: 345000, bookings: 520, growth: 15.2 },
+    { period: 'Feb 2024', revenue: 389000, bookings: 584, growth: 12.8 },
+    { period: 'Mar 2024', revenue: 425000, bookings: 638, growth: 18.5 },
+    { period: 'Apr 2024', revenue: 398000, bookings: 595, growth: -6.4 },
+    { period: 'May 2024', revenue: 445000, bookings: 672, growth: 22.1 },
+    { period: 'Jun 2024', revenue: 465000, bookings: 698, growth: 8.9 }
   ];
 
   const mockMerchantData: MerchantRevenue[] = [
-    {
-      merchantId: "MERCH_001",
-      merchantName: "Sneha Patel",
-      revenue: 125600,
-      transactions: 432,
-      percentage: 28.5,
-      growth: 15.3
-    },
-    {
-      merchantId: "MERCH_002", 
-      merchantName: "Rajesh Kumar",
-      revenue: 98400,
-      transactions: 356,
-      percentage: 22.3,
-      growth: 12.7
-    },
-    {
-      merchantId: "MERCH_003",
-      merchantName: "Amit Singh",
-      revenue: 76800,
-      transactions: 298,
-      percentage: 17.4,
-      growth: 8.9
-    },
-    {
-      merchantId: "MERCH_004",
-      merchantName: "Kumar Study Centers",
-      revenue: 89200,
-      transactions: 312,
-      percentage: 20.2,
-      growth: 18.5
-    },
-    {
-      merchantId: "MERCH_005",
-      merchantName: "Student Study Zone",
-      revenue: 52400,
-      transactions: 189,
-      percentage: 11.6,
-      growth: 6.2
-    }
+    { name: 'Sneha Patel', revenue: 125000, percentage: 35.2, bookings: 186 },
+    { name: 'Rajesh Kumar', revenue: 89000, percentage: 25.1, bookings: 134 },
+    { name: 'Amit Singh', revenue: 67000, percentage: 18.9, bookings: 98 },
+    { name: 'Priya Sharma', revenue: 74000, percentage: 20.8, bookings: 112 }
   ];
 
   const mockLocationData: LocationRevenue[] = [
-    {
-      location: "Connaught Place, Delhi",
-      revenue: 156800,
-      merchants: 15,
-      transactions: 542,
-      percentage: 35.2
-    },
-    {
-      location: "Karol Bagh, Delhi",
-      revenue: 124500,
-      merchants: 12,
-      transactions: 438,
-      percentage: 27.9
-    },
-    {
-      location: "Gurgaon, Haryana",
-      revenue: 89600,
-      merchants: 10,
-      transactions: 321,
-      percentage: 20.1
-    },
-    {
-      location: "Rajouri Garden, Delhi",
-      revenue: 52300,
-      merchants: 8,
-      transactions: 189,
-      percentage: 11.7
-    },
-    {
-      location: "Lajpat Nagar, Delhi",
-      revenue: 23100,
-      merchants: 6,
-      transactions: 87,
-      percentage: 5.1
-    }
+    { location: 'Connaught Place', revenue: 156000, growth: 22.5, merchants: 8 },
+    { location: 'Karol Bagh', revenue: 134000, growth: 18.2, merchants: 6 },
+    { location: 'Gurgaon', revenue: 98000, growth: 15.7, merchants: 4 },
+    { location: 'Lajpat Nagar', revenue: 87000, growth: 12.3, merchants: 5 }
   ];
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   useEffect(() => {
     fetchRevenueData();
-  }, [timeRange, reportType]);
+  }, [reportType, dateRange, selectedMerchant, selectedLocation]);
 
   const fetchRevenueData = async () => {
     setLoading(true);
     try {
       setTimeout(() => {
-        setRevenueData(mockRevenueData);
+        switch (reportType) {
+          case 'daily-revenue':
+            setRevenueData(mockDailyData);
+            break;
+          case 'weekly-revenue':
+            setRevenueData(mockWeeklyData);
+            break;
+          case 'monthly-revenue':
+            setRevenueData(mockMonthlyData);
+            break;
+          default:
+            setRevenueData(mockDailyData);
+        }
         setMerchantData(mockMerchantData);
         setLocationData(mockLocationData);
         setLoading(false);
@@ -203,209 +129,29 @@ const RevenueReports = ({ reportType }: { reportType: string }) => {
     });
   };
 
-  const totalRevenue = revenueData.reduce((sum, item) => sum + item.totalRevenue, 0);
-  const totalPlatformFee = revenueData.reduce((sum, item) => sum + item.platformFee, 0);
-  const totalTransactions = revenueData.reduce((sum, item) => sum + item.transactionCount, 0);
-  const averageGrowth = revenueData.reduce((sum, item) => sum + item.growth, 0) / revenueData.length;
+  const getTotalRevenue = () => {
+    return revenueData.reduce((sum, item) => sum + item.revenue, 0);
+  };
 
-  const renderDailyRevenue = () => (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</p>
-                <p className="text-xs text-green-600">+{averageGrowth.toFixed(1)}% avg</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Platform Fee</p>
-                <p className="text-2xl font-bold">₹{totalPlatformFee.toLocaleString()}</p>
-                <p className="text-xs text-blue-600">{((totalPlatformFee/totalRevenue)*100).toFixed(1)}% of total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Transactions</p>
-                <p className="text-2xl font-bold">{totalTransactions}</p>
-                <p className="text-xs text-purple-600">₹{(totalRevenue/totalTransactions).toFixed(0)} avg</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Calendar className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Daily Average</p>
-                <p className="text-2xl font-bold">₹{(totalRevenue/revenueData.length).toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+  const getTotalBookings = () => {
+    return revenueData.reduce((sum, item) => sum + item.bookings, 0);
+  };
 
-      {/* Daily Revenue Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Daily Revenue Breakdown</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Total Revenue</TableHead>
-                <TableHead>Platform Fee</TableHead>
-                <TableHead>Merchant Revenue</TableHead>
-                <TableHead>Transactions</TableHead>
-                <TableHead>Avg Transaction</TableHead>
-                <TableHead>Growth</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {revenueData.map((item, index) => (
-                <TableRow key={index}>
-                  <TableCell>{item.period}</TableCell>
-                  <TableCell className="font-medium">₹{item.totalRevenue.toLocaleString()}</TableCell>
-                  <TableCell className="text-blue-600">₹{item.platformFee.toLocaleString()}</TableCell>
-                  <TableCell className="text-green-600">₹{item.merchantRevenue.toLocaleString()}</TableCell>
-                  <TableCell>{item.transactionCount}</TableCell>
-                  <TableCell>₹{item.averageTransaction}</TableCell>
-                  <TableCell>
-                    <Badge variant={item.growth > 0 ? "default" : "destructive"}>
-                      {item.growth > 0 ? '+' : ''}{item.growth}%
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const getAverageGrowth = () => {
+    const totalGrowth = revenueData.reduce((sum, item) => sum + item.growth, 0);
+    return (totalGrowth / revenueData.length).toFixed(1);
+  };
 
-  const renderMerchantRevenue = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue by Merchant</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Merchant</TableHead>
-                <TableHead>Revenue</TableHead>
-                <TableHead>Transactions</TableHead>
-                <TableHead>Percentage</TableHead>
-                <TableHead>Growth</TableHead>
-                <TableHead>Avg Transaction</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {merchantData.map((merchant) => (
-                <TableRow key={merchant.merchantId}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{merchant.merchantName}</div>
-                      <div className="text-sm text-gray-500">{merchant.merchantId}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium text-green-600">
-                    ₹{merchant.revenue.toLocaleString()}
-                  </TableCell>
-                  <TableCell>{merchant.transactions}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{width: `${merchant.percentage}%`}}
-                        ></div>
-                      </div>
-                      {merchant.percentage}%
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={merchant.growth > 0 ? "default" : "destructive"}>
-                      {merchant.growth > 0 ? '+' : ''}{merchant.growth}%
-                    </Badge>
-                  </TableCell>
-                  <TableCell>₹{(merchant.revenue / merchant.transactions).toFixed(0)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  const renderLocationRevenue = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue by Location</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Location</TableHead>
-                <TableHead>Revenue</TableHead>
-                <TableHead>Merchants</TableHead>
-                <TableHead>Transactions</TableHead>
-                <TableHead>Market Share</TableHead>
-                <TableHead>Avg per Merchant</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {locationData.map((location, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{location.location}</TableCell>
-                  <TableCell className="font-medium text-green-600">
-                    ₹{location.revenue.toLocaleString()}
-                  </TableCell>
-                  <TableCell>{location.merchants}</TableCell>
-                  <TableCell>{location.transactions}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full" 
-                          style={{width: `${location.percentage}%`}}
-                        ></div>
-                      </div>
-                      {location.percentage}%
-                    </div>
-                  </TableCell>
-                  <TableCell>₹{(location.revenue / location.merchants).toLocaleString()}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const getReportTitle = () => {
+    switch (reportType) {
+      case 'daily-revenue': return 'Daily Revenue Report';
+      case 'weekly-revenue': return 'Weekly Revenue Report';
+      case 'monthly-revenue': return 'Monthly Revenue Report';
+      case 'merchant-revenue': return 'Merchant Revenue Analysis';
+      case 'location-revenue': return 'Location Revenue Analysis';
+      default: return 'Revenue Analytics';
+    }
+  };
 
   if (loading) {
     return (
@@ -417,14 +163,18 @@ const RevenueReports = ({ reportType }: { reportType: string }) => {
 
   return (
     <div className="space-y-6">
-      {/* Controls */}
+      {/* Header with Controls */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <Select value={timeRange} onValueChange={setTimeRange}>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 className="text-2xl font-bold">{getReportTitle()}</h2>
+              <p className="text-gray-600">Comprehensive revenue analytics and insights</p>
+            </div>
+            <div className="flex gap-4">
+              <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select time range" />
+                  <SelectValue placeholder="Select date range" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="7">Last 7 days</SelectItem>
@@ -433,32 +183,238 @@ const RevenueReports = ({ reportType }: { reportType: string }) => {
                   <SelectItem value="365">Last year</SelectItem>
                 </SelectContent>
               </Select>
+              <Button onClick={exportReport} variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
             </div>
-            <Button onClick={exportReport}>
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Report Content */}
-      <Tabs defaultValue="daily" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="daily">Daily Revenue</TabsTrigger>
-          <TabsTrigger value="merchants">By Merchant</TabsTrigger>
-          <TabsTrigger value="locations">By Location</TabsTrigger>
-        </TabsList>
-        <TabsContent value="daily">
-          {renderDailyRevenue()}
-        </TabsContent>
-        <TabsContent value="merchants">
-          {renderMerchantRevenue()}
-        </TabsContent>
-        <TabsContent value="locations">
-          {renderLocationRevenue()}
-        </TabsContent>
-      </Tabs>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <DollarSign className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold">₹{getTotalRevenue().toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Calendar className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Total Bookings</p>
+                <p className="text-2xl font-bold">{getTotalBookings().toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              {parseFloat(getAverageGrowth()) >= 0 ? (
+                <TrendingUp className="h-8 w-8 text-green-600" />
+              ) : (
+                <TrendingDown className="h-8 w-8 text-red-600" />
+              )}
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Avg Growth</p>
+                <p className={`text-2xl font-bold ${parseFloat(getAverageGrowth()) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {getAverageGrowth()}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Building2 className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Avg per Booking</p>
+                <p className="text-2xl font-bold">₹{Math.round(getTotalRevenue() / getTotalBookings()).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Trend Chart */}
+      {(reportType.includes('revenue') || reportType === 'daily-revenue' || reportType === 'weekly-revenue' || reportType === 'monthly-revenue') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={revenueData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="period" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    name === 'revenue' ? `₹${value.toLocaleString()}` : value,
+                    name === 'revenue' ? 'Revenue' : 'Bookings'
+                  ]}
+                />
+                <Line type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={3} />
+                <Line type="monotone" dataKey="bookings" stroke="#82ca9d" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Merchant Revenue Analysis */}
+      {(reportType === 'merchant-revenue' || reportType === 'dashboard') && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Merchants by Revenue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={merchantData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`₹${value.toLocaleString()}`, 'Revenue']} />
+                  <Bar dataKey="revenue" fill="#8884d8" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Revenue Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={merchantData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({name, percentage}) => `${name}: ${percentage}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="revenue"
+                  >
+                    {merchantData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`₹${value.toLocaleString()}`, 'Revenue']} />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Location Revenue Analysis */}
+      {(reportType === 'location-revenue' || reportType === 'dashboard') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Location Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {locationData.map((location, index) => (
+                <Card key={index}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-1 text-gray-400" />
+                          <p className="font-medium">{location.location}</p>
+                        </div>
+                        <p className="text-2xl font-bold text-green-600">₹{location.revenue.toLocaleString()}</p>
+                        <div className="flex items-center mt-1">
+                          {location.growth >= 0 ? (
+                            <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                          ) : (
+                            <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
+                          )}
+                          <span className={`text-sm ${location.growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {location.growth}%
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">{location.merchants} merchants</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Detailed Tables */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Merchant Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {merchantData.map((merchant, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  <div>
+                    <p className="font-medium">{merchant.name}</p>
+                    <p className="text-sm text-gray-500">{merchant.bookings} bookings</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">₹{merchant.revenue.toLocaleString()}</p>
+                    <Badge variant="secondary">{merchant.percentage}%</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Period Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {revenueData.slice(-5).map((period, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+                  <div>
+                    <p className="font-medium">{period.period}</p>
+                    <p className="text-sm text-gray-500">{period.bookings} bookings</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-green-600">₹{period.revenue.toLocaleString()}</p>
+                    <div className="flex items-center">
+                      {period.growth >= 0 ? (
+                        <TrendingUp className="h-4 w-4 mr-1 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4 mr-1 text-red-500" />
+                      )}
+                      <span className={`text-sm ${period.growth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {period.growth}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

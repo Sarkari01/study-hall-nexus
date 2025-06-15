@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, CheckCircle, XCircle, Ban, Building2, Star, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Merchant {
@@ -15,20 +17,12 @@ interface Merchant {
   businessName: string;
   email: string;
   phone: string;
-  status: 'pending' | 'approved' | 'rejected' | 'suspended';
-  totalEarnings: number;
-  rating: number;
+  address: string;
   studyHallsCount: number;
-  createdAt: string;
-  studyHalls?: StudyHall[];
-}
-
-interface StudyHall {
-  id: number;
-  title: string;
-  location: string;
-  earnings: number;
-  bookings: number;
+  totalRevenue: number;
+  status: 'active' | 'inactive' | 'pending' | 'rejected';
+  joinedDate: string;
+  lastActive: string;
 }
 
 const MerchantsTable = () => {
@@ -36,76 +30,70 @@ const MerchantsTable = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [expandedMerchant, setExpandedMerchant] = useState<number | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    businessName: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
   const { toast } = useToast();
 
-  // Mock data for merchants
   const mockMerchants: Merchant[] = [
     {
       id: 1,
-      name: "Rajesh Kumar",
-      businessName: "Kumar Study Centers",
-      email: "rajesh@kumarstudy.com",
+      name: "Sneha Patel",
+      businessName: "Premium Study Lounge",
+      email: "sneha@premiumstudy.com",
       phone: "+91 9876543210",
-      status: 'approved',
-      totalEarnings: 125000,
-      rating: 4.5,
+      address: "Connaught Place, New Delhi",
       studyHallsCount: 3,
-      createdAt: "2024-01-15",
-      studyHalls: [
-        { id: 1, title: "Main Branch Study Hall", location: "Delhi NCR", earnings: 45000, bookings: 120 },
-        { id: 2, title: "Secondary Branch", location: "Gurgaon", earnings: 35000, bookings: 95 },
-        { id: 3, title: "New Branch", location: "Noida", earnings: 45000, bookings: 110 }
-      ]
+      totalRevenue: 125000,
+      status: 'active',
+      joinedDate: "2024-01-15",
+      lastActive: "2024-06-14"
     },
     {
       id: 2,
-      name: "Priya Sharma",
-      businessName: "Sharma Learning Hub",
-      email: "priya@sharmalearning.com",
+      name: "Rajesh Kumar",
+      businessName: "Kumar Study Centers",
+      email: "rajesh@kumarstudy.com",
       phone: "+91 9876543211",
-      status: 'pending',
-      totalEarnings: 0,
-      rating: 0,
-      studyHallsCount: 1,
-      createdAt: "2024-06-10",
-      studyHalls: [
-        { id: 4, title: "Premium Study Space", location: "Mumbai", earnings: 0, bookings: 0 }
-      ]
+      address: "Karol Bagh, New Delhi",
+      studyHallsCount: 2,
+      totalRevenue: 89000,
+      status: 'active',
+      joinedDate: "2024-02-20",
+      lastActive: "2024-06-13"
     },
     {
       id: 3,
       name: "Amit Singh",
-      businessName: "Singh Study Solutions",
-      email: "amit@singhstudy.com",
+      businessName: "Tech Park Study Space",
+      email: "amit@techpark.com",
       phone: "+91 9876543212",
-      status: 'suspended',
-      totalEarnings: 78000,
-      rating: 3.8,
-      studyHallsCount: 2,
-      createdAt: "2024-02-20",
-      studyHalls: [
-        { id: 5, title: "Central Study Hall", location: "Bangalore", earnings: 45000, bookings: 85 },
-        { id: 6, title: "Tech Park Branch", location: "Bangalore", earnings: 33000, bookings: 70 }
-      ]
+      address: "Gurgaon, Haryana",
+      studyHallsCount: 1,
+      totalRevenue: 45000,
+      status: 'pending',
+      joinedDate: "2024-03-10",
+      lastActive: "2024-06-12"
     },
     {
       id: 4,
-      name: "Sneha Patel",
-      businessName: "Patel Education Center",
-      email: "sneha@pateledu.com",
+      name: "Priya Sharma",
+      businessName: "Student Study Zone",
+      email: "priya@studyzone.com",
       phone: "+91 9876543213",
-      status: 'approved',
-      totalEarnings: 198000,
-      rating: 4.8,
+      address: "Lajpat Nagar, New Delhi",
       studyHallsCount: 4,
-      createdAt: "2024-01-05",
-      studyHalls: [
-        { id: 7, title: "Premium Study Lounge", location: "Pune", earnings: 65000, bookings: 150 },
-        { id: 8, title: "Budget Study Hall", location: "Pune", earnings: 35000, bookings: 90 },
-        { id: 9, title: "Executive Study Space", location: "Pune", earnings: 55000, bookings: 125 },
-        { id: 10, title: "Student Study Zone", location: "Pune", earnings: 43000, bookings: 105 }
-      ]
+      totalRevenue: 156000,
+      status: 'rejected',
+      joinedDate: "2024-04-05",
+      lastActive: "2024-06-10"
     }
   ];
 
@@ -116,10 +104,6 @@ const MerchantsTable = () => {
   const fetchMerchants = async () => {
     setLoading(true);
     try {
-      // TODO: Replace with actual API call
-      // const response = await axios.get('/api/admin/merchants');
-      // setMerchants(response.data);
-      
       setTimeout(() => {
         setMerchants(mockMerchants);
         setLoading(false);
@@ -134,20 +118,92 @@ const MerchantsTable = () => {
     }
   };
 
-  const updateMerchantStatus = async (merchantId: number, newStatus: string) => {
+  const handleAddMerchant = async () => {
     try {
-      // TODO: Replace with actual API call
-      // await axios.patch(`/api/admin/merchants/${merchantId}/status`, { status: newStatus });
+      const newMerchant: Merchant = {
+        id: Date.now(),
+        ...formData,
+        studyHallsCount: 0,
+        totalRevenue: 0,
+        status: 'pending' as const,
+        joinedDate: new Date().toISOString().split('T')[0],
+        lastActive: new Date().toISOString().split('T')[0]
+      };
+
+      setMerchants(prev => [...prev, newMerchant]);
+      setFormData({ name: '', businessName: '', email: '', phone: '', address: '' });
+      setIsAddModalOpen(false);
+
+      toast({
+        title: "Success",
+        description: "Merchant added successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add merchant",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditMerchant = async () => {
+    if (!selectedMerchant) return;
+
+    try {
+      setMerchants(prev => prev.map(merchant => 
+        merchant.id === selectedMerchant.id 
+          ? { ...merchant, ...formData }
+          : merchant
+      ));
+
+      setIsEditModalOpen(false);
+      setSelectedMerchant(null);
+      setFormData({ name: '', businessName: '', email: '', phone: '', address: '' });
+
+      toast({
+        title: "Success",
+        description: "Merchant updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update merchant",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteMerchant = async (merchantId: number) => {
+    if (!confirm("Are you sure you want to delete this merchant?")) return;
+
+    try {
+      setMerchants(prev => prev.filter(merchant => merchant.id !== merchantId));
       
-      setMerchants(merchants.map(merchant => 
+      toast({
+        title: "Success",
+        description: "Merchant deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete merchant",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStatusChange = async (merchantId: number, newStatus: string) => {
+    try {
+      setMerchants(prev => prev.map(merchant => 
         merchant.id === merchantId 
-          ? { ...merchant, status: newStatus as 'pending' | 'approved' | 'rejected' | 'suspended' }
+          ? { ...merchant, status: newStatus as Merchant['status'] }
           : merchant
       ));
 
       toast({
         title: "Success",
-        description: `Merchant ${newStatus} successfully`,
+        description: `Merchant status updated to ${newStatus}`,
       });
     } catch (error) {
       toast({
@@ -158,27 +214,35 @@ const MerchantsTable = () => {
     }
   };
 
-  const toggleMerchantDetails = (merchantId: number) => {
-    setExpandedMerchant(expandedMerchant === merchantId ? null : merchantId);
+  const openEditModal = (merchant: Merchant) => {
+    setSelectedMerchant(merchant);
+    setFormData({
+      name: merchant.name,
+      businessName: merchant.businessName,
+      email: merchant.email,
+      phone: merchant.phone,
+      address: merchant.address
+    });
+    setIsEditModalOpen(true);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'default';
+      case 'active': return 'default';
       case 'pending': return 'secondary';
       case 'rejected': return 'destructive';
-      case 'suspended': return 'outline';
+      case 'inactive': return 'outline';
       default: return 'secondary';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved': return <CheckCircle className="h-3 w-3 mr-1" />;
-      case 'pending': return <Eye className="h-3 w-3 mr-1" />;
-      case 'rejected': return <XCircle className="h-3 w-3 mr-1" />;
-      case 'suspended': return <Ban className="h-3 w-3 mr-1" />;
-      default: return null;
+      case 'active': return <CheckCircle className="h-4 w-4" />;
+      case 'pending': return <Clock className="h-4 w-4" />;
+      case 'rejected': return <XCircle className="h-4 w-4" />;
+      case 'inactive': return <XCircle className="h-4 w-4" />;
+      default: return <Clock className="h-4 w-4" />;
     }
   };
 
@@ -192,15 +256,63 @@ const MerchantsTable = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Building2 className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Total Merchants</p>
+                <p className="text-2xl font-bold">{merchants.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Active</p>
+                <p className="text-2xl font-bold">{merchants.filter(m => m.status === 'active').length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <Clock className="h-8 w-8 text-orange-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-2xl font-bold">{merchants.filter(m => m.status === 'pending').length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center">
+              <XCircle className="h-8 w-8 text-red-600" />
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Rejected</p>
+                <p className="text-2xl font-bold">{merchants.filter(m => m.status === 'rejected').length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters and Add Button */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search by name, business, or email..."
+                  placeholder="Search merchants..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -212,13 +324,82 @@ const MerchantsTable = () => {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Merchants</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Merchant
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Merchant</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Enter merchant name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="businessName">Business Name</Label>
+                    <Input
+                      id="businessName"
+                      value={formData.businessName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
+                      placeholder="Enter business name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="Enter email"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                      placeholder="Enter address"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleAddMerchant}>
+                      Add Merchant
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardContent>
       </Card>
@@ -237,146 +418,141 @@ const MerchantsTable = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Merchant Info</TableHead>
+                  <TableHead>Merchant</TableHead>
                   <TableHead>Business</TableHead>
                   <TableHead>Contact</TableHead>
                   <TableHead>Study Halls</TableHead>
-                  <TableHead>Earnings</TableHead>
-                  <TableHead>Rating</TableHead>
+                  <TableHead>Revenue</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredMerchants.map((merchant) => (
-                  <React.Fragment key={merchant.id}>
-                    <TableRow>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{merchant.name}</div>
-                          <div className="text-sm text-gray-500">{merchant.email}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <Building2 className="h-4 w-4 mr-2 text-gray-400" />
-                          {merchant.businessName}
-                        </div>
-                      </TableCell>
-                      <TableCell>{merchant.phone}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{merchant.studyHallsCount}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <DollarSign className="h-4 w-4 mr-1 text-green-600" />
-                          ₹{merchant.totalEarnings.toLocaleString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {merchant.rating > 0 ? (
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 mr-1 text-yellow-500 fill-current" />
-                            {merchant.rating}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">No ratings</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(merchant.status)}>
-                          {getStatusIcon(merchant.status)}
-                          {merchant.status.charAt(0).toUpperCase() + merchant.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => toggleMerchantDetails(merchant.id)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {merchant.status === 'pending' && (
-                            <>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => updateMerchantStatus(merchant.id, 'approved')}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => updateMerchantStatus(merchant.id, 'rejected')}
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                          {merchant.status === 'approved' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => updateMerchantStatus(merchant.id, 'suspended')}
-                            >
-                              <Ban className="h-4 w-4 mr-1" />
-                              Suspend
-                            </Button>
-                          )}
-                          {merchant.status === 'suspended' && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => updateMerchantStatus(merchant.id, 'approved')}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Reactivate
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                    
-                    {/* Expanded merchant details */}
-                    {expandedMerchant === merchant.id && (
-                      <TableRow>
-                        <TableCell colSpan={8} className="bg-gray-50">
-                          <div className="p-4 space-y-4">
-                            <h4 className="font-semibold text-lg">Study Halls & Performance</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {merchant.studyHalls?.map((hall) => (
-                                <Card key={hall.id} className="p-4">
-                                  <h5 className="font-medium">{hall.title}</h5>
-                                  <p className="text-sm text-gray-600 mb-2">{hall.location}</p>
-                                  <div className="space-y-1">
-                                    <div className="flex justify-between text-sm">
-                                      <span>Earnings:</span>
-                                      <span className="font-medium">₹{hall.earnings.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                      <span>Bookings:</span>
-                                      <span className="font-medium">{hall.bookings}</span>
-                                    </div>
-                                  </div>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
+                  <TableRow key={merchant.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{merchant.name}</div>
+                        <div className="text-sm text-gray-500">{merchant.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{merchant.businessName}</div>
+                        <div className="text-sm text-gray-500">{merchant.address}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{merchant.phone}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{merchant.studyHallsCount}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-green-600">₹{merchant.totalRevenue.toLocaleString()}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {getStatusIcon(merchant.status)}
+                        <Select
+                          value={merchant.status}
+                          onValueChange={(value) => handleStatusChange(merchant.id, value)}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="rejected">Rejected</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => openEditModal(merchant)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteMerchant(merchant.id)}>
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 ))}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Merchant</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-name">Name</Label>
+              <Input
+                id="edit-name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter merchant name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-businessName">Business Name</Label>
+              <Input
+                id="edit-businessName"
+                value={formData.businessName}
+                onChange={(e) => setFormData(prev => ({ ...prev, businessName: e.target.value }))}
+                placeholder="Enter business name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Enter email"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-phone">Phone</Label>
+              <Input
+                id="edit-phone"
+                value={formData.phone}
+                onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-address">Address</Label>
+              <Input
+                id="edit-address"
+                value={formData.address}
+                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                placeholder="Enter address"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleEditMerchant}>
+                Update Merchant
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
