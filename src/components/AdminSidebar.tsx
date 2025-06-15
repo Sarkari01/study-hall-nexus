@@ -1,9 +1,10 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Users, Building2, Calendar, CreditCard, ArrowRightLeft, DollarSign, MapPin, UserPlus, TrendingUp, ChevronDown, ChevronRight, LayoutDashboard, Megaphone, MessageSquare, Users2, Settings, Code, Package, Gift, Wallet, Percent, Bell, LogOut, User } from "lucide-react";
+import { Users, Building2, Calendar, CreditCard, ArrowRightLeft, DollarSign, MapPin, UserPlus, TrendingUp, ChevronDown, ChevronRight, LayoutDashboard, Megaphone, MessageSquare, Users2, Settings, Code, Package, Gift, Wallet, Percent, Bell, LogOut, User, BookOpen } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
+
 interface AdminSidebarItem {
   id: string;
   label: string;
@@ -14,12 +15,14 @@ interface AdminSidebarItem {
     label: string;
   }>;
 }
+
 interface AdminSidebarProps {
   activeItem: string;
   onItemClick: (itemId: string) => void;
   expandedItems: string[];
   onToggleExpand: (itemId: string) => void;
 }
+
 const sidebarItems: AdminSidebarItem[] = [{
   id: "dashboard",
   label: "Dashboard",
@@ -36,6 +39,10 @@ const sidebarItems: AdminSidebarItem[] = [{
   id: "study-halls",
   label: "Study Halls",
   icon: <Calendar className="h-5 w-5" />
+}, {
+  id: "bookings",
+  label: "Bookings",
+  icon: <BookOpen className="h-5 w-5" />
 }, {
   id: "subscriptions",
   label: "Subscription Management",
@@ -154,6 +161,7 @@ const sidebarItems: AdminSidebarItem[] = [{
     label: "Developer Management"
   }]
 }];
+
 const AdminSidebar: React.FC<AdminSidebarProps> = ({
   activeItem,
   onItemClick,
@@ -226,4 +234,5 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </div>
     </div>;
 };
+
 export default AdminSidebar;

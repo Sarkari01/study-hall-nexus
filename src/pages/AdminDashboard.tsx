@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import AdminSidebar from "@/components/AdminSidebar";
 import StudentsTable from "@/components/admin/StudentsTable";
 import MerchantsTable from "@/components/admin/MerchantsTable";
 import StudyHallsTable from "@/components/admin/StudyHallsTable";
+import BookingsTable from "@/components/admin/BookingsTable";
 import PaymentsTable from "@/components/admin/PaymentsTable";
 import TransactionsTable from "@/components/admin/TransactionsTable";
 import SettleNowTable from "@/components/admin/SettleNowTable";
@@ -130,6 +130,15 @@ const AdminDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
             </div>
             <StudyHallsTable />
+          </div>
+        );
+      case "bookings":
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Bookings Management</h2>
+            </div>
+            <BookingsTable />
           </div>
         );
       case "subscription-plans":
@@ -285,11 +294,13 @@ const AdminDashboard = () => {
           <h1 className="text-3xl font-bold text-gray-900">
             {activeTab === 'dashboard' ? 'Dashboard' : 
              activeTab === 'general-settings' ? 'General Settings' :
+             activeTab === 'bookings' ? 'Bookings Management' :
              'Management Console'}
           </h1>
           <p className="text-gray-600">
             {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' :
              activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' :
+             activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' :
              'Advanced administrative controls and monitoring'}
           </p>
         </div>
