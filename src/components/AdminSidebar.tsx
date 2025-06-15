@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -101,6 +100,30 @@ const sidebarItems: AdminSidebarItem[] = [
     id: "chat",
     label: "Chat System",
     icon: <MessageSquare className="h-5 w-5" />
+  },
+  {
+    id: "ai-features",
+    label: "AI Features",
+    icon: <Code className="h-5 w-5" />,
+    hasSubmenu: true,
+    submenu: [
+      {
+        id: "ai-chatbot",
+        label: "24/7 AI Assistant"
+      },
+      {
+        id: "content-moderation",
+        label: "Content Moderation"
+      },
+      {
+        id: "smart-text-assistant",
+        label: "Smart Text Assistant"
+      },
+      {
+        id: "ai-analytics",
+        label: "AI Analytics & Predictions"
+      }
+    ]
   },
   {
     id: "revenue",

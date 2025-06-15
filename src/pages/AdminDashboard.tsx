@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -202,17 +201,14 @@ const AdminDashboard = () => {
         return <CommunityFeed />;
       case "chat":
         return <ChatSystem />;
-      case "general-settings":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>General Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-500 text-center py-8">General settings configuration coming soon...</p>
-            </CardContent>
-          </Card>
-        );
+      case "ai-chatbot":
+        return <AIChatbot apiKey={getDeepSeekApiKey()} userType="admin" />;
+      case "content-moderation":
+        return <ContentModerator apiKey={getDeepSeekApiKey()} />;
+      case "smart-text-assistant":
+        return <SmartTextAssistant apiKey={getDeepSeekApiKey()} />;
+      case "ai-analytics":
+        return <AIAnalyticsDashboard apiKey={getDeepSeekApiKey()} />;
       case "developer-management":
         return <DeveloperManagement />;
       case "daily-revenue":
@@ -283,6 +279,12 @@ const AdminDashboard = () => {
           </div>
         );
     }
+  };
+
+  const getDeepSeekApiKey = (): string | undefined => {
+    // In a real app, this would fetch from your secure storage/environment
+    // For now, we'll return undefined - users need to configure it in Developer Management
+    return undefined;
   };
 
   return (
