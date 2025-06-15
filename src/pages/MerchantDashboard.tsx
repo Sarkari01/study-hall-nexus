@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,10 @@ import { Users, DollarSign, Calendar, TrendingUp, Building2, MapPin, Star, Eye, 
 import StudyHallForm from "@/components/admin/StudyHallForm";
 import StudyHallView from "@/components/admin/StudyHallView";
 import { useToast } from "@/hooks/use-toast";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import MerchantSidebar from "@/components/MerchantSidebar";
+import CommunityFeed from "@/components/community/CommunityFeed";
+import ChatSystem from "@/components/chat/ChatSystem";
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -122,34 +125,11 @@ const MerchantDashboard = () => {
     setIsViewOpen(true);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Merchant Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {currentMerchant.name}</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                {currentMerchant.businessName}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-6 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="study-halls">Study Halls</TabsTrigger>
-            <TabsTrigger value="bookings">Bookings</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return (
+          <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, index) => (
@@ -187,11 +167,19 @@ const MerchantDashboard = () => {
                     <Plus className="h-6 w-6 mb-2" />
                     Add Study Hall
                   </Button>
-                  <Button variant="outline" className="h-20 flex-col">
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col"
+                    onClick={() => setActiveTab("bookings")}
+                  >
                     <Calendar className="h-6 w-6 mb-2" />
                     View Bookings
                   </Button>
-                  <Button variant="outline" className="h-20 flex-col">
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col"
+                    onClick={() => setActiveTab("analytics")}
+                  >
                     <TrendingUp className="h-6 w-6 mb-2" />
                     Analytics
                   </Button>
@@ -273,9 +261,12 @@ const MerchantDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        );
 
-          <TabsContent value="study-halls" className="space-y-6">
+      case "study-halls":
+        return (
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
               <Button onClick={() => setIsFormOpen(true)}>
@@ -360,51 +351,131 @@ const MerchantDashboard = () => {
                 </Card>
               ))}
             </div>
-          </TabsContent>
+          </div>
+        );
 
-          <TabsContent value="bookings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Bookings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-500 text-center py-8">Booking management coming soon...</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
+      case "bookings":
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Bookings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500 text-center py-8">Booking management coming soon...</p>
+            </CardContent>
+          </Card>
+        );
 
-          <TabsContent value="profile" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Merchant Profile</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Business Name</label>
-                    <p className="text-lg">{currentMerchant.businessName}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Owner Name</label>
-                    <p className="text-lg">{currentMerchant.name}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Email</label>
-                    <p className="text-lg">{currentMerchant.email}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Phone</label>
-                    <p className="text-lg">{currentMerchant.phone}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Location</label>
-                    <p className="text-lg">{currentMerchant.location}</p>
-                  </div>
+      case "analytics":
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Analytics Dashboard</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500 text-center py-8">Analytics dashboard coming soon...</p>
+            </CardContent>
+          </Card>
+        );
+
+      case "community":
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Community Feed</h2>
+            </div>
+            <CommunityFeed />
+          </div>
+        );
+
+      case "chat":
+        return (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Messages</h2>
+            </div>
+            <ChatSystem />
+          </div>
+        );
+
+      case "profile":
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Merchant Profile</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Business Name</label>
+                  <p className="text-lg">{currentMerchant.businessName}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Owner Name</label>
+                  <p className="text-lg">{currentMerchant.name}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Email</label>
+                  <p className="text-lg">{currentMerchant.email}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Phone</label>
+                  <p className="text-lg">{currentMerchant.phone}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Location</label>
+                  <p className="text-lg">{currentMerchant.location}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
+      case "settings":
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle>Settings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-500 text-center py-8">Settings panel coming soon...</p>
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <MerchantSidebar 
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          merchantName={currentMerchant.name}
+          businessName={currentMerchant.businessName}
+        />
+        <SidebarInset>
+          <div className="flex flex-col min-h-screen">
+            {/* Header */}
+            <div className="bg-white border-b p-4">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger />
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Merchant Dashboard</h1>
+                  <p className="text-gray-600">Welcome back, {currentMerchant.name}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 p-6 bg-gray-50">
+              {renderTabContent()}
+            </div>
+          </div>
+        </SidebarInset>
 
         {/* Study Hall Form Modal */}
         <StudyHallForm
@@ -429,7 +500,7 @@ const MerchantDashboard = () => {
           />
         )}
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
