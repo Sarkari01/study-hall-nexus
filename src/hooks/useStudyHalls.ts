@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +29,7 @@ export const useStudyHalls = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const isMountedRef = useRef(true);
 
   const fetchStudyHalls = async () => {
     try {
@@ -46,18 +47,25 @@ export const useStudyHalls = () => {
         status: hall.status as 'draft' | 'active' | 'inactive' | 'maintenance'
       }));
 
-      setStudyHalls(typedStudyHalls);
-      setError(null);
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setStudyHalls(typedStudyHalls);
+        setError(null);
+      }
     } catch (err) {
       console.error('Error fetching study halls:', err);
-      setError('Failed to fetch study halls');
-      toast({
-        title: "Error",
-        description: "Failed to fetch study halls",
-        variant: "destructive",
-      });
+      if (isMountedRef.current) {
+        setError('Failed to fetch study halls');
+        toast({
+          title: "Error",
+          description: "Failed to fetch study halls",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -70,18 +78,22 @@ export const useStudyHalls = () => {
 
       if (error) throw error;
 
-      setStudyHalls(prev => prev.filter(hall => hall.id !== studyHallId));
-      toast({
-        title: "Success",
-        description: "Study hall deleted successfully",
-      });
+      if (isMountedRef.current) {
+        setStudyHalls(prev => prev.filter(hall => hall.id !== studyHallId));
+        toast({
+          title: "Success",
+          description: "Study hall deleted successfully",
+        });
+      }
     } catch (err) {
       console.error('Error deleting study hall:', err);
-      toast({
-        title: "Error",
-        description: "Failed to delete study hall",
-        variant: "destructive",
-      });
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to delete study hall",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -94,28 +106,43 @@ export const useStudyHalls = () => {
 
       if (error) throw error;
 
-      setStudyHalls(prev => prev.map(hall => 
-        hall.id === studyHallId 
-          ? { ...hall, ...updates }
-          : hall
-      ));
+      if (isMountedRef.current) {
+        setStudyHalls(prev => prev.map(hall => 
+          hall.id === studyHallId 
+            ? { ...hall, ...updates }
+            : hall
+        ));
 
-      toast({
-        title: "Success",
-        description: "Study hall updated successfully",
-      });
+        toast({
+          title: "Success",
+          description: "Study hall updated successfully",
+        });
+      }
     } catch (err) {
       console.error('Error updating study hall:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update study hall",
-        variant: "destructive",
-      });
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to update study hall",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const addStudyHall = (studyHall: StudyHall) => {
+    if (isMountedRef.current) {
+      setStudyHalls(prev => [studyHall, ...prev]);
     }
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchStudyHalls();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   return {
@@ -125,6 +152,6 @@ export const useStudyHalls = () => {
     fetchStudyHalls,
     deleteStudyHall,
     updateStudyHall,
-    addStudyHall: (studyHall: StudyHall) => setStudyHalls(prev => [studyHall, ...prev])
+    addStudyHall
   };
 };

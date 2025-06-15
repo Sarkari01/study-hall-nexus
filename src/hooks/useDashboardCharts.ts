@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,6 +44,7 @@ export const useDashboardCharts = () => {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const isMountedRef = useRef(true);
 
   const fetchChartsData = async () => {
     try {
@@ -168,26 +169,38 @@ export const useDashboardCharts = () => {
         { hour: '22:00', active: Math.floor(Math.random() * 80) + 40 }
       ];
 
-      setChartsData({
-        revenueData,
-        merchantData,
-        bookingDistribution,
-        studentActivityData
-      });
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setChartsData({
+          revenueData,
+          merchantData,
+          bookingDistribution,
+          studentActivityData
+        });
+      }
     } catch (error) {
       console.error('Error fetching charts data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch dashboard charts data",
-        variant: "destructive",
-      });
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch dashboard charts data",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchChartsData();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   return {

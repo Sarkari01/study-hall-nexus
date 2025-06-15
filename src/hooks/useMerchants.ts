@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,6 +22,7 @@ export const useMerchants = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const isMountedRef = useRef(true);
 
   const fetchMerchants = async () => {
     try {
@@ -57,18 +58,25 @@ export const useMerchants = () => {
         };
       });
 
-      setMerchants(typedMerchants);
-      setError(null);
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setMerchants(typedMerchants);
+        setError(null);
+      }
     } catch (err) {
       console.error('Error fetching merchants:', err);
-      setError('Failed to fetch merchants');
-      toast({
-        title: "Error",
-        description: "Failed to fetch merchants",
-        variant: "destructive",
-      });
+      if (isMountedRef.current) {
+        setError('Failed to fetch merchants');
+        toast({
+          title: "Error",
+          description: "Failed to fetch merchants",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -81,28 +89,37 @@ export const useMerchants = () => {
 
       if (error) throw error;
 
-      setMerchants(prev => prev.map(merchant => 
-        merchant.id === merchantId 
-          ? { ...merchant, ...updates }
-          : merchant
-      ));
+      if (isMountedRef.current) {
+        setMerchants(prev => prev.map(merchant => 
+          merchant.id === merchantId 
+            ? { ...merchant, ...updates }
+            : merchant
+        ));
 
-      toast({
-        title: "Success",
-        description: "Merchant updated successfully",
-      });
+        toast({
+          title: "Success",
+          description: "Merchant updated successfully",
+        });
+      }
     } catch (err) {
       console.error('Error updating merchant:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update merchant",
-        variant: "destructive",
-      });
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to update merchant",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchMerchants();
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, []);
 
   return {
