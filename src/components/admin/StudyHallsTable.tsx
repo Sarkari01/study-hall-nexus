@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -5,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useStudyHalls } from "@/hooks/useStudyHalls";
 import { supabase } from "@/integrations/supabase/client";
 import StudyHallForm from "./StudyHallForm";
+import StudyHallView from "./StudyHallView";
 import StudyHallStats from "./StudyHallStats";
 import StudyHallFilters from "./StudyHallFilters";
 import StudyHallTableRow from "./StudyHallTableRow";
@@ -15,6 +17,9 @@ const StudyHallsTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -90,6 +95,60 @@ const StudyHallsTable = () => {
     }
   };
 
+  const handleEditStudyHall = async (formData: any) => {
+    if (!selectedStudyHall || isSubmitting) return;
+    
+    try {
+      setIsSubmitting(true);
+      
+      const { error } = await supabase
+        .from('study_halls')
+        .update({
+          name: formData.name,
+          location: formData.location,
+          description: formData.description,
+          capacity: formData.rows * formData.seatsPerRow,
+          price_per_day: parseFloat(formData.pricePerDay),
+          price_per_week: formData.pricePerWeek ? parseFloat(formData.pricePerWeek) : null,
+          price_per_month: formData.pricePerMonth ? parseFloat(formData.pricePerMonth) : null,
+          amenities: formData.amenities,
+          status: formData.status,
+          operating_hours: {
+            layout: formData.layout,
+            rows: formData.rows,
+            seatsPerRow: formData.seatsPerRow,
+            gpsLocation: formData.gpsLocation
+          }
+        })
+        .eq('id', selectedStudyHall.id);
+
+      if (error) throw error;
+
+      await updateStudyHall(selectedStudyHall.id, {
+        ...formData,
+        capacity: formData.rows * formData.seatsPerRow,
+        price_per_day: parseFloat(formData.pricePerDay)
+      });
+
+      setShowEditForm(false);
+      setSelectedStudyHall(null);
+      
+      toast({
+        title: "Success",
+        description: "Study hall updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating study hall:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update study hall",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const toggleStudyHallStatus = async (studyHallId: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
@@ -97,6 +156,62 @@ const StudyHallsTable = () => {
     } catch (error) {
       console.error('Error updating study hall status:', error);
     }
+  };
+
+  const handleViewStudyHall = (hall: any) => {
+    // Transform the study hall data to match the StudyHallView interface
+    const transformedHall = {
+      id: parseInt(hall.id) || 1,
+      name: hall.name,
+      merchantName: 'Test Merchant', // This should come from the merchant data
+      location: hall.location,
+      gpsLocation: hall.operating_hours?.gpsLocation || { lat: 28.6315, lng: 77.2167 },
+      capacity: hall.capacity,
+      rows: hall.operating_hours?.rows || 6,
+      seatsPerRow: hall.operating_hours?.seatsPerRow || 8,
+      layout: hall.operating_hours?.layout || [],
+      pricePerDay: hall.price_per_day,
+      pricePerWeek: hall.price_per_week || 0,
+      pricePerMonth: hall.price_per_month || 0,
+      amenities: hall.amenities || [],
+      images: [],
+      mainImage: '',
+      description: hall.description || '',
+      status: hall.status,
+      rating: hall.rating || 0,
+      totalBookings: hall.total_bookings || 0,
+      qrCode: `${window.location.origin}/book/${hall.id}`
+    };
+    
+    setSelectedStudyHall(transformedHall);
+    setShowViewModal(true);
+  };
+
+  const handleEditStudyHallClick = (hall: any) => {
+    // Transform the study hall data to match the form interface
+    const transformedHall = {
+      id: parseInt(hall.id) || 1,
+      name: hall.name,
+      merchantId: hall.merchant_id || '',
+      merchantName: 'Test Merchant',
+      location: hall.location,
+      gpsLocation: hall.operating_hours?.gpsLocation || { lat: 28.6315, lng: 77.2167 },
+      rows: hall.operating_hours?.rows || 6,
+      seatsPerRow: hall.operating_hours?.seatsPerRow || 8,
+      layout: hall.operating_hours?.layout || [],
+      pricePerDay: hall.price_per_day.toString(),
+      pricePerWeek: (hall.price_per_week || 0).toString(),
+      pricePerMonth: (hall.price_per_month || 0).toString(),
+      amenities: hall.amenities || [],
+      customAmenities: [],
+      images: [],
+      mainImage: '',
+      description: hall.description || '',
+      status: hall.status
+    };
+    
+    setSelectedStudyHall(transformedHall);
+    setShowEditForm(true);
   };
 
   const filteredStudyHalls = useMemo(() => {
@@ -190,6 +305,8 @@ const StudyHallsTable = () => {
                         key={hall.id}
                         hall={hall}
                         onToggleStatus={toggleStudyHallStatus}
+                        onView={handleViewStudyHall}
+                        onEdit={handleEditStudyHallClick}
                       />
                     ))}
                   </TableBody>
@@ -199,12 +316,43 @@ const StudyHallsTable = () => {
           </CardContent>
         </Card>
 
+        {/* Create Form */}
         {showCreateForm && (
           <StudyHallForm
             isOpen={showCreateForm}
             onClose={() => setShowCreateForm(false)}
             onSubmit={handleCreateStudyHall}
             isAdmin={true}
+          />
+        )}
+
+        {/* Edit Form */}
+        {showEditForm && selectedStudyHall && (
+          <StudyHallForm
+            isOpen={showEditForm}
+            onClose={() => {
+              setShowEditForm(false);
+              setSelectedStudyHall(null);
+            }}
+            onSubmit={handleEditStudyHall}
+            editData={selectedStudyHall}
+            isAdmin={true}
+          />
+        )}
+
+        {/* View Modal */}
+        {showViewModal && selectedStudyHall && (
+          <StudyHallView
+            studyHall={selectedStudyHall}
+            isOpen={showViewModal}
+            onClose={() => {
+              setShowViewModal(false);
+              setSelectedStudyHall(null);
+            }}
+            onEdit={() => {
+              setShowViewModal(false);
+              setShowEditForm(true);
+            }}
           />
         )}
       </div>

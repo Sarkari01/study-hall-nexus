@@ -21,9 +21,11 @@ interface StudyHall {
 interface StudyHallTableRowProps {
   hall: StudyHall;
   onToggleStatus: (id: string, currentStatus: string) => void;
+  onView: (hall: StudyHall) => void;
+  onEdit: (hall: StudyHall) => void;
 }
 
-const StudyHallTableRow = ({ hall, onToggleStatus }: StudyHallTableRowProps) => {
+const StudyHallTableRow = ({ hall, onToggleStatus, onView, onEdit }: StudyHallTableRowProps) => {
   return (
     <TableRow key={hall.id}>
       <TableCell>
@@ -79,10 +81,10 @@ const StudyHallTableRow = ({ hall, onToggleStatus }: StudyHallTableRowProps) => 
       </TableCell>
       <TableCell>
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => onView(hall)}>
             <Eye className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => onEdit(hall)}>
             <Edit className="h-4 w-4" />
           </Button>
           <Button
