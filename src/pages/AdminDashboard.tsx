@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,10 +30,15 @@ import PaymentHistoryTable from "@/components/admin/PaymentHistoryTable";
 import CouponsTable from "@/components/admin/CouponsTable";
 import RewardRulesTable from "@/components/admin/RewardRulesTable";
 import WalletManagement from "@/components/admin/WalletManagement";
+import NotificationManager from "@/components/notifications/NotificationManager";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  
+  // Initialize FCM
+  const { fcmToken } = useNotifications();
   
   const handleToggleExpand = (itemId: string) => {
     setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
@@ -274,6 +279,8 @@ const AdminDashboard = () => {
         return <AIAnalyticsDashboard apiKey={getDeepSeekApiKey()} />;
       case "developer-management":
         return <DeveloperManagement />;
+      case "notifications":
+        return <NotificationManager />;
       case "daily-revenue":
       case "weekly-revenue":
       case "monthly-revenue":

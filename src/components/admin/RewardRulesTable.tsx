@@ -16,6 +16,7 @@ import { Search, Plus, Edit, Trash2, Calendar as CalendarIcon, Gift, TrendingUp,
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import ExportButtons from "@/components/shared/ExportButtons";
 
 interface RewardRule {
   id: string;
@@ -285,6 +286,14 @@ const RewardRulesTable = () => {
                 <SelectItem value="campaign">Campaign</SelectItem>
               </SelectContent>
             </Select>
+            
+            <ExportButtons 
+              data={filteredRules}
+              filename="reward_rules"
+              title="Reward Rules Report"
+              columns={['name', 'trigger_type', 'reward_points', 'reward_amount', 'is_active', 'created_at']}
+            />
+
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={() => { resetForm(); setEditingRule(null); }}>

@@ -23,7 +23,8 @@ import {
   Package,
   Gift,
   Wallet,
-  Percent
+  Percent,
+  Bell
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -105,6 +106,11 @@ const sidebarItems: AdminSidebarItem[] = [
         label: "Wallet Management"
       }
     ]
+  },
+  {
+    id: "notifications",
+    label: "Push Notifications",
+    icon: <Bell className="h-5 w-5" />
   },
   {
     id: "payments",
