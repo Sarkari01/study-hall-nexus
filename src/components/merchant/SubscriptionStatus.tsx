@@ -47,33 +47,21 @@ const MerchantSubscriptionStatus: React.FC<MerchantSubscriptionStatusProps> = ({
     setLoading(true);
     setError(null);
     try {
-      // For now, we'll show a mock subscription since the tables might not exist yet
-      // In production, this would fetch from the actual database
+      const { data, error } = await supabase
+        .from('merchant_subscriptions')
+        .select(`
+          *,
+          subscription_plans (*)
+        `)
+        .eq('merchant_id', merchantId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
       
-      // Mock data for demonstration
-      const mockSubscription = {
-        id: '1',
-        status: 'active',
-        start_date: new Date().toISOString(),
-        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        auto_renew: true,
-        subscription_plans: {
-          name: 'Professional Plan',
-          price: 2499,
-          billing_period: 'month',
-          features: {
-            priority_support: true,
-            mobile_app: true,
-            advanced_booking: true
-          },
-          max_study_halls: 5,
-          max_cabins: 50,
-          has_analytics: true,
-          has_chat_support: true
-        }
-      };
-      
-      setSubscription(mockSubscription);
+      setSubscription(data);
     } catch (error: any) {
       console.error('Error fetching subscription:', error);
       setError('Unable to load subscription data. Please try again later.');

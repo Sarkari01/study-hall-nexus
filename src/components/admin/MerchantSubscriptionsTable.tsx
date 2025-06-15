@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,70 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Search, UserPlus, Calendar, Package, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-interface MerchantSubscription {
-  id: string;
-  merchant_id: string;
-  plan_id: string;
-  status: string;
-  start_date: string;
-  end_date: string;
-  auto_renew: boolean;
-  created_at: string;
-  plan_name?: string;
-  plan_price?: number;
-  plan_billing_period?: string;
-}
-
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  price: number;
-  billing_period: string;
-  validity_days: number;
-}
-
-// Mock data for demonstration
-const mockSubscriptions: MerchantSubscription[] = [
-  {
-    id: '1',
-    merchant_id: 'merchant_001',
-    plan_id: 'plan_prof',
-    status: 'active',
-    start_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    end_date: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-    auto_renew: true,
-    created_at: new Date().toISOString(),
-    plan_name: 'Professional Plan',
-    plan_price: 2499,
-    plan_billing_period: 'month'
-  },
-  {
-    id: '2',
-    merchant_id: 'merchant_002',
-    plan_id: 'plan_basic',
-    status: 'expired',
-    start_date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
-    end_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    auto_renew: false,
-    created_at: new Date().toISOString(),
-    plan_name: 'Basic Plan',
-    plan_price: 999,
-    plan_billing_period: 'month'
-  }
-];
-
-const mockPlans: SubscriptionPlan[] = [
-  { id: 'plan_basic', name: 'Basic Plan', price: 999, billing_period: 'month', validity_days: 30 },
-  { id: 'plan_prof', name: 'Professional Plan', price: 2499, billing_period: 'month', validity_days: 30 },
-  { id: 'plan_ent', name: 'Enterprise Plan', price: 4999, billing_period: 'month', validity_days: 30 }
-];
+import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useMemo } from 'react';
 
 const MerchantSubscriptionsTable = () => {
-  const [subscriptions, setSubscriptions] = useState<MerchantSubscription[]>([]);
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { subscriptions, plans, loading, assignSubscription } = useSubscriptions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -84,36 +25,6 @@ const MerchantSubscriptionsTable = () => {
     auto_renew: true
   });
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchSubscriptions();
-    fetchPlans();
-  }, []);
-
-  const fetchSubscriptions = async () => {
-    setLoading(true);
-    try {
-      // For now, use mock data since the tables might not be reflected in TypeScript types yet
-      setTimeout(() => {
-        setSubscriptions(mockSubscriptions);
-        setLoading(false);
-      }, 500);
-    } catch (error: any) {
-      console.error('Error fetching subscriptions:', error);
-      setSubscriptions(mockSubscriptions);
-      setLoading(false);
-    }
-  };
-
-  const fetchPlans = async () => {
-    try {
-      // For now, use mock data since the tables might not be reflected in TypeScript types yet
-      setPlans(mockPlans);
-    } catch (error: any) {
-      console.error('Error fetching plans:', error);
-      setPlans(mockPlans);
-    }
-  };
 
   const handleAssignSubscription = async () => {
     try {
@@ -126,38 +37,11 @@ const MerchantSubscriptionsTable = () => {
         return;
       }
 
-      const selectedPlan = plans.find(p => p.id === formData.plan_id);
-      if (!selectedPlan) return;
-
-      const newSubscription: MerchantSubscription = {
-        id: Math.random().toString(36).substr(2, 9),
-        merchant_id: formData.merchant_id,
-        plan_id: formData.plan_id,
-        status: 'active',
-        start_date: new Date().toISOString(),
-        end_date: new Date(Date.now() + selectedPlan.validity_days * 24 * 60 * 60 * 1000).toISOString(),
-        auto_renew: formData.auto_renew,
-        created_at: new Date().toISOString(),
-        plan_name: selectedPlan.name,
-        plan_price: selectedPlan.price,
-        plan_billing_period: selectedPlan.billing_period
-      };
-
-      setSubscriptions(prev => [newSubscription, ...prev]);
-
-      toast({
-        title: "Success",
-        description: "Subscription assigned successfully",
-      });
-
+      await assignSubscription(formData.merchant_id, formData.plan_id, formData.auto_renew);
       setIsAssignModalOpen(false);
       resetForm();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to assign subscription",
-        variant: "destructive",
-      });
+    } catch (error) {
+      // Error already handled in the hook
     }
   };
 
@@ -179,15 +63,26 @@ const MerchantSubscriptionsTable = () => {
     }
   };
 
-  const filteredSubscriptions = subscriptions.filter(subscription => {
-    const matchesSearch = subscription.merchant_id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || subscription.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredSubscriptions = useMemo(() => {
+    return subscriptions.filter(subscription => {
+      const matchesSearch = subscription.merchant_id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || subscription.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [subscriptions, searchTerm, statusFilter]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN');
   };
+
+  const stats = useMemo(() => {
+    return {
+      total: subscriptions.length,
+      active: subscriptions.filter(s => s.status === 'active').length,
+      expired: subscriptions.filter(s => s.status === 'expired').length,
+      plansAvailable: plans.length
+    };
+  }, [subscriptions, plans]);
 
   return (
     <div className="space-y-6">
@@ -199,7 +94,7 @@ const MerchantSubscriptionsTable = () => {
               <Package className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm text-blue-700 font-medium">Total Subscriptions</p>
-                <p className="text-2xl font-bold text-blue-900">{subscriptions.length}</p>
+                <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
               </div>
             </div>
           </CardContent>
@@ -211,9 +106,7 @@ const MerchantSubscriptionsTable = () => {
               <Calendar className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm text-green-700 font-medium">Active</p>
-                <p className="text-2xl font-bold text-green-900">
-                  {subscriptions.filter(s => s.status === 'active').length}
-                </p>
+                <p className="text-2xl font-bold text-green-900">{stats.active}</p>
               </div>
             </div>
           </CardContent>
@@ -225,9 +118,7 @@ const MerchantSubscriptionsTable = () => {
               <Calendar className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm text-red-700 font-medium">Expired</p>
-                <p className="text-2xl font-bold text-red-900">
-                  {subscriptions.filter(s => s.status === 'expired').length}
-                </p>
+                <p className="text-2xl font-bold text-red-900">{stats.expired}</p>
               </div>
             </div>
           </CardContent>
@@ -239,7 +130,7 @@ const MerchantSubscriptionsTable = () => {
               <UserPlus className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
                 <p className="text-sm text-purple-700 font-medium">Plans Available</p>
-                <p className="text-2xl font-bold text-purple-900">{plans.length}</p>
+                <p className="text-2xl font-bold text-purple-900">{stats.plansAvailable}</p>
               </div>
             </div>
           </CardContent>
@@ -378,10 +269,10 @@ const MerchantSubscriptionsTable = () => {
                       <TableCell>
                         <div>
                           <div className="font-medium text-gray-900">
-                            {subscription.plan_name || 'Unknown Plan'}
+                            {subscription.subscription_plans?.name || 'Unknown Plan'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            ₹{subscription.plan_price || 0}/{subscription.plan_billing_period || 'month'}
+                            ₹{subscription.subscription_plans?.price || 0}/{subscription.subscription_plans?.billing_period || 'month'}
                           </div>
                         </div>
                       </TableCell>
