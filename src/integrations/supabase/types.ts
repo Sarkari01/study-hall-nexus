@@ -57,6 +57,69 @@ export type Database = {
         }
         Relationships: []
       }
+      bookings: {
+        Row: {
+          booking_date: string
+          booking_reference: string
+          created_at: string
+          end_time: string
+          final_amount: number
+          id: string
+          payment_status: string | null
+          start_time: string
+          status: string | null
+          student_id: string | null
+          study_hall_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          booking_date: string
+          booking_reference?: string
+          created_at?: string
+          end_time: string
+          final_amount?: number
+          id?: string
+          payment_status?: string | null
+          start_time: string
+          status?: string | null
+          student_id?: string | null
+          study_hall_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          booking_date?: string
+          booking_reference?: string
+          created_at?: string
+          end_time?: string
+          final_amount?: number
+          id?: string
+          payment_status?: string | null
+          start_time?: string
+          status?: string | null
+          student_id?: string | null
+          study_hall_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_study_hall_id_fkey"
+            columns: ["study_hall_id"]
+            isOneToOne: false
+            referencedRelation: "study_halls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           attachments: string[] | null
@@ -704,6 +767,117 @@ export type Database = {
           updated_at?: string
           valid_from?: string | null
           valid_until?: string | null
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          average_session_duration: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_booking_date: string | null
+          phone: string
+          preferred_study_halls: string[] | null
+          status: string | null
+          student_id: string
+          total_bookings: number | null
+          total_spent: number | null
+          updated_at: string
+        }
+        Insert: {
+          average_session_duration?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          last_booking_date?: string | null
+          phone: string
+          preferred_study_halls?: string[] | null
+          status?: string | null
+          student_id?: string
+          total_bookings?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Update: {
+          average_session_duration?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          last_booking_date?: string | null
+          phone?: string
+          preferred_study_halls?: string[] | null
+          status?: string | null
+          student_id?: string
+          total_bookings?: number | null
+          total_spent?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      study_halls: {
+        Row: {
+          amenities: string[] | null
+          capacity: number
+          created_at: string
+          description: string | null
+          id: string
+          is_featured: boolean | null
+          location: string
+          merchant_id: string | null
+          name: string
+          operating_hours: Json | null
+          price_per_day: number
+          price_per_month: number | null
+          price_per_week: number | null
+          rating: number | null
+          status: string | null
+          total_bookings: number | null
+          total_revenue: number | null
+          updated_at: string
+        }
+        Insert: {
+          amenities?: string[] | null
+          capacity?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_featured?: boolean | null
+          location: string
+          merchant_id?: string | null
+          name: string
+          operating_hours?: Json | null
+          price_per_day?: number
+          price_per_month?: number | null
+          price_per_week?: number | null
+          rating?: number | null
+          status?: string | null
+          total_bookings?: number | null
+          total_revenue?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amenities?: string[] | null
+          capacity?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_featured?: boolean | null
+          location?: string
+          merchant_id?: string | null
+          name?: string
+          operating_hours?: Json | null
+          price_per_day?: number
+          price_per_month?: number | null
+          price_per_week?: number | null
+          rating?: number | null
+          status?: string | null
+          total_bookings?: number | null
+          total_revenue?: number | null
+          updated_at?: string
         }
         Relationships: []
       }

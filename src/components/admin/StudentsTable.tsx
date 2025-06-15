@@ -18,11 +18,13 @@ import {
   UserPlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useStudents } from "@/hooks/useStudents";
 import StudentDetailsModal from "./StudentDetailsModal";
 import AddStudentModal from "./AddStudentModal";
 import ExportButtons from "@/components/shared/ExportButtons";
 
-interface Student {
+// Convert database Student type to UI Student type
+interface UIStudent {
   id: number;
   name: string;
   email: string;
@@ -37,142 +39,44 @@ interface Student {
 }
 
 const StudentsTable = () => {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { students: dbStudents, loading, updateStudent, deleteStudent, addStudent } = useStudents();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [bookingFilter, setBookingFilter] = useState<string>('all');
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<UIStudent | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { toast } = useToast();
 
-  // Enhanced mock data with more details
-  const mockStudents: Student[] = [
-    {
-      id: 1,
-      name: "Rajesh Kumar",
-      email: "rajesh.kumar@email.com",
-      phone: "+91 9876543210",
-      bookingsCount: 15,
-      status: 'active',
-      createdAt: "2024-01-15",
-      lastBooking: "2024-06-10",
-      totalSpent: "₹3,750",
-      averageSessionDuration: "4.2h",
-      preferredStudyHalls: ["Central Study Hub", "Elite Library"]
-    },
-    {
-      id: 2,
-      name: "Priya Sharma",
-      email: "priya.sharma@email.com",
-      phone: "+91 9876543211",
-      bookingsCount: 8,
-      status: 'active',
-      createdAt: "2024-02-20",
-      lastBooking: "2024-06-12",
-      totalSpent: "₹2,160",
-      averageSessionDuration: "3.5h",
-      preferredStudyHalls: ["Study Zone Pro"]
-    },
-    {
-      id: 3,
-      name: "Amit Singh",
-      email: "amit.singh@email.com",
-      phone: "+91 9876543212",
-      bookingsCount: 3,
-      status: 'inactive',
-      createdAt: "2024-03-10",
-      lastBooking: "2024-05-15",
-      totalSpent: "₹810",
-      averageSessionDuration: "2.8h",
-      preferredStudyHalls: ["Central Study Hub"]
-    },
-    {
-      id: 4,
-      name: "Sneha Patel",
-      email: "sneha.patel@email.com",
-      phone: "+91 9876543213",
-      bookingsCount: 22,
-      status: 'active',
-      createdAt: "2024-01-05",
-      lastBooking: "2024-06-14",
-      totalSpent: "₹5,940",
-      averageSessionDuration: "5.1h",
-      preferredStudyHalls: ["Elite Library", "Study Zone Pro", "Central Study Hub"]
-    },
-    {
-      id: 5,
-      name: "Arjun Reddy",
-      email: "arjun.reddy@email.com",
-      phone: "+91 9876543214",
-      bookingsCount: 12,
-      status: 'active',
-      createdAt: "2024-02-01",
-      lastBooking: "2024-06-13",
-      totalSpent: "₹3,240",
-      averageSessionDuration: "4.0h",
-      preferredStudyHalls: ["Central Study Hub"]
-    },
-    {
-      id: 6,
-      name: "Kavya Nair",
-      email: "kavya.nair@email.com",
-      phone: "+91 9876543215",
-      bookingsCount: 0,
-      status: 'active',
-      createdAt: "2024-06-10",
-      lastBooking: undefined,
-      totalSpent: "₹0",
-      averageSessionDuration: "0h",
-      preferredStudyHalls: []
-    }
-  ];
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  const fetchStudents = async () => {
-    setLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      // const response = await axios.get('/api/admin/students');
-      // setStudents(response.data);
-      
-      // Mock API delay
-      setTimeout(() => {
-        setStudents(mockStudents);
-        setLoading(false);
-      }, 1000);
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch students data",
-        variant: "destructive",
-      });
-      setLoading(false);
-    }
-  };
+  // Convert database students to UI format
+  const students = useMemo(() => {
+    return dbStudents.map(student => ({
+      id: parseInt(student.id.split('-')[0] || '0', 16) % 100000, // Generate a simple number ID for UI
+      name: student.full_name,
+      email: student.email,
+      phone: student.phone,
+      bookingsCount: student.total_bookings,
+      status: student.status as 'active' | 'inactive',
+      createdAt: student.created_at,
+      lastBooking: student.last_booking_date,
+      totalSpent: `₹${student.total_spent}`,
+      averageSessionDuration: student.average_session_duration,
+      preferredStudyHalls: student.preferred_study_halls
+    }));
+  }, [dbStudents]);
 
   const toggleStudentStatus = async (studentId: number, currentStatus: string) => {
     try {
       const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      const dbStudent = dbStudents.find(s => parseInt(s.id.split('-')[0] || '0', 16) % 100000 === studentId);
       
-      // TODO: Replace with actual API call
-      // await axios.patch(`/api/admin/students/${studentId}/status`, { status: newStatus });
-      
-      setStudents(students.map(student => 
-        student.id === studentId 
-          ? { ...student, status: newStatus as 'active' | 'inactive' }
-          : student
-      ));
-
-      toast({
-        title: "Success",
-        description: `Student account ${newStatus === 'active' ? 'enabled' : 'disabled'}`,
-      });
+      if (dbStudent) {
+        await updateStudent(dbStudent.id, { status: newStatus as 'active' | 'inactive' | 'suspended' });
+        toast({
+          title: "Success",
+          description: `Student account ${newStatus === 'active' ? 'enabled' : 'disabled'}`,
+        });
+      }
     } catch (error) {
       console.error('Error updating student status:', error);
       toast({
@@ -183,13 +87,28 @@ const StudentsTable = () => {
     }
   };
 
-  const handleViewStudent = (student: Student) => {
+  const handleViewStudent = (student: UIStudent) => {
     setSelectedStudent(student);
     setIsDetailsModalOpen(true);
   };
 
-  const handleAddStudent = (newStudent: Student) => {
-    setStudents(prev => [newStudent, ...prev]);
+  const handleAddStudent = (newDBStudent: any) => {
+    // Convert database student to UI format and add to list
+    const newUIStudent: UIStudent = {
+      id: parseInt(newDBStudent.id.split('-')[0] || '0', 16) % 100000,
+      name: newDBStudent.full_name,
+      email: newDBStudent.email,
+      phone: newDBStudent.phone,
+      bookingsCount: newDBStudent.total_bookings,
+      status: newDBStudent.status,
+      createdAt: newDBStudent.created_at,
+      lastBooking: newDBStudent.last_booking_date,
+      totalSpent: `₹${newDBStudent.total_spent}`,
+      averageSessionDuration: newDBStudent.average_session_duration,
+      preferredStudyHalls: newDBStudent.preferred_study_halls
+    };
+    
+    addStudent(newDBStudent);
   };
 
   // Memoized filtered students for better performance

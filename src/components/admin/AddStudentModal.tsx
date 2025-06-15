@@ -19,9 +19,9 @@ interface Student {
   status: 'active' | 'inactive' | 'suspended';
   created_at: string;
   last_booking_date?: string;
-  total_spent?: string;
-  average_session_duration?: string;
-  preferred_study_halls?: string[];
+  total_spent: number;
+  average_session_duration: string;
+  preferred_study_halls: string[];
 }
 
 interface AddStudentModalProps {
@@ -74,9 +74,9 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({
         total_bookings: student.total_bookings,
         status: student.status,
         created_at: student.created_at,
-        total_spent: `₹${student.total_spent}`,
-        average_session_duration: "0h",
-        preferred_study_halls: []
+        total_spent: student.total_spent,
+        average_session_duration: student.average_session_duration,
+        preferred_study_halls: student.preferred_study_halls
       };
 
       onStudentAdded(newStudent);

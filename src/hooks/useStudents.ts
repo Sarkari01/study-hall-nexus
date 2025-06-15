@@ -13,9 +13,9 @@ interface Student {
   status: 'active' | 'inactive' | 'suspended';
   created_at: string;
   last_booking_date?: string;
-  total_spent?: string;
-  average_session_duration?: string;
-  preferred_study_halls?: string[];
+  total_spent: number;
+  average_session_duration: string;
+  preferred_study_halls: string[];
 }
 
 export const useStudents = () => {
@@ -34,22 +34,7 @@ export const useStudents = () => {
 
       if (error) throw error;
 
-      const formattedStudents: Student[] = data.map(student => ({
-        id: student.id,
-        student_id: student.student_id,
-        full_name: student.full_name,
-        email: student.email,
-        phone: student.phone,
-        total_bookings: student.total_bookings || 0,
-        status: student.status,
-        created_at: student.created_at,
-        last_booking_date: student.last_booking_date,
-        total_spent: `₹${student.total_spent || 0}`,
-        average_session_duration: student.average_session_duration || "0h",
-        preferred_study_halls: student.preferred_study_halls || []
-      }));
-
-      setStudents(formattedStudents);
+      setStudents(data || []);
       setError(null);
     } catch (err) {
       console.error('Error fetching students:', err);
