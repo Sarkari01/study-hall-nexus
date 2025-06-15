@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus, FileText, Bell } from "lucide-react";
 import AdminSidebar from "@/components/AdminSidebar";
 import StudentsTable from "@/components/admin/StudentsTable";
+import MerchantsTable from "@/components/admin/MerchantsTable";
+import StudyHallsTable from "@/components/admin/StudyHallsTable";
+import PaymentsTable from "@/components/admin/PaymentsTable";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -82,21 +86,21 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-20 flex-col">
+                  <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("students")}>
                     <Users className="h-6 w-6 mb-2" />
                     View Students
                   </Button>
-                  <Button variant="outline" className="h-20 flex-col">
+                  <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("merchants")}>
                     <Building2 className="h-6 w-6 mb-2" />
                     Manage Merchants
                   </Button>
-                  <Button variant="outline" className="h-20 flex-col">
+                  <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("payments")}>
                     <DollarSign className="h-6 w-6 mb-2" />
-                    Process Payouts
+                    View Payments
                   </Button>
-                  <Button variant="outline" className="h-20 flex-col">
-                    <TrendingUp className="h-6 w-6 mb-2" />
-                    View Reports
+                  <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("study-halls")}>
+                    <Calendar className="h-6 w-6 mb-2" />
+                    Study Halls
                   </Button>
                 </div>
               </CardContent>
@@ -120,58 +124,53 @@ const AdminDashboard = () => {
               <h2 className="text-2xl font-bold text-gray-900">Merchants Management</h2>
               <Button>Add New Merchant</Button>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>All Merchants</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Merchants module will be implemented in Step 3</p>
-              </CardContent>
-            </Card>
+            <MerchantsTable />
           </div>
         );
       case "study-halls":
-        return <div className="space-y-6">
+        return (
+          <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
               <Button>Add New Study Hall</Button>
             </div>
-            <Card>
-              <CardHeader>
-                <CardTitle>All Study Halls</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Study Halls module will be implemented in Step 4</p>
-              </CardContent>
-            </Card>
-          </div>;
+            <StudyHallsTable />
+          </div>
+        );
       case "payments":
-        return <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Payments</h2>
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Payments module will be implemented in Step 5</p>
-              </CardContent>
-            </Card>
-          </div>;
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Payment Transactions</h2>
+              <Button>Export Payments</Button>
+            </div>
+            <PaymentsTable />
+          </div>
+        );
       case "transactions":
-        return <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Transactions</h2>
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Transaction Ledger</h2>
+              <Button>Export Transactions</Button>
+            </div>
             <Card>
               <CardHeader>
-                <CardTitle>Transaction Ledger</CardTitle>
+                <CardTitle>All Transactions</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">Transactions module will be implemented in Step 6</p>
               </CardContent>
             </Card>
-          </div>;
+          </div>
+        );
       case "settle-now":
-        return <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Settle Now (Payouts)</h2>
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Settle Now (Payouts)</h2>
+              <Button>Process All Payouts</Button>
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle>Pending Payouts</CardTitle>
@@ -180,22 +179,32 @@ const AdminDashboard = () => {
                 <p className="text-gray-600">Settle Now module will be implemented in Step 7</p>
               </CardContent>
             </Card>
-          </div>;
+          </div>
+        );
       case "locations":
-        return <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Locations</h2>
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Locations Management</h2>
+              <Button>Add New Location</Button>
+            </div>
             <Card>
               <CardHeader>
-                <CardTitle>Manage Locations</CardTitle>
+                <CardTitle>All Locations</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">Locations module will be implemented in Step 8</p>
               </CardContent>
             </Card>
-          </div>;
+          </div>
+        );
       case "leads":
-        return <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Leads</h2>
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Leads Management</h2>
+              <Button>Export Leads</Button>
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle>All Leads</CardTitle>
@@ -204,14 +213,19 @@ const AdminDashboard = () => {
                 <p className="text-gray-600">Leads module will be implemented in Step 9</p>
               </CardContent>
             </Card>
-          </div>;
+          </div>
+        );
       case "daily-revenue":
       case "weekly-revenue":
       case "monthly-revenue":
       case "merchant-revenue":
       case "location-revenue":
-        return <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Revenue Reports</h2>
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Revenue Reports</h2>
+              <Button>Export Report</Button>
+            </div>
             <Card>
               <CardHeader>
                 <CardTitle>Revenue Analytics</CardTitle>
@@ -220,7 +234,8 @@ const AdminDashboard = () => {
                 <p className="text-gray-600">Revenue module will be implemented in Step 10</p>
               </CardContent>
             </Card>
-          </div>;
+          </div>
+        );
       default:
         return (
           <div className="space-y-6">
