@@ -29,14 +29,19 @@ const PermissionChecker: React.FC<PermissionCheckerProps> = ({
         return;
       }
 
+      // Check if user has permission via the database function
       const { data, error } = await supabase
         .rpc('user_has_permission', { 
           user_id: user.id, 
           permission_name: permission 
         });
 
-      if (error) throw error;
-      setHasPermission(data || false);
+      if (error) {
+        console.error('Permission check error:', error);
+        setHasPermission(false);
+      } else {
+        setHasPermission(data || false);
+      }
     } catch (error) {
       console.error('Error checking permission:', error);
       setHasPermission(false);
