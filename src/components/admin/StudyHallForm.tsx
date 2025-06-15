@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -237,15 +236,8 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
 
     setLoading(true);
     try {
-      const dataToSubmit = {
-        ...formData,
-        pricePerDay: parseFloat(formData.pricePerDay),
-        pricePerWeek: formData.pricePerWeek ? parseFloat(formData.pricePerWeek) : 0,
-        pricePerMonth: formData.pricePerMonth ? parseFloat(formData.pricePerMonth) : 0,
-        merchantId: parseInt(formData.merchantId)
-      };
-
-      await onSubmit(dataToSubmit);
+      // Keep merchantId as string to match the interface
+      await onSubmit(formData);
       toast({ title: "Success", description: `Study hall ${editData ? 'updated' : 'created'} successfully` });
       onClose();
     } catch (error) {
@@ -565,9 +557,9 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
               </p>
               <ImageUploader
                 currentImages={formData.images}
-                onImagesChange={handleImagesUpdate}
+                onImagesUploaded={handleImagesUpdate}
                 maxImages={10}
-                acceptedFileTypes={['image/jpeg', 'image/png', 'image/webp']}
+                folder="study-halls"
               />
             </div>
 
