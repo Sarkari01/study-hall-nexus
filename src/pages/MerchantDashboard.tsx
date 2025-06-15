@@ -13,13 +13,14 @@ import CommunityFeed from "@/components/community/CommunityFeed";
 import ChatSystem from "@/components/chat/ChatSystem";
 import MerchantAnalytics from "@/components/merchant/MerchantAnalytics";
 import MerchantBookings from "@/components/merchant/MerchantBookings";
+import MerchantTransactions from "@/components/merchant/MerchantTransactions";
 import MerchantPayments from "@/components/merchant/MerchantPayments";
 import MerchantProfile from "@/components/merchant/MerchantProfile";
 import MerchantSettings from "@/components/merchant/MerchantSettings";
 import SubscriptionStatus from "@/components/merchant/SubscriptionStatus";
 
 const MerchantDashboard = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("overview");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
@@ -271,7 +272,7 @@ const MerchantDashboard = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case "dashboard":
+      case "overview":
         return renderDashboardContent();
       case "study-halls":
         return (
@@ -365,6 +366,9 @@ const MerchantDashboard = () => {
 
       case "bookings":
         return <MerchantBookings />;
+
+      case "transactions":
+        return <MerchantTransactions />;
 
       case "analytics":
         return <MerchantAnalytics />;

@@ -1,54 +1,75 @@
+
 import React from 'react';
-import { Building2, Calendar, DollarSign, BarChart3, Settings, User, Home, MessageSquare, Users } from "lucide-react";
+import { Building2, Calendar, DollarSign, BarChart3, Settings, User, Home, MessageSquare, Users, CreditCard } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+
 interface MerchantSidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   merchantName: string;
   businessName: string;
 }
+
 const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
   activeTab,
   onTabChange,
   merchantName,
   businessName
 }) => {
-  const mainMenuItems = [{
-    title: "Overview",
-    value: "overview",
-    icon: Home
-  }, {
-    title: "Study Halls",
-    value: "study-halls",
-    icon: Building2
-  }, {
-    title: "Bookings",
-    value: "bookings",
-    icon: Calendar
-  }, {
-    title: "Analytics",
-    value: "analytics",
-    icon: BarChart3
-  }, {
-    title: "Community",
-    value: "community",
-    icon: MessageSquare
-  }, {
-    title: "Chat",
-    value: "chat",
-    icon: Users
-  }];
-  const settingsItems = [{
-    title: "Profile",
-    value: "profile",
-    icon: User
-  }, {
-    title: "Settings",
-    value: "settings",
-    icon: Settings
-  }];
-  return <Sidebar>
+  const mainMenuItems = [
+    {
+      title: "Overview",
+      value: "overview",
+      icon: Home
+    },
+    {
+      title: "Study Halls",
+      value: "study-halls",
+      icon: Building2
+    },
+    {
+      title: "Bookings",
+      value: "bookings",
+      icon: Calendar
+    },
+    {
+      title: "Transactions",
+      value: "transactions",
+      icon: CreditCard
+    },
+    {
+      title: "Analytics",
+      value: "analytics",
+      icon: BarChart3
+    },
+    {
+      title: "Community",
+      value: "community",
+      icon: MessageSquare
+    },
+    {
+      title: "Chat",
+      value: "chat",
+      icon: Users
+    }
+  ];
+
+  const settingsItems = [
+    {
+      title: "Profile",
+      value: "profile",
+      icon: User
+    },
+    {
+      title: "Settings",
+      value: "settings",
+      icon: Settings
+    }
+  ];
+
+  return (
+    <Sidebar>
       <SidebarHeader className="p-6">
         <div className="space-y-2">
           <h2 className="text-gray-900 text-3xl font-semibold text-left">Sarkari Ninja</h2>
@@ -66,14 +87,20 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
           <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainMenuItems.map(item => <SidebarMenuItem key={item.value}>
-                  <SidebarMenuButton asChild isActive={activeTab === item.value} onClick={() => onTabChange(item.value)}>
+              {mainMenuItems.map(item => (
+                <SidebarMenuItem key={item.value}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={activeTab === item.value} 
+                    onClick={() => onTabChange(item.value)}
+                  >
                     <button className="w-full">
                       <item.icon />
                       <span>{item.title}</span>
                     </button>
                   </SidebarMenuButton>
-                </SidebarMenuItem>)}
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -82,14 +109,20 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {settingsItems.map(item => <SidebarMenuItem key={item.value}>
-                  <SidebarMenuButton asChild isActive={activeTab === item.value} onClick={() => onTabChange(item.value)}>
+              {settingsItems.map(item => (
+                <SidebarMenuItem key={item.value}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={activeTab === item.value} 
+                    onClick={() => onTabChange(item.value)}
+                  >
                     <button className="w-full">
                       <item.icon />
                       <span>{item.title}</span>
                     </button>
                   </SidebarMenuButton>
-                </SidebarMenuItem>)}
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -98,6 +131,8 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
       <SidebarFooter className="p-4">
         <div className="text-xs text-gray-500 text-center">Sarkari Ninja v1.0</div>
       </SidebarFooter>
-    </Sidebar>;
+    </Sidebar>
+  );
 };
+
 export default MerchantSidebar;
