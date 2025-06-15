@@ -1,39 +1,44 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { MapPin, Upload, X, Plus, Minus, QrCode, Download, Copy } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MapPin, Upload, X, Plus, Clock, DollarSign, Users, Wifi, Car, Coffee, Power, BookOpen, Shield, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import SeatLayoutDesigner from './SeatLayoutDesigner';
-import QRCodeDisplay from './QRCodeDisplay';
-import GoogleMapsLocationPicker from './GoogleMapsLocationPicker';
+import ImageUploader from '@/components/shared/ImageUploader';
 
 interface StudyHallFormData {
   id?: number;
   name: string;
   merchantId: string;
-  merchantName: string;
+  description: string;
   location: string;
   gpsLocation: { lat: number; lng: number };
+  capacity: number;
   rows: number;
   seatsPerRow: number;
-  layout: Array<{ id: string; status: 'available' | 'occupied' | 'maintenance' | 'disabled' }>;
+  layout: string[];
   pricePerDay: string;
   pricePerWeek: string;
   pricePerMonth: string;
   amenities: string[];
   customAmenities: string[];
+  status: 'draft' | 'active' | 'inactive';
   images: string[];
   mainImage: string;
-  description: string;
-  status: 'draft' | 'active' | 'inactive';
-  qrCode?: string;
+  operatingHours: {
+    open: string;
+    close: string;
+    days: string[];
+  };
 }
 
 interface StudyHallFormProps {
@@ -42,7 +47,6 @@ interface StudyHallFormProps {
   onSubmit: (data: StudyHallFormData) => void;
   editData?: StudyHallFormData | null;
   isAdmin?: boolean;
-  currentMerchant?: { id: number; name: string; businessName: string };
 }
 
 const StudyHallForm: React.FC<StudyHallFormProps> = ({
@@ -50,559 +54,557 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
   onClose,
   onSubmit,
   editData,
-  isAdmin = true,
-  currentMerchant
+  isAdmin = false
 }) => {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("basic");
+  const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState<StudyHallFormData>({
     name: '',
     merchantId: '',
-    merchantName: '',
+    description: '',
     location: '',
-    gpsLocation: { lat: 28.6315, lng: 77.2167 },
-    rows: 6,
-    seatsPerRow: 8,
+    gpsLocation: { lat: 0, lng: 0 },
+    capacity: 30,
+    rows: 5,
+    seatsPerRow: 6,
     layout: [],
     pricePerDay: '',
     pricePerWeek: '',
     pricePerMonth: '',
     amenities: [],
     customAmenities: [],
+    status: 'draft',
     images: [],
     mainImage: '',
-    description: '',
-    status: 'draft'
+    operatingHours: {
+      open: '09:00',
+      close: '21:00',
+      days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    }
   });
 
-  const [merchants] = useState([
-    { id: 1, name: "Sneha Patel", businessName: "StudySpace Pro" },
-    { id: 2, name: "Rajesh Kumar", businessName: "Quiet Zones" },
-    { id: 3, name: "Amit Singh", businessName: "Tech Study Hub" }
-  ]);
+  const predefinedAmenities = [
+    { id: 'wifi', label: 'Wi-Fi', icon: Wifi },
+    { id: 'parking', label: 'Parking', icon: Car },
+    { id: 'coffee', label: 'Coffee/Tea', icon: Coffee },
+    { id: 'power', label: 'Power Outlets', icon: Power },
+    { id: 'library', label: 'Library Access', icon: BookOpen },
+    { id: 'security', label: '24/7 Security', icon: Shield },
+    { id: 'cctv', label: 'CCTV Monitoring', icon: Camera }
+  ];
 
-  const [newAmenity, setNewAmenity] = useState('');
-  const [showQRCode, setShowQRCode] = useState(false);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const { toast } = useToast();
+  const mockMerchants = [
+    { id: '1', name: 'Sneha Patel - StudySpace Pro' },
+    { id: '2', name: 'Rajesh Kumar - Quiet Zones' },
+    { id: '3', name: 'Amit Singh - Tech Study Hub' }
+  ];
 
-  const defaultAmenities = ['AC', 'Wi-Fi', 'Parking', 'Power Outlets', 'Water Cooler', 'Washroom'];
+  const weekDays = [
+    { id: 'monday', label: 'Monday' },
+    { id: 'tuesday', label: 'Tuesday' },
+    { id: 'wednesday', label: 'Wednesday' },
+    { id: 'thursday', label: 'Thursday' },
+    { id: 'friday', label: 'Friday' },
+    { id: 'saturday', label: 'Saturday' },
+    { id: 'sunday', label: 'Sunday' }
+  ];
 
   useEffect(() => {
     if (editData) {
-      // Ensure all required properties exist with proper defaults
+      setFormData(editData);
+    } else {
       setFormData({
-        ...editData,
-        amenities: editData.amenities || [],
-        customAmenities: editData.customAmenities || [],
-        images: editData.images || [],
-        layout: editData.layout || [],
-        pricePerDay: editData.pricePerDay?.toString() || '',
-        pricePerWeek: editData.pricePerWeek?.toString() || '',
-        pricePerMonth: editData.pricePerMonth?.toString() || '',
-        merchantId: editData.merchantId?.toString() || '',
-        status: editData.status || 'draft'
+        name: '',
+        merchantId: '',
+        description: '',
+        location: '',
+        gpsLocation: { lat: 0, lng: 0 },
+        capacity: 30,
+        rows: 5,
+        seatsPerRow: 6,
+        layout: [],
+        pricePerDay: '',
+        pricePerWeek: '',
+        pricePerMonth: '',
+        amenities: [],
+        customAmenities: [],
+        status: 'draft',
+        images: [],
+        mainImage: '',
+        operatingHours: {
+          open: '09:00',
+          close: '21:00',
+          days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+        }
       });
-    } else if (!isAdmin && currentMerchant) {
+    }
+  }, [editData, isOpen]);
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleAmenityToggle = (amenityId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenityId)
+        ? prev.amenities.filter(id => id !== amenityId)
+        : [...prev.amenities, amenityId]
+    }));
+  };
+
+  const handleCustomAmenityAdd = (amenity: string) => {
+    if (amenity.trim() && !formData.customAmenities.includes(amenity.trim())) {
       setFormData(prev => ({
         ...prev,
-        merchantId: currentMerchant.id.toString(),
-        merchantName: currentMerchant.name
+        customAmenities: [...prev.customAmenities, amenity.trim()]
       }));
     }
-  }, [editData, isAdmin, currentMerchant]);
+  };
 
-  const generateSeatLayout = (rows: number, seatsPerRow: number) => {
-    const layout = [];
-    for (let i = 0; i < rows; i++) {
-      const rowLetter = String.fromCharCode(65 + i);
-      for (let j = 1; j <= seatsPerRow; j++) {
-        layout.push({
-          id: `${rowLetter}${j}`,
-          status: 'available' as const
-        });
+  const handleCustomAmenityRemove = (amenity: string) => {
+    setFormData(prev => ({
+      ...prev,
+      customAmenities: prev.customAmenities.filter(a => a !== amenity)
+    }));
+  };
+
+  const handleLayoutUpdate = (layout: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      layout,
+      capacity: layout.length
+    }));
+  };
+
+  const handleImagesUpdate = (images: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      images,
+      mainImage: images.length > 0 && !prev.mainImage ? images[0] : prev.mainImage
+    }));
+  };
+
+  const handleOperatingHoursChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      operatingHours: {
+        ...prev.operatingHours,
+        [field]: value
       }
+    }));
+  };
+
+  const handleDayToggle = (day: string) => {
+    setFormData(prev => ({
+      ...prev,
+      operatingHours: {
+        ...prev.operatingHours,
+        days: prev.operatingHours.days.includes(day)
+          ? prev.operatingHours.days.filter(d => d !== day)
+          : [...prev.operatingHours.days, day]
+      }
+    }));
+  };
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      toast({ title: "Error", description: "Study hall name is required", variant: "destructive" });
+      return false;
     }
-    return layout;
-  };
-
-  const handleLayoutChange = (rows: number, seatsPerRow: number) => {
-    setFormData(prev => ({
-      ...prev,
-      rows,
-      seatsPerRow,
-      layout: generateSeatLayout(rows, seatsPerRow)
-    }));
-  };
-
-  const handleSeatStatusChange = (seatId: string, status: 'available' | 'occupied' | 'maintenance' | 'disabled') => {
-    setFormData(prev => ({
-      ...prev,
-      layout: prev.layout.map(seat =>
-        seat.id === seatId ? { ...seat, status } : seat
-      )
-    }));
-  };
-
-  const handleAmenityToggle = (amenity: string) => {
-    setFormData(prev => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }));
-  };
-
-  const addCustomAmenity = () => {
-    if (newAmenity.trim() && !formData.customAmenities.includes(newAmenity.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        customAmenities: [...prev.customAmenities, newAmenity.trim()],
-        amenities: [...prev.amenities, newAmenity.trim()]
-      }));
-      setNewAmenity('');
+    if (isAdmin && !formData.merchantId) {
+      toast({ title: "Error", description: "Please select a merchant", variant: "destructive" });
+      return false;
     }
-  };
-
-  const removeCustomAmenity = (amenity: string) => {
-    setFormData(prev => ({
-      ...prev,
-      customAmenities: prev.customAmenities.filter(a => a !== amenity),
-      amenities: prev.amenities.filter(a => a !== amenity)
-    }));
-  };
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, ...newImages],
-        mainImage: prev.mainImage || newImages[0]
-      }));
+    if (!formData.location.trim()) {
+      toast({ title: "Error", description: "Location is required", variant: "destructive" });
+      return false;
     }
+    if (!formData.pricePerDay || parseFloat(formData.pricePerDay) <= 0) {
+      toast({ title: "Error", description: "Valid price per day is required", variant: "destructive" });
+      return false;
+    }
+    return true;
   };
 
-  const removeImage = (index: number) => {
-    setFormData(prev => {
-      const newImages = prev.images.filter((_, i) => i !== index);
-      return {
-        ...prev,
-        images: newImages,
-        mainImage: prev.mainImage === prev.images[index] ? newImages[0] || '' : prev.mainImage
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const dataToSubmit = {
+        ...formData,
+        pricePerDay: parseFloat(formData.pricePerDay),
+        pricePerWeek: formData.pricePerWeek ? parseFloat(formData.pricePerWeek) : 0,
+        pricePerMonth: formData.pricePerMonth ? parseFloat(formData.pricePerMonth) : 0,
+        merchantId: parseInt(formData.merchantId)
       };
-    });
-  };
 
-  const generateQRCode = () => {
-    const qrData = `${window.location.origin}/book/${Date.now()}`;
-    setFormData(prev => ({ ...prev, qrCode: qrData }));
-    setShowQRCode(true);
-  };
-
-  const handleLocationSelect = (locationData: { lat: number; lng: number; address: string }) => {
-    setFormData(prev => ({
-      ...prev,
-      location: locationData.address,
-      gpsLocation: { lat: locationData.lat, lng: locationData.lng }
-    }));
-    setShowLocationPicker(false);
-    toast({
-      title: "Location Updated",
-      description: "Study hall location has been updated successfully",
-    });
-  };
-
-  const handleSubmit = () => {
-    if (!formData.name || !formData.location || !formData.pricePerDay) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
+      await onSubmit(dataToSubmit);
+      toast({ title: "Success", description: `Study hall ${editData ? 'updated' : 'created'} successfully` });
+      onClose();
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to save study hall", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-
-    const finalData = {
-      ...formData,
-      qrCode: formData.qrCode || `${window.location.origin}/book/${Date.now()}`
-    };
-
-    onSubmit(finalData);
-    onClose();
-    
-    toast({
-      title: "Success",
-      description: `Study hall ${editData ? 'updated' : 'created'} successfully`,
-    });
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">
-            {editData ? 'Edit Study Hall' : 'Create New Study Hall'}
+          <DialogTitle>
+            {editData ? 'Edit Study Hall' : 'Add New Study Hall'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Basic Information */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="basic">Basic Info</TabsTrigger>
+            <TabsTrigger value="layout">Layout & Seats</TabsTrigger>
+            <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            <TabsTrigger value="amenities">Amenities</TabsTrigger>
+            <TabsTrigger value="media">Images</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="basic" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Study Hall Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  placeholder="Enter study hall name"
+                />
+              </div>
+              
+              {isAdmin && (
                 <div>
-                  <Label htmlFor="name">Study Hall Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter study hall name"
-                    className="mt-1"
-                  />
-                </div>
-
-                {isAdmin ? (
-                  <div>
-                    <Label htmlFor="merchant">Select Merchant *</Label>
-                    <Select
-                      value={formData.merchantId}
-                      onValueChange={(value) => {
-                        const merchant = merchants.find(m => m.id.toString() === value);
-                        setFormData(prev => ({
-                          ...prev,
-                          merchantId: value,
-                          merchantName: merchant ? merchant.name : ''
-                        }));
-                      }}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Choose merchant" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {merchants.map(merchant => (
-                          <SelectItem key={merchant.id} value={merchant.id.toString()}>
-                            {merchant.name} - {merchant.businessName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ) : (
-                  <div>
-                    <Label>Merchant</Label>
-                    <Input
-                      value={formData.merchantName}
-                      disabled
-                      className="mt-1 bg-gray-50"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <Label htmlFor="location">Location with GPS *</Label>
-                  <div className="space-y-2 mt-1">
-                    <Textarea
-                      id="location"
-                      value={formData.location}
-                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                      placeholder="Enter complete address"
-                      rows={2}
-                    />
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <MapPin className="h-4 w-4" />
-                      GPS: {formData.gpsLocation.lat.toFixed(6)}, {formData.gpsLocation.lng.toFixed(6)}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowLocationPicker(true)}
-                      className="w-full"
-                    >
-                      🗺️ Select Location on Map
-                    </Button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Describe your study hall..."
-                    className="mt-1"
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Pricing Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Pricing</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="pricePerDay">Per Day (₹) *</Label>
-                    <Input
-                      id="pricePerDay"
-                      type="number"
-                      value={formData.pricePerDay}
-                      onChange={(e) => setFormData(prev => ({ ...prev, pricePerDay: e.target.value }))}
-                      placeholder="50"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="pricePerWeek">Per Week (₹)</Label>
-                    <Input
-                      id="pricePerWeek"
-                      type="number"
-                      value={formData.pricePerWeek}
-                      onChange={(e) => setFormData(prev => ({ ...prev, pricePerWeek: e.target.value }))}
-                      placeholder="300"
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="pricePerMonth">Per Month (₹)</Label>
-                    <Input
-                      id="pricePerMonth"
-                      type="number"
-                      value={formData.pricePerMonth}
-                      onChange={(e) => setFormData(prev => ({ ...prev, pricePerMonth: e.target.value }))}
-                      placeholder="1000"
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Amenities Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Amenities</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {defaultAmenities.map(amenity => (
-                    <div key={amenity} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={amenity}
-                        checked={formData.amenities.includes(amenity)}
-                        onChange={() => handleAmenityToggle(amenity)}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor={amenity} className="text-sm font-medium">
-                        {amenity}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <Input
-                    value={newAmenity}
-                    onChange={(e) => setNewAmenity(e.target.value)}
-                    placeholder="Add custom amenity"
-                    onKeyPress={(e) => e.key === 'Enter' && addCustomAmenity()}
-                  />
-                  <Button onClick={addCustomAmenity} size="sm">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {formData.customAmenities.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {formData.customAmenities.map(amenity => (
-                      <Badge key={amenity} variant="secondary" className="flex items-center gap-1">
-                        {amenity}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeCustomAmenity(amenity)}
-                          className="h-4 w-4 p-0 hover:bg-transparent"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Status Toggle */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Publication Status</Label>
-                    <p className="text-sm text-gray-500">Control visibility of this study hall</p>
-                  </div>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value: 'draft' | 'active' | 'inactive') => 
-                      setFormData(prev => ({ ...prev, status: value }))
-                    }
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
+                  <Label htmlFor="merchant">Merchant *</Label>
+                  <Select value={formData.merchantId} onValueChange={(value) => handleInputChange('merchantId', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select merchant" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
+                      {mockMerchants.map(merchant => (
+                        <SelectItem key={merchant.id} value={merchant.id}>
+                          {merchant.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Describe your study hall..."
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="location">Location *</Label>
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-4 w-4 text-gray-400" />
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  placeholder="Enter complete address"
+                />
+              </div>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Clock className="h-5 w-5" />
+                  <span>Operating Hours</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Opening Time</Label>
+                    <Input
+                      type="time"
+                      value={formData.operatingHours.open}
+                      onChange={(e) => handleOperatingHoursChange('open', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Closing Time</Label>
+                    <Input
+                      type="time"
+                      value={formData.operatingHours.close}
+                      onChange={(e) => handleOperatingHoursChange('close', e.target.value)}
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>Operating Days</Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {weekDays.map(day => (
+                      <div key={day.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={day.id}
+                          checked={formData.operatingHours.days.includes(day.id)}
+                          onCheckedChange={() => handleDayToggle(day.id)}
+                        />
+                        <Label htmlFor={day.id} className="text-sm">{day.label}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </div>
 
-          {/* Right Column - Layout and Images */}
-          <div className="space-y-6">
-            {/* Seat Layout Designer */}
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="layout" className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="rows">Number of Rows</Label>
+                <Input
+                  id="rows"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={formData.rows}
+                  onChange={(e) => handleInputChange('rows', parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="seatsPerRow">Seats per Row</Label>
+                <Input
+                  id="seatsPerRow"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={formData.seatsPerRow}
+                  onChange={(e) => handleInputChange('seatsPerRow', parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <div>
+                <Label>Total Capacity</Label>
+                <div className="flex items-center space-x-2 mt-2">
+                  <Users className="h-4 w-4 text-gray-400" />
+                  <span className="font-medium">{formData.capacity} seats</span>
+                </div>
+              </div>
+            </div>
+
             <SeatLayoutDesigner
               rows={formData.rows}
               seatsPerRow={formData.seatsPerRow}
               layout={formData.layout}
-              onLayoutChange={handleLayoutChange}
-              onSeatStatusChange={handleSeatStatusChange}
+              onLayoutChange={handleLayoutUpdate}
             />
+          </TabsContent>
 
-            {/* Image Upload Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Images</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
+          <TabsContent value="pricing" className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="pricePerDay">Price per Day (₹) *</Label>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-4 w-4 text-gray-400" />
                   <Input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="mb-3"
+                    id="pricePerDay"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.pricePerDay}
+                    onChange={(e) => handleInputChange('pricePerDay', e.target.value)}
+                    placeholder="0.00"
                   />
-                  <p className="text-sm text-gray-500">Upload multiple images. First image will be the main image.</p>
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="pricePerWeek">Price per Week (₹)</Label>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-4 w-4 text-gray-400" />
+                  <Input
+                    id="pricePerWeek"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.pricePerWeek}
+                    onChange={(e) => handleInputChange('pricePerWeek', e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="pricePerMonth">Price per Month (₹)</Label>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-4 w-4 text-gray-400" />
+                  <Input
+                    id="pricePerMonth"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.pricePerMonth}
+                    onChange={(e) => handleInputChange('pricePerMonth', e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            </div>
 
-                {formData.images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3">
-                    {formData.images.map((image, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={image}
-                          alt={`Study hall ${index + 1}`}
-                          className={`w-full h-24 object-cover rounded-lg border-2 ${
-                            image === formData.mainImage ? 'border-blue-500' : 'border-gray-200'
-                          }`}
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeImage(index)}
-                          className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                        {image === formData.mainImage && (
-                          <Badge className="absolute bottom-1 left-1 text-xs">Main</Badge>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* QR Code Section */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <QrCode className="h-5 w-5" />
-                  QR Code
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {formData.qrCode ? (
-                  <div className="text-center space-y-3">
-                    <div className="w-32 h-32 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center mx-auto">
-                      <QrCode className="h-16 w-16 text-gray-400" />
-                    </div>
-                    <div className="space-y-2">
-                      <Button variant="outline" size="sm" onClick={() => setShowQRCode(true)}>
-                        View QR Code
-                      </Button>
-                      <p className="text-xs text-gray-500">QR code will be generated after saving</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <Button onClick={generateQRCode} variant="outline" className="w-full">
-                      <QrCode className="h-4 w-4 mr-2" />
-                      Generate QR Code
-                    </Button>
-                    <p className="text-xs text-gray-500 mt-2">Students can scan this to book directly</p>
-                  </div>
-                )}
+              <CardContent className="pt-6">
+                <div className="text-sm text-gray-600 space-y-2">
+                  <p><strong>Pricing Guidelines:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Daily rate is mandatory and forms the base pricing</li>
+                    <li>Weekly and monthly rates are optional but recommended for better deals</li>
+                    <li>Consider offering discounts for longer duration bookings</li>
+                    <li>Price should include basic amenities like seating and lighting</li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 pt-6 border-t">
-          <Button variant="outline" onClick={onClose}>
+          <TabsContent value="amenities" className="space-y-4">
+            <div>
+              <Label>Standard Amenities</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                {predefinedAmenities.map(amenity => {
+                  const IconComponent = amenity.icon;
+                  return (
+                    <div key={amenity.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={amenity.id}
+                        checked={formData.amenities.includes(amenity.id)}
+                        onCheckedChange={() => handleAmenityToggle(amenity.id)}
+                      />
+                      <IconComponent className="h-4 w-4 text-gray-500" />
+                      <Label htmlFor={amenity.id} className="text-sm">{amenity.label}</Label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label>Custom Amenities</Label>
+              <div className="flex space-x-2 mt-2">
+                <Input
+                  placeholder="Add custom amenity"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCustomAmenityAdd(e.currentTarget.value);
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const input = document.querySelector('input[placeholder="Add custom amenity"]') as HTMLInputElement;
+                    if (input) {
+                      handleCustomAmenityAdd(input.value);
+                      input.value = '';
+                    }
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {formData.customAmenities.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.customAmenities.map(amenity => (
+                    <Badge key={amenity} variant="secondary" className="flex items-center space-x-1">
+                      <span>{amenity}</span>
+                      <X
+                        className="h-3 w-3 cursor-pointer"
+                        onClick={() => handleCustomAmenityRemove(amenity)}
+                      />
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="media" className="space-y-4">
+            <div>
+              <Label>Study Hall Images</Label>
+              <p className="text-sm text-gray-500 mb-3">
+                Upload images of your study hall. The first image will be used as the main image.
+              </p>
+              <ImageUploader
+                currentImages={formData.images}
+                onImagesChange={handleImagesUpdate}
+                maxImages={10}
+                acceptedFileTypes={['image/jpeg', 'image/png', 'image/webp']}
+              />
+            </div>
+
+            {formData.images.length > 0 && (
+              <div>
+                <Label>Main Image</Label>
+                <div className="grid grid-cols-3 gap-3 mt-2">
+                  {formData.images.map(image => (
+                    <div
+                      key={image}
+                      className={`relative cursor-pointer border-2 rounded-lg overflow-hidden ${
+                        formData.mainImage === image ? 'border-blue-500' : 'border-gray-200'
+                      }`}
+                      onClick={() => handleInputChange('mainImage', image)}
+                    >
+                      <img src={image} alt="Study hall" className="w-full h-24 object-cover" />
+                      {formData.mainImage === image && (
+                        <div className="absolute inset-0 bg-blue-500 bg-opacity-20 flex items-center justify-center">
+                          <Badge className="bg-blue-500">Main</Badge>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-end space-x-3 pt-4 border-t">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
-            {editData ? 'Update Study Hall' : 'Create Study Hall'}
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Saving...' : editData ? 'Update Study Hall' : 'Create Study Hall'}
           </Button>
         </div>
-
-        {/* Google Maps Location Picker Modal */}
-        <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Select Study Hall Location</DialogTitle>
-            </DialogHeader>
-            <GoogleMapsLocationPicker
-              initialLocation={{
-                lat: formData.gpsLocation.lat,
-                lng: formData.gpsLocation.lng,
-                address: formData.location
-              }}
-              onLocationSelect={handleLocationSelect}
-            />
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowLocationPicker(false)}>
-                Cancel
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* QR Code Modal */}
-        {showQRCode && formData.qrCode && (
-          <QRCodeDisplay
-            qrCode={formData.qrCode}
-            studyHallName={formData.name}
-            onClose={() => setShowQRCode(false)}
-          />
-        )}
       </DialogContent>
     </Dialog>
   );

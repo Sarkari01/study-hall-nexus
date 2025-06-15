@@ -1,205 +1,228 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Minus } from "lucide-react";
-
-interface SeatInfo {
-  id: string;
-  status: 'available' | 'occupied' | 'maintenance' | 'disabled';
-}
+import { RotateCcw, Save, Eye, Edit3 } from "lucide-react";
 
 interface SeatLayoutDesignerProps {
   rows: number;
   seatsPerRow: number;
-  layout: SeatInfo[];
-  onLayoutChange: (rows: number, seatsPerRow: number) => void;
-  onSeatStatusChange: (seatId: string, status: SeatInfo['status']) => void;
+  layout: string[];
+  onLayoutChange: (layout: string[]) => void;
+}
+
+type SeatStatus = 'available' | 'occupied' | 'maintenance' | 'disabled';
+
+interface Seat {
+  id: string;
+  status: SeatStatus;
+  row: number;
+  seat: number;
 }
 
 const SeatLayoutDesigner: React.FC<SeatLayoutDesignerProps> = ({
   rows,
   seatsPerRow,
   layout,
-  onLayoutChange,
-  onSeatStatusChange
+  onLayoutChange
 }) => {
-  const seatColors = {
-    available: 'bg-green-500 hover:bg-green-600 text-white',
-    occupied: 'bg-red-500 hover:bg-red-600 text-white',
-    maintenance: 'bg-yellow-500 hover:bg-yellow-600 text-white',
-    disabled: 'bg-gray-500 hover:bg-gray-600 text-white'
-  };
+  const [seats, setSeats] = useState<Seat[]>([]);
+  const [selectedTool, setSelectedTool] = useState<SeatStatus>('available');
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
-  const statusLabels = {
-    available: 'Available',
-    occupied: 'Occupied',
-    maintenance: 'Maintenance',
-    disabled: 'Disabled'
-  };
+  // Generate seat layout
+  useEffect(() => {
+    const newSeats: Seat[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let s = 0; s < seatsPerRow; s++) {
+        const seatId = `${String.fromCharCode(65 + r)}${s + 1}`;
+        newSeats.push({
+          id: seatId,
+          status: 'available',
+          row: r,
+          seat: s
+        });
+      }
+    }
+    setSeats(newSeats);
+  }, [rows, seatsPerRow]);
 
-  const cycleStatus = (currentStatus: SeatInfo['status']): SeatInfo['status'] => {
-    const statuses: SeatInfo['status'][] = ['available', 'occupied', 'maintenance', 'disabled'];
-    const currentIndex = statuses.indexOf(currentStatus);
-    return statuses[(currentIndex + 1) % statuses.length];
-  };
+  // Update layout when seats change
+  useEffect(() => {
+    const seatIds = seats
+      .filter(seat => seat.status === 'available' || seat.status === 'occupied')
+      .map(seat => seat.id);
+    onLayoutChange(seatIds);
+  }, [seats, onLayoutChange]);
 
   const handleSeatClick = (seatId: string) => {
-    const seat = layout.find(s => s.id === seatId);
-    if (seat) {
-      const newStatus = cycleStatus(seat.status);
-      onSeatStatusChange(seatId, newStatus);
+    if (isPreviewMode) return;
+    
+    setSeats(prev => prev.map(seat => 
+      seat.id === seatId 
+        ? { ...seat, status: selectedTool }
+        : seat
+    ));
+  };
+
+  const resetLayout = () => {
+    setSeats(prev => prev.map(seat => ({ ...seat, status: 'available' })));
+  };
+
+  const getSeatColor = (status: SeatStatus) => {
+    switch (status) {
+      case 'available':
+        return 'bg-green-500 hover:bg-green-600';
+      case 'occupied':
+        return 'bg-red-500 hover:bg-red-600';
+      case 'maintenance':
+        return 'bg-yellow-500 hover:bg-yellow-600';
+      case 'disabled':
+        return 'bg-gray-400 hover:bg-gray-500';
+      default:
+        return 'bg-gray-300';
     }
   };
 
-  const getTotalSeats = () => layout.filter(seat => seat.status !== 'disabled').length;
-  const getAvailableSeats = () => layout.filter(seat => seat.status === 'available').length;
+  const getToolColor = (status: SeatStatus) => {
+    switch (status) {
+      case 'available':
+        return 'bg-green-500 text-white';
+      case 'occupied':
+        return 'bg-red-500 text-white';
+      case 'maintenance':
+        return 'bg-yellow-500 text-white';
+      case 'disabled':
+        return 'bg-gray-500 text-white';
+      default:
+        return 'bg-gray-300';
+    }
+  };
+
+  const seatCounts = {
+    available: seats.filter(s => s.status === 'available').length,
+    occupied: seats.filter(s => s.status === 'occupied').length,
+    maintenance: seats.filter(s => s.status === 'maintenance').length,
+    disabled: seats.filter(s => s.status === 'disabled').length
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Cabin Layout Designer</CardTitle>
-        <div className="flex justify-between items-center text-sm text-gray-600">
-          <span>{getTotalSeats()} Total Cabins</span>
-          <span>{getAvailableSeats()} Available</span>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center space-x-2">
+            <span>Seat Layout Designer</span>
+            <Badge variant="outline">{rows}×{seatsPerRow} Grid</Badge>
+          </CardTitle>
+          <div className="flex space-x-2">
+            <Button
+              variant={isPreviewMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIsPreviewMode(!isPreviewMode)}
+            >
+              {isPreviewMode ? <Edit3 className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+              {isPreviewMode ? 'Edit' : 'Preview'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={resetLayout}>
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Reset
+            </Button>
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Layout Controls */}
-        <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-          <div>
-            <label className="block text-sm font-medium mb-2">Rows: {rows}</label>
-            <div className="flex items-center gap-2">
+      <CardContent className="space-y-4">
+        {/* Seat Status Tools */}
+        {!isPreviewMode && (
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-gray-700">Paint Tool:</span>
+            {(['available', 'occupied', 'maintenance', 'disabled'] as SeatStatus[]).map(status => (
               <Button
-                variant="outline"
+                key={status}
+                variant={selectedTool === status ? "default" : "outline"}
                 size="sm"
-                onClick={() => rows > 1 && onLayoutChange(rows - 1, seatsPerRow)}
-                disabled={rows <= 1}
+                className={selectedTool === status ? getToolColor(status) : ''}
+                onClick={() => setSelectedTool(status)}
               >
-                <Minus className="h-4 w-4" />
+                {status.charAt(0).toUpperCase() + status.slice(1)}
               </Button>
-              <span className="w-8 text-center">{rows}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => rows < 10 && onLayoutChange(rows + 1, seatsPerRow)}
-                disabled={rows >= 10}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+            ))}
+          </div>
+        )}
+
+        {/* Layout Grid */}
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="text-center mb-4">
+            <div className="bg-gray-800 text-white py-2 px-4 rounded inline-block">
+              📚 Front (Teacher/Screen Area)
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Columns: {seatsPerRow}</label>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => seatsPerRow > 1 && onLayoutChange(rows, seatsPerRow - 1)}
-                disabled={seatsPerRow <= 1}
+          
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${seatsPerRow}, 1fr)` }}>
+            {seats.map(seat => (
+              <div
+                key={seat.id}
+                className={`
+                  w-10 h-10 rounded-md border-2 border-white 
+                  flex items-center justify-center text-xs font-medium text-white
+                  transition-colors cursor-pointer
+                  ${getSeatColor(seat.status)}
+                  ${isPreviewMode ? 'cursor-default' : 'cursor-pointer'}
+                `}
+                onClick={() => handleSeatClick(seat.id)}
+                title={`Seat ${seat.id} - ${seat.status}`}
               >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="w-8 text-center">{seatsPerRow}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => seatsPerRow < 12 && onLayoutChange(rows, seatsPerRow + 1)}
-                disabled={seatsPerRow >= 12}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Cabin States Legend */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm">Cabin States</h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {Object.entries(statusLabels).map(([status, label]) => (
-              <div key={status} className="flex items-center gap-2">
-                <div className={`w-4 h-4 rounded ${seatColors[status as keyof typeof seatColors].split(' ')[0]}`} />
-                <span>{label}</span>
+                {seat.id}
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-500 mt-2">Click on any cabin to cycle through states</p>
+          
+          <div className="text-center mt-4">
+            <div className="bg-gray-800 text-white py-2 px-4 rounded inline-block">
+              🚪 Back (Entry/Exit)
+            </div>
+          </div>
         </div>
 
-        {/* Movie Theater Style Layout */}
-        <div className="space-y-4">
-          {/* Entrance */}
+        {/* Seat Statistics */}
+        <div className="grid grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="inline-block bg-gray-800 text-white px-6 py-2 rounded-lg text-sm font-medium">
-              ENTRANCE
+            <div className="w-6 h-6 bg-green-500 rounded mx-auto mb-1"></div>
+            <div className="text-sm font-medium">Available</div>
+            <div className="text-lg font-bold">{seatCounts.available}</div>
+          </div>
+          <div className="text-center">
+            <div className="w-6 h-6 bg-red-500 rounded mx-auto mb-1"></div>
+            <div className="text-sm font-medium">Occupied</div>
+            <div className="text-lg font-bold">{seatCounts.occupied}</div>
+          </div>
+          <div className="text-center">
+            <div className="w-6 h-6 bg-yellow-500 rounded mx-auto mb-1"></div>
+            <div className="text-sm font-medium">Maintenance</div>
+            <div className="text-lg font-bold">{seatCounts.maintenance}</div>
+          </div>
+          <div className="text-center">
+            <div className="w-6 h-6 bg-gray-500 rounded mx-auto mb-1"></div>
+            <div className="text-sm font-medium">Disabled</div>
+            <div className="text-lg font-bold">{seatCounts.disabled}</div>
+          </div>
+        </div>
+
+        {/* Instructions */}
+        {!isPreviewMode && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="text-sm text-blue-800">
+              <strong>Instructions:</strong>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Select a paint tool above and click on seats to change their status</li>
+                <li><strong>Available:</strong> Seats that can be booked by students</li>
+                <li><strong>Occupied:</strong> Currently booked seats (for preview)</li>
+                <li><strong>Maintenance:</strong> Temporarily unavailable seats</li>
+                <li><strong>Disabled:</strong> Permanently disabled seats (removed from layout)</li>
+              </ul>
             </div>
           </div>
-
-          {/* Seat Grid */}
-          <div className="space-y-2">
-            {Array.from({ length: rows }, (_, rowIndex) => {
-              const rowLetter = String.fromCharCode(65 + rowIndex);
-              return (
-                <div key={rowLetter} className="flex items-center gap-2">
-                  {/* Row Letter */}
-                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-sm font-medium">
-                    {rowLetter}
-                  </div>
-                  
-                  {/* Seats in Row */}
-                  <div className="flex gap-1">
-                    {Array.from({ length: seatsPerRow }, (_, seatIndex) => {
-                      const seatId = `${rowLetter}${seatIndex + 1}`;
-                      const seat = layout.find(s => s.id === seatId);
-                      const status = seat?.status || 'available';
-                      
-                      return (
-                        <Button
-                          key={seatId}
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSeatClick(seatId)}
-                          className={`w-12 h-10 p-0 text-xs font-medium rounded transition-colors ${seatColors[status]}`}
-                        >
-                          {seatId}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Column Numbers */}
-          <div className="flex items-center gap-2 ml-10">
-            {Array.from({ length: seatsPerRow }, (_, index) => (
-              <div key={index + 1} className="w-12 text-center text-xs text-gray-500">
-                {index + 1}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Summary */}
-        <div className="grid grid-cols-4 gap-2 text-center text-xs">
-          {Object.entries(statusLabels).map(([status, label]) => {
-            const count = layout.filter(seat => seat.status === status).length;
-            return (
-              <div key={status} className="p-2 bg-gray-50 rounded">
-                <div className="font-medium">{count}</div>
-                <div className="text-gray-600">{label}</div>
-              </div>
-            );
-          })}
-        </div>
-        
-        <div className="text-xs text-gray-500 text-center">
-          Last saved: {new Date().toLocaleString()}
-        </div>
+        )}
       </CardContent>
     </Card>
   );
