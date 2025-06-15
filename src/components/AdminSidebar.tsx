@@ -4,8 +4,6 @@ import { cn } from "@/lib/utils";
 import { Users, Building2, Calendar, CreditCard, ArrowRightLeft, DollarSign, MapPin, UserPlus, TrendingUp, ChevronDown, ChevronRight, LayoutDashboard, Megaphone, MessageSquare, Users2, Settings, Code, Package, Gift, Wallet, Percent, Bell, LogOut, User, BookOpen } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-import Footer from "./Footer";
-
 interface AdminSidebarItem {
   id: string;
   label: string;
@@ -178,69 +176,40 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     // In a real app, you would clear the session and redirect
     window.location.href = '/';
   };
-  return <div className="w-72 bg-white border-r border-gray-200 min-h-screen flex flex-col shadow-lg">
-      <div className="p-6 flex-1">
+  return <div className="w-72 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+      <div className="p-6">
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="p-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-md">
-              <Building2 className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-gray-900 font-bold text-2xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Sarkari Ninja</h2>
-            </div>
-          </div>
-          <p className="text-zinc-700 font-medium text-xs ml-12">Advanced Management System</p>
+          <h2 className="text-gray-900 font-bold text-4xl">Sarkari Ninja</h2>
+          <p className="text-zinc-950 font-extrabold text-xs">Advanced Management System</p>
         </div>
         
         <nav className="space-y-2 flex-1">
           {sidebarItems.map(item => <div key={item.id}>
               {item.hasSubmenu ? <Collapsible open={expandedItems.includes(item.id)} onOpenChange={() => onToggleExpand(item.id)}>
                   <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className={cn("w-full justify-between text-left hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 rounded-lg", expandedItems.includes(item.id) && "bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm")}>
+                    <Button variant="ghost" className={cn("w-full justify-between text-left", expandedItems.includes(item.id) && "bg-gray-100")}>
                       <div className="flex items-center">
-                        <div className="text-blue-600">
-                          {item.icon}
-                        </div>
-                        <span className="ml-3 font-medium">{item.label}</span>
+                        {item.icon}
+                        <span className="ml-3">{item.label}</span>
                       </div>
-                      {expandedItems.includes(item.id) ? <ChevronDown className="h-4 w-4 text-blue-600" /> : <ChevronRight className="h-4 w-4 text-gray-400" />}
+                      {expandedItems.includes(item.id) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="ml-6 mt-1 space-y-1">
-                    {item.submenu?.map(subItem => <Button key={subItem.id} variant={activeItem === subItem.id ? "default" : "ghost"} className={cn("w-full justify-start text-sm transition-all duration-200 rounded-lg", activeItem === subItem.id ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-md" : "hover:bg-gray-50")} onClick={() => onItemClick(subItem.id)}>
+                    {item.submenu?.map(subItem => <Button key={subItem.id} variant={activeItem === subItem.id ? "default" : "ghost"} className={cn("w-full justify-start text-sm", activeItem === subItem.id && "bg-blue-600 text-white hover:bg-blue-700")} onClick={() => onItemClick(subItem.id)}>
                         {subItem.label}
                       </Button>)}
                   </CollapsibleContent>
-                </Collapsible> : <Button variant={activeItem === item.id ? "default" : "ghost"} className={cn("w-full justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-200 rounded-lg", activeItem === item.id ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-md" : "")} onClick={() => onItemClick(item.id)}>
-                  <div className={cn("transition-colors", activeItem === item.id ? "text-white" : "text-blue-600")}>
-                    {item.icon}
-                  </div>
-                  <span className="ml-3 font-medium">{item.label}</span>
+                </Collapsible> : <Button variant={activeItem === item.id ? "default" : "ghost"} className={cn("w-full justify-start", activeItem === item.id && "bg-blue-600 text-white hover:bg-blue-700")} onClick={() => onItemClick(item.id)}>
+                  {item.icon}
+                  <span className="ml-3">{item.label}</span>
                 </Button>}
             </div>)}
         </nav>
       </div>
 
-      {/* Enhanced Admin Profile & Logout Section */}
-      <div className="border-t border-gray-200 p-4 bg-gradient-to-r from-gray-50 to-blue-50">
-        <div className="flex items-center space-x-3 mb-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-md">
-            <User className="h-5 w-5 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">Admin User</p>
-            <p className="text-xs text-gray-600">admin@sarkarininja.com</p>
-          </div>
-        </div>
-        <Button 
-          onClick={handleLogout} 
-          variant="outline" 
-          className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300 transition-all duration-200"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Log out
-        </Button>
-      </div>
+      {/* Admin Profile & Logout Section */}
+      
     </div>;
 };
 export default AdminSidebar;
