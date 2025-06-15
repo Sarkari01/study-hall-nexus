@@ -60,7 +60,13 @@ const StudyHallsTable = () => {
 
       if (error) throw error;
 
-      addStudyHall(data);
+      // Type the data properly before adding to state
+      const typedStudyHall = {
+        ...data,
+        status: data.status as 'draft' | 'active' | 'inactive' | 'maintenance'
+      };
+
+      addStudyHall(typedStudyHall);
       setShowCreateForm(false);
       
       toast({
