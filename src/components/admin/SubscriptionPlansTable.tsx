@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,7 @@ const SubscriptionPlansTable = () => {
 
   const handleAddPlan = async () => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('subscription_plans')
         .insert({
           name: formData.name,
@@ -80,7 +79,7 @@ const SubscriptionPlansTable = () => {
     if (!confirm("Are you sure you want to delete this plan?")) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('subscription_plans')
         .delete()
         .eq('id', planId);
@@ -136,7 +135,6 @@ const SubscriptionPlansTable = () => {
     };
   }, [plans]);
 
-  // Prepare data for export
   const exportData = useMemo(() => {
     return filteredPlans.map(plan => ({
       'Plan ID': plan.id,

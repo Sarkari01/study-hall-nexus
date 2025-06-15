@@ -42,7 +42,7 @@ export const useSubscriptions = () => {
 
   const fetchSubscriptions = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('merchant_subscriptions')
         .select(`
           *,
@@ -64,7 +64,7 @@ export const useSubscriptions = () => {
 
   const fetchPlans = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('subscription_plans')
         .select('*')
         .eq('is_active', true)
@@ -90,7 +90,7 @@ export const useSubscriptions = () => {
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + plan.validity_days);
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('merchant_subscriptions')
         .insert({
           merchant_id: merchantId,

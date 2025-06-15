@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,7 @@ const MerchantSubscriptionStatus: React.FC<MerchantSubscriptionStatusProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('merchant_subscriptions')
         .select(`
           *,
