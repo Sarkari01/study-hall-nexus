@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,9 +12,7 @@ import {
   Ban, 
   CheckCircle, 
   XCircle, 
-  Filter, 
   Calendar,
-  TrendingUp,
   Users,
   CreditCard,
   UserPlus
@@ -147,6 +146,7 @@ const StudentsTable = () => {
         setLoading(false);
       }, 1000);
     } catch (error) {
+      console.error('Error fetching students:', error);
       toast({
         title: "Error",
         description: "Failed to fetch students data",
@@ -174,6 +174,7 @@ const StudentsTable = () => {
         description: `Student account ${newStatus === 'active' ? 'enabled' : 'disabled'}`,
       });
     } catch (error) {
+      console.error('Error updating student status:', error);
       toast({
         title: "Error",
         description: "Failed to update student status",
@@ -191,48 +192,57 @@ const StudentsTable = () => {
     setStudents(prev => [newStudent, ...prev]);
   };
 
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         student.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
-    
-    let matchesBookings = true;
-    if (bookingFilter === 'high') {
-      matchesBookings = student.bookingsCount >= 10;
-    } else if (bookingFilter === 'medium') {
-      matchesBookings = student.bookingsCount >= 5 && student.bookingsCount < 10;
-    } else if (bookingFilter === 'low') {
-      matchesBookings = student.bookingsCount > 0 && student.bookingsCount < 5;
-    } else if (bookingFilter === 'none') {
-      matchesBookings = student.bookingsCount === 0;
-    }
-    
-    return matchesSearch && matchesStatus && matchesBookings;
-  });
+  // Memoized filtered students for better performance
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
+      const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           student.email.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
+      
+      let matchesBookings = true;
+      if (bookingFilter === 'high') {
+        matchesBookings = student.bookingsCount >= 10;
+      } else if (bookingFilter === 'medium') {
+        matchesBookings = student.bookingsCount >= 5 && student.bookingsCount < 10;
+      } else if (bookingFilter === 'low') {
+        matchesBookings = student.bookingsCount > 0 && student.bookingsCount < 5;
+      } else if (bookingFilter === 'none') {
+        matchesBookings = student.bookingsCount === 0;
+      }
+      
+      return matchesSearch && matchesStatus && matchesBookings;
+    });
+  }, [students, searchTerm, statusFilter, bookingFilter]);
 
   // Calculate statistics
-  const totalStudents = students.length;
-  const activeStudents = students.filter(s => s.status === 'active').length;
-  const totalBookings = students.reduce((sum, s) => sum + s.bookingsCount, 0);
-  const totalRevenue = students.reduce((sum, s) => {
-    const amount = parseFloat(s.totalSpent?.replace('₹', '').replace(',', '') || '0');
-    return sum + amount;
-  }, 0);
+  const statistics = useMemo(() => {
+    const totalStudents = students.length;
+    const activeStudents = students.filter(s => s.status === 'active').length;
+    const totalBookings = students.reduce((sum, s) => sum + s.bookingsCount, 0);
+    const totalRevenue = students.reduce((sum, s) => {
+      const amount = parseFloat(s.totalSpent?.replace('₹', '').replace(',', '') || '0');
+      return sum + amount;
+    }, 0);
+
+    return { totalStudents, activeStudents, totalBookings, totalRevenue };
+  }, [students]);
 
   // Prepare data for export
-  const exportData = filteredStudents.map(student => ({
-    'Student ID': student.id,
-    'Name': student.name,
-    'Email': student.email,
-    'Phone': student.phone,
-    'Bookings': student.bookingsCount,
-    'Total Spent': student.totalSpent,
-    'Average Session Duration': student.averageSessionDuration,
-    'Status': student.status,
-    'Member Since': student.createdAt,
-    'Last Booking': student.lastBooking || 'Never',
-    'Preferred Study Halls': student.preferredStudyHalls?.join(', ') || 'None'
-  }));
+  const exportData = useMemo(() => {
+    return filteredStudents.map(student => ({
+      'Student ID': student.id,
+      'Name': student.name,
+      'Email': student.email,
+      'Phone': student.phone,
+      'Bookings': student.bookingsCount,
+      'Total Spent': student.totalSpent,
+      'Average Session Duration': student.averageSessionDuration,
+      'Status': student.status,
+      'Member Since': student.createdAt,
+      'Last Booking': student.lastBooking || 'Never',
+      'Preferred Study Halls': student.preferredStudyHalls?.join(', ') || 'None'
+    }));
+  }, [filteredStudents]);
 
   const exportColumns = [
     'Student ID', 'Name', 'Email', 'Phone', 'Bookings', 'Total Spent',
@@ -249,7 +259,7 @@ const StudentsTable = () => {
               <Users className="h-8 w-8 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Students</p>
-                <p className="text-2xl font-bold">{totalStudents}</p>
+                <p className="text-2xl font-bold">{statistics.totalStudents}</p>
               </div>
             </div>
           </CardContent>
@@ -261,7 +271,7 @@ const StudentsTable = () => {
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Active Students</p>
-                <p className="text-2xl font-bold">{activeStudents}</p>
+                <p className="text-2xl font-bold">{statistics.activeStudents}</p>
               </div>
             </div>
           </CardContent>
@@ -273,7 +283,7 @@ const StudentsTable = () => {
               <Calendar className="h-8 w-8 text-orange-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Bookings</p>
-                <p className="text-2xl font-bold">{totalBookings}</p>
+                <p className="text-2xl font-bold">{statistics.totalBookings}</p>
               </div>
             </div>
           </CardContent>
@@ -285,7 +295,7 @@ const StudentsTable = () => {
               <CreditCard className="h-8 w-8 text-purple-600" />
               <div>
                 <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold">₹{statistics.totalRevenue.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -358,81 +368,83 @@ const StudentsTable = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Bookings</TableHead>
-                  <TableHead>Total Spent</TableHead>
-                  <TableHead>Avg. Session</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Booking</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredStudents.map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>{student.email}</TableCell>
-                    <TableCell>{student.phone}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{student.bookingsCount}</Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">{student.totalSpent}</TableCell>
-                    <TableCell>{student.averageSessionDuration}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={student.status === 'active' ? 'default' : 'destructive'}
-                      >
-                        {student.status === 'active' ? (
-                          <>
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Active
-                          </>
-                        ) : (
-                          <>
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Inactive
-                          </>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{student.lastBooking || 'Never'}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewStudent(student)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant={student.status === 'active' ? 'destructive' : 'default'}
-                          size="sm"
-                          onClick={() => toggleStudentStatus(student.id, student.status)}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Bookings</TableHead>
+                    <TableHead>Total Spent</TableHead>
+                    <TableHead>Avg. Session</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Booking</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredStudents.map((student) => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell>{student.email}</TableCell>
+                      <TableCell>{student.phone}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{student.bookingsCount}</Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">{student.totalSpent}</TableCell>
+                      <TableCell>{student.averageSessionDuration}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={student.status === 'active' ? 'default' : 'destructive'}
                         >
                           {student.status === 'active' ? (
                             <>
-                              <Ban className="h-4 w-4 mr-1" />
-                              Disable
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Active
                             </>
                           ) : (
                             <>
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Enable
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Inactive
                             </>
                           )}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{student.lastBooking || 'Never'}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewStudent(student)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant={student.status === 'active' ? 'destructive' : 'default'}
+                            size="sm"
+                            onClick={() => toggleStudentStatus(student.id, student.status)}
+                          >
+                            {student.status === 'active' ? (
+                              <>
+                                <Ban className="h-4 w-4 mr-1" />
+                                Disable
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Enable
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

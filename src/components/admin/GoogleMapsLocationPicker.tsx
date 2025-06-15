@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LocationData {
@@ -25,9 +25,10 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [marker, setMarker] = useState<google.maps.Marker | null>(null);
+  const [marker, setMarker] = useState<google.maps.marker.AdvancedMarkerElement | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<LocationData>(
     initialLocation || { lat: 28.6315, lng: 77.2167, address: 'New Delhi, India' }
   );
@@ -37,12 +38,21 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
     const initializeMap = async () => {
       try {
         // Get Google Maps API key from localStorage (set by Developer Management)
-        const apiKey = localStorage.getItem('google_maps_api_key') || 'AIzaSyD5pi7yo0QubYKjSC86ZG0Q7IyvCm-qXg4';
+        const apiKey = localStorage.getItem('google_maps_api_key');
+        
+        if (!apiKey) {
+          toast({
+            title: "Google Maps API Key Required",
+            description: "Please set your Google Maps API key in Developer Management settings.",
+            variant: "destructive"
+          });
+          return;
+        }
         
         const loader = new Loader({
           apiKey: apiKey,
           version: 'weekly',
-          libraries: ['places', 'geometry']
+          libraries: ['places', 'geometry', 'marker']
         });
 
         await loader.load();
@@ -55,14 +65,15 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           mapTypeControl: true,
           streetViewControl: true,
           fullscreenControl: true,
+          mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
         });
 
-        // Create initial marker
-        const markerInstance = new window.google.maps.Marker({
+        // Create advanced marker instead of deprecated Marker
+        const markerInstance = new window.google.maps.marker.AdvancedMarkerElement({
           position: { lat: currentLocation.lat, lng: currentLocation.lng },
           map: mapInstance,
-          draggable: true,
-          title: 'Study Hall Location'
+          title: 'Study Hall Location',
+          gmpDraggable: true,
         });
 
         // Add click listener to map
@@ -91,7 +102,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
         console.error('Error loading Google Maps:', error);
         toast({
           title: "Error",
-          description: "Failed to load Google Maps. Please check your API key.",
+          description: "Failed to load Google Maps. Please check your API key and internet connection.",
           variant: "destructive"
         });
       }
@@ -100,10 +111,10 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
     initializeMap();
   }, []);
 
-  const updateLocation = async (lat: number, lng: number, mapInstance: google.maps.Map, markerInstance: google.maps.Marker) => {
+  const updateLocation = async (lat: number, lng: number, mapInstance: google.maps.Map, markerInstance: google.maps.marker.AdvancedMarkerElement) => {
     try {
       // Update marker position
-      markerInstance.setPosition({ lat, lng });
+      markerInstance.position = { lat, lng };
       
       // Reverse geocoding to get address
       if (!window.google) return;
@@ -157,42 +168,92 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
       console.error('Error searching location:', error);
       toast({
         title: "Search error",
-        description: "Failed to search for the location.",
+        description: "Failed to search for the location. Please try again.",
         variant: "destructive"
       });
     }
   };
 
   const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          
-          if (map && marker) {
-            map.setCenter({ lat, lng });
-            map.setZoom(15);
-            updateLocation(lat, lng, map, marker);
-          }
-        },
-        (error) => {
-          console.error('Error getting current location:', error);
-          toast({
-            title: "Location error",
-            description: "Unable to get your current location.",
-            variant: "destructive"
-          });
-        }
-      );
-    } else {
+    if (!navigator.geolocation) {
       toast({
         title: "Not supported",
         description: "Geolocation is not supported by this browser.",
         variant: "destructive"
       });
+      return;
     }
+
+    setIsLoadingLocation(true);
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        if (map && marker) {
+          map.setCenter({ lat, lng });
+          map.setZoom(15);
+          updateLocation(lat, lng, map, marker);
+        }
+        setIsLoadingLocation(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        let errorMessage = "Unable to get your current location.";
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access denied. Please enable location permissions.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out.";
+            break;
+        }
+        
+        toast({
+          title: "Location error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        setIsLoadingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 600000 // 10 minutes
+      }
+    );
   };
+
+  const hasApiKey = localStorage.getItem('google_maps_api_key');
+
+  if (!hasApiKey) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            Google Maps API Key Required
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-gray-600">
+            To use location selection, please configure your Google Maps API key in the Developer Management settings.
+          </p>
+          <Button 
+            onClick={() => window.location.href = '/admin?tab=developer-management'}
+            variant="outline"
+          >
+            Go to Developer Settings
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -219,8 +280,17 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
             <Button onClick={searchLocation} size="sm">
               <Search className="h-4 w-4" />
             </Button>
-            <Button onClick={getCurrentLocation} variant="outline" size="sm">
-              📍 Current
+            <Button 
+              onClick={getCurrentLocation} 
+              variant="outline" 
+              size="sm"
+              disabled={isLoadingLocation}
+            >
+              {isLoadingLocation ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              ) : (
+                "📍 Current"
+              )}
             </Button>
           </div>
         </div>
@@ -229,17 +299,18 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
         <div className="space-y-2">
           <div 
             ref={mapRef} 
-            className="w-full h-64 bg-gray-100 rounded-lg border"
+            className="w-full h-64 bg-gray-100 rounded-lg border relative"
             style={{ minHeight: '300px' }}
-          />
-          {!isLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                <p className="text-sm text-gray-600">Loading Google Maps...</p>
+          >
+            {!isLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">Loading Google Maps...</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Selected Location Info */}

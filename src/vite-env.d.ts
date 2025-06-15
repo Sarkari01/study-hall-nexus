@@ -30,12 +30,31 @@ declare namespace google {
       geocode(request: GeocoderRequest, callback?: (results: GeocoderResult[], status: GeocoderStatus) => void): Promise<GeocoderResponse>;
     }
 
+    namespace marker {
+      class AdvancedMarkerElement {
+        constructor(opts?: AdvancedMarkerOptions);
+        addListener(eventName: string, handler: Function): void;
+        position: LatLng | LatLngLiteral | null;
+        map: Map | null;
+        title: string;
+        gmpDraggable: boolean;
+      }
+
+      interface AdvancedMarkerOptions {
+        position?: LatLng | LatLngLiteral;
+        map?: Map;
+        title?: string;
+        gmpDraggable?: boolean;
+      }
+    }
+
     interface MapOptions {
       center?: LatLng | LatLngLiteral;
       zoom?: number;
       mapTypeControl?: boolean;
       streetViewControl?: boolean;
       fullscreenControl?: boolean;
+      mapId?: string;
     }
 
     interface MarkerOptions {

@@ -1,86 +1,130 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getMessaging, getToken, onMessage, MessagePayload } from 'firebase/messaging';
 import { requestNotificationPermission, onMessageListener } from '@/config/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { updateServiceWorkerConfig } from '@/utils/serviceWorkerUtils';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useNotifications = () => {
   const [fcmToken, setFcmToken] = useState<string | null>(null);
-  const [isSupported, setIsSupported] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
   const { toast } = useToast();
 
   useEffect(() => {
     const initializeFCM = async () => {
       try {
-        // Check if Firebase is supported
+        // Check if the browser supports notifications
         if (!('Notification' in window)) {
-          console.log('This browser does not support notifications');
+          console.warn('This browser does not support notifications');
           return;
         }
 
-        setIsSupported(true);
-        
-        // Update service worker with actual config
-        updateServiceWorkerConfig();
-        
+        // Check current permission status
+        setNotificationPermission(Notification.permission);
+
+        // Only proceed if permission is granted or default
+        if (Notification.permission === 'denied') {
+          console.warn('Notification permission denied');
+          return;
+        }
+
+        // Request permission and get FCM token
         const token = await requestNotificationPermission();
         if (token) {
           setFcmToken(token);
-          console.log('FCM Token stored:', token);
-          
-          // Store token in database
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { error } = await supabase
-              .from('user_notification_tokens')
-              .upsert({
-                user_id: user.id,
-                fcm_token: token,
-                device_type: 'web',
-                is_active: true,
-                updated_at: new Date().toISOString()
-              }, {
-                onConflict: 'user_id,fcm_token'
-              });
-
-            if (error) {
-              console.error('Error storing FCM token:', error);
-            }
-          }
+          console.log('FCM Token obtained:', token);
         }
       } catch (error) {
         console.error('Error initializing FCM:', error);
-        toast({
-          title: "Notification Setup Error",
-          description: "Unable to initialize push notifications. Please check your Firebase configuration.",
-          variant: "destructive",
-        });
+        // Don't show toast for FCM initialization errors as they're not critical
       }
     };
 
     initializeFCM();
+  }, []);
 
-    // Set up message listener
+  useEffect(() => {
     const setupMessageListener = async () => {
       try {
+        // Only set up listener if FCM is properly initialized
+        if (!fcmToken) return;
+
         const unsubscribe = await onMessageListener();
-        if (unsubscribe && typeof unsubscribe === 'object' && 'notification' in unsubscribe) {
-          const payload = unsubscribe as any;
-          toast({
-            title: payload.notification?.title || 'New Notification',
-            description: payload.notification?.body || 'You have a new message',
-          });
-        }
+        
+        return unsubscribe;
       } catch (error) {
         console.error('Error setting up message listener:', error);
       }
     };
 
-    if (isSupported) {
-      setupMessageListener();
-    }
-  }, [toast, isSupported]);
+    let unsubscribe: (() => void) | undefined;
 
-  return { fcmToken, isSupported };
+    setupMessageListener().then((unsub) => {
+      unsubscribe = unsub;
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [fcmToken, toast]);
+
+  const requestPermission = async () => {
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      
+      if (permission === 'granted') {
+        const token = await requestNotificationPermission();
+        if (token) {
+          setFcmToken(token);
+          toast({
+            title: "Notifications enabled",
+            description: "You will now receive push notifications",
+          });
+        }
+      } else {
+        toast({
+          title: "Notifications disabled",
+          description: "Please enable notifications in your browser settings",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      toast({
+        title: "Error",
+        description: "Failed to enable notifications",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const showNotification = (title: string, body: string, icon?: string) => {
+    if (Notification.permission === 'granted') {
+      const notification = new Notification(title, {
+        body,
+        icon: icon || '/favicon.ico',
+        badge: '/favicon.ico',
+        requireInteraction: false,
+        silent: false
+      });
+
+      // Auto-close after 5 seconds
+      setTimeout(() => {
+        notification.close();
+      }, 5000);
+
+      return notification;
+    }
+  };
+
+  return {
+    fcmToken,
+    notificationPermission,
+    requestPermission,
+    showNotification,
+    isSupported: 'Notification' in window
+  };
 };
