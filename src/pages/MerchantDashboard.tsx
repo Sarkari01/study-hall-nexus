@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Plus,
   QrCode,
@@ -18,19 +19,39 @@ import {
   Building2,
   Tag,
   MapPin,
-  X,
-  AirVent,
-  Car
+  X
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import { useToast } from "@/hooks/use-toast";
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState(0);
-  const [amenities, setAmenities] = useState({
-    ac: false,
-    parking: false
+  const { toast } = useToast();
+
+  // Current logged-in merchant (auto-filled)
+  const currentMerchant = {
+    id: 1,
+    name: "Sneha Patel",
+    businessName: "StudySpace Pro",
+    email: "sneha@studyspace.com"
+  };
+
+  const [formData, setFormData] = useState({
+    title: '',
+    location: '',
+    gpsLocation: { lat: 0, lng: 0 },
+    rows: '',
+    seatsPerRow: '',
+    pricePerDay: '',
+    pricePerWeek: '',
+    pricePerMonth: '',
+    description: '',
+    amenities: {
+      ac: false,
+      parking: false
+    }
   });
 
   const stats = [
@@ -164,8 +185,92 @@ const MerchantDashboard = () => {
     setMainImageIndex(index);
   };
 
-  const handleAmenityChange = (amenity: string, checked: boolean) => {
-    setAmenities(prev => ({ ...prev, [amenity]: checked }));
+  const handleLocationSelect = (location: string, coordinates: { lat: number; lng: number }) => {
+    setFormData(prev => ({
+      ...prev,
+      location,
+      gpsLocation: coordinates
+    }));
+  };
+
+  const generateLayout = (rows: number, seatsPerRow: number): string[] => {
+    const layout = [];
+    for (let i = 0; i < rows; i++) {
+      const rowLetter = String.fromCharCode(65 + i); // A, B, C, etc.
+      for (let j = 1; j <= seatsPerRow; j++) {
+        layout.push(`${rowLetter}${j}`);
+      }
+    }
+    return layout;
+  };
+
+  const handleCreateStudyHall = () => {
+    try {
+      const rows = parseInt(formData.rows);
+      const seatsPerRow = parseInt(formData.seatsPerRow);
+      
+      if (!formData.title || !formData.location || !rows || !seatsPerRow) {
+        toast({
+          title: "Error",
+          description: "Please fill all required fields",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create study hall with current merchant auto-filled
+      const newStudyHall = {
+        title: formData.title,
+        merchantId: currentMerchant.id,
+        merchantName: currentMerchant.name,
+        location: formData.location,
+        gpsLocation: formData.gpsLocation,
+        capacity: rows * seatsPerRow,
+        layout: generateLayout(rows, seatsPerRow),
+        pricing: {
+          daily: parseFloat(formData.pricePerDay),
+          weekly: parseFloat(formData.pricePerWeek),
+          monthly: parseFloat(formData.pricePerMonth)
+        },
+        amenities: Object.entries(formData.amenities)
+          .filter(([_, value]) => value)
+          .map(([key, _]) => key === 'ac' ? 'AC' : 'Parking'),
+        description: formData.description,
+        images: selectedImages
+      };
+
+      console.log('Creating study hall:', newStudyHall);
+
+      // Reset form
+      setFormData({
+        title: '',
+        location: '',
+        gpsLocation: { lat: 0, lng: 0 },
+        rows: '',
+        seatsPerRow: '',
+        pricePerDay: '',
+        pricePerWeek: '',
+        pricePerMonth: '',
+        description: '',
+        amenities: {
+          ac: false,
+          parking: false
+        }
+      });
+      setSelectedImages([]);
+      setMainImageIndex(0);
+
+      toast({
+        title: "Success",
+        description: "Study hall created successfully! It's now pending approval.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create study hall",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -180,7 +285,7 @@ const MerchantDashboard = () => {
       <main className="flex-1 p-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Merchant Dashboard</h1>
-          <p className="text-gray-600">Manage your study hall operations</p>
+          <p className="text-gray-600">Welcome back, {currentMerchant.name}!</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -250,18 +355,48 @@ const MerchantDashboard = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Create New Study Hall</CardTitle>
+                  <p className="text-sm text-gray-600">Merchant: {currentMerchant.name} ({currentMerchant.businessName})</p>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
                     <Label htmlFor="hallName">Study Hall Name</Label>
-                    <Input id="hallName" placeholder="e.g., Prime Study Zone - Ground Floor" />
+                    <Input 
+                      id="hallName" 
+                      value={formData.title}
+                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g., Prime Study Zone - Ground Floor" 
+                    />
                   </div>
                   
                   <div>
-                    <Label htmlFor="location">Location</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input id="location" placeholder="e.g., Connaught Place, New Delhi" className="pl-10" />
+                    <Label htmlFor="location">Location with GPS</Label>
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input 
+                          id="location" 
+                          value={formData.location}
+                          onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                          placeholder="e.g., Connaught Place, New Delhi" 
+                          className="pl-10" 
+                        />
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        GPS: Lat {formData.gpsLocation.lat.toFixed(6)}, Lng {formData.gpsLocation.lng.toFixed(6)}
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          // Simulate GPS location capture
+                          const lat = 28.6315 + (Math.random() - 0.5) * 0.1;
+                          const lng = 77.2167 + (Math.random() - 0.5) * 0.1;
+                          handleLocationSelect(formData.location, { lat, lng });
+                        }}
+                      >
+                        📍 Capture GPS Location
+                      </Button>
                     </div>
                   </div>
 
@@ -334,18 +469,42 @@ const MerchantDashboard = () => {
                   </div>
 
                   <div>
-                    <Label>Custom Layout Configuration</Label>
+                    <Label>Cabin Layout Configuration (Movie Theater Style)</Label>
                     <div className="grid grid-cols-2 gap-4 mt-2">
                       <div>
                         <Label htmlFor="rows">Number of Rows</Label>
-                        <Input id="rows" placeholder="6" type="number" min="1" max="10" />
+                        <Input 
+                          id="rows" 
+                          value={formData.rows}
+                          onChange={(e) => setFormData(prev => ({ ...prev, rows: e.target.value }))}
+                          placeholder="6" 
+                          type="number" 
+                          min="1" 
+                          max="10" 
+                        />
                       </div>
                       <div>
                         <Label htmlFor="cols">Seats per Row</Label>
-                        <Input id="cols" placeholder="5" type="number" min="1" max="10" />
+                        <Input 
+                          id="cols" 
+                          value={formData.seatsPerRow}
+                          onChange={(e) => setFormData(prev => ({ ...prev, seatsPerRow: e.target.value }))}
+                          placeholder="5" 
+                          type="number" 
+                          min="1" 
+                          max="10" 
+                        />
                       </div>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">Layout will be: A1, A2... B1, B2... etc.</p>
+                    {formData.rows && formData.seatsPerRow && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded">
+                        <p className="text-sm text-gray-600">
+                          Layout Preview: {generateLayout(parseInt(formData.rows), parseInt(formData.seatsPerRow)).slice(0, 6).join(', ')}
+                          {parseInt(formData.rows) * parseInt(formData.seatsPerRow) > 6 && '...'}
+                        </p>
+                        <p className="text-sm font-medium">Total Capacity: {parseInt(formData.rows || '0') * parseInt(formData.seatsPerRow || '0')} seats</p>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -354,23 +513,27 @@ const MerchantDashboard = () => {
                       <div className="flex items-center space-x-2">
                         <Checkbox 
                           id="ac" 
-                          checked={amenities.ac}
-                          onCheckedChange={(checked) => handleAmenityChange('ac', checked as boolean)}
+                          checked={formData.amenities.ac}
+                          onCheckedChange={(checked) => setFormData(prev => ({
+                            ...prev,
+                            amenities: { ...prev.amenities, ac: checked as boolean }
+                          }))}
                         />
                         <Label htmlFor="ac" className="flex items-center gap-2">
-                          <AirVent className="h-4 w-4" />
-                          Air Conditioning (AC)
+                          ❄️ Air Conditioning (AC)
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox 
                           id="parking" 
-                          checked={amenities.parking}
-                          onCheckedChange={(checked) => handleAmenityChange('parking', checked as boolean)}
+                          checked={formData.amenities.parking}
+                          onCheckedChange={(checked) => setFormData(prev => ({
+                            ...prev,
+                            amenities: { ...prev.amenities, parking: checked as boolean }
+                          }))}
                         />
                         <Label htmlFor="parking" className="flex items-center gap-2">
-                          <Car className="h-4 w-4" />
-                          Parking Available
+                          🚗 Parking Available
                         </Label>
                       </div>
                     </div>
@@ -380,21 +543,48 @@ const MerchantDashboard = () => {
                     <Label>Flexible Pricing</Label>
                     <div className="grid grid-cols-3 gap-4 mt-2">
                       <div>
-                        <Label htmlFor="dailyPrice">Per Day</Label>
-                        <Input id="dailyPrice" placeholder="₹50" />
+                        <Label htmlFor="dailyPrice">📅 Per Day</Label>
+                        <Input 
+                          id="dailyPrice" 
+                          value={formData.pricePerDay}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerDay: e.target.value }))}
+                          placeholder="₹50" 
+                        />
                       </div>
                       <div>
-                        <Label htmlFor="weeklyPrice">Per Week</Label>
-                        <Input id="weeklyPrice" placeholder="₹300" />
+                        <Label htmlFor="weeklyPrice">📆 Per Week</Label>
+                        <Input 
+                          id="weeklyPrice" 
+                          value={formData.pricePerWeek}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerWeek: e.target.value }))}
+                          placeholder="₹300" 
+                        />
                       </div>
                       <div>
-                        <Label htmlFor="monthlyPrice">Per Month</Label>
-                        <Input id="monthlyPrice" placeholder="₹1000" />
+                        <Label htmlFor="monthlyPrice">🗓️ Per Month</Label>
+                        <Input 
+                          id="monthlyPrice" 
+                          value={formData.pricePerMonth}
+                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerMonth: e.target.value }))}
+                          placeholder="₹1000" 
+                        />
                       </div>
                     </div>
                   </div>
+
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Describe your study hall..."
+                    />
+                  </div>
                   
-                  <Button className="w-full">Create Study Hall</Button>
+                  <Button className="w-full" onClick={handleCreateStudyHall}>
+                    Create Study Hall
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -424,16 +614,14 @@ const MerchantDashboard = () => {
                             <span>Amenities:</span>
                             {hall.amenities.map((amenity, i) => (
                               <Badge key={i} variant="secondary" className="text-xs">
-                                {amenity === 'AC' && <AirVent className="h-3 w-3 mr-1" />}
-                                {amenity === 'Parking' && <Car className="h-3 w-3 mr-1" />}
-                                {amenity}
+                                {amenity === 'AC' ? '❄️' : '🚗'} {amenity}
                               </Badge>
                             ))}
                           </div>
                           <div className="flex items-center gap-4 text-xs">
-                            <span>Daily: ₹{hall.pricing.daily}</span>
-                            <span>Weekly: ₹{hall.pricing.weekly}</span>
-                            <span>Monthly: ₹{hall.pricing.monthly}</span>
+                            <span>📅 Daily: ₹{hall.pricing.daily}</span>
+                            <span>📆 Weekly: ₹{hall.pricing.weekly}</span>
+                            <span>🗓️ Monthly: ₹{hall.pricing.monthly}</span>
                           </div>
                         </div>
                         
