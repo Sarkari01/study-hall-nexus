@@ -87,12 +87,12 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
   };
 
   return (
-    <Sidebar className="border-r border-gray-100 bg-white w-72">
-      <SidebarHeader className="p-6 border-b border-gray-50">
+    <Sidebar className="border-r border-green-100 bg-white w-72">
+      <SidebarHeader className="p-6 border-b border-green-50">
         <div className="space-y-4">
           <div>
-            <h2 className="text-gray-900 font-bold text-2xl mb-1">Sarkari Ninja</h2>
-            <p className="text-sm text-gray-500">Advanced Management System</p>
+            <h2 className="text-green-800 font-bold text-2xl mb-1">Sarkari Ninja</h2>
+            <p className="text-sm text-green-600">Advanced Management System</p>
           </div>
         </div>
       </SidebarHeader>
@@ -111,12 +111,12 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
                   >
                     <button className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left transition-all duration-200 ${
                       activeTab === item.value 
-                        ? 'bg-blue-600 text-white' 
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-green-600 text-white shadow-md' 
+                        : 'text-gray-700 hover:bg-green-50 hover:text-green-700'
                     }`}>
                       <div className="flex items-center space-x-3">
                         <div className={`flex-shrink-0 ${
-                          activeTab === item.value ? 'text-white' : 'text-gray-400'
+                          activeTab === item.value ? 'text-white' : 'text-green-500'
                         }`}>
                           <item.icon className="h-5 w-5" />
                         </div>
@@ -134,7 +134,7 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
                             className={`text-xs px-2 py-0.5 font-medium ${
                               activeTab === item.value 
                                 ? 'bg-white/20 text-white border-white/30' 
-                                : 'bg-gray-100 text-gray-600 border-gray-200'
+                                : 'bg-green-100 text-green-700 border-green-200'
                             }`}
                           >
                             {item.badge}
@@ -142,7 +142,7 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
                         )}
                         {item.hasChevron && (
                           <ChevronRight className={`h-4 w-4 ${
-                            activeTab === item.value ? 'text-white' : 'text-gray-400'
+                            activeTab === item.value ? 'text-white' : 'text-green-500'
                           }`} />
                         )}
                       </div>
@@ -155,17 +155,17 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-gray-100">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+      <SidebarFooter className="p-4 border-t border-green-100">
+        <div className="flex items-center space-x-3 p-3 rounded-lg bg-green-50">
           <Avatar className="h-10 w-10">
             <AvatarImage src="/placeholder-avatar.jpg" />
-            <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold text-sm">
+            <AvatarFallback className="bg-green-100 text-green-700 font-semibold text-sm">
               {getInitials(merchantName)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 truncate">{merchantName}</p>
-            <p className="text-xs text-gray-500 truncate">{businessName}</p>
+            <p className="text-sm font-semibold text-green-800 truncate">{merchantName}</p>
+            <p className="text-xs text-green-600 truncate">{businessName}</p>
           </div>
         </div>
       </SidebarFooter>
