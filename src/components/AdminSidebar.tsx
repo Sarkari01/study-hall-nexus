@@ -22,17 +22,12 @@ import {
   Code,
   Package,
   Gift,
-  Wallet,
-  Percent,
   Bell,
-  LogOut,
-  User,
   Shield
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
 
 interface AdminSidebarItem {
   id: string;
@@ -243,22 +238,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   expandedItems,
   onToggleExpand
 }) => {
-  const { toast } = useToast();
-
-  const handleLogout = () => {
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-      variant: "default",
-    });
-    window.location.href = '/';
-  };
-
   return (
     <div className="w-72 bg-gradient-to-b from-slate-50 to-white border-r border-slate-200/60 min-h-screen flex flex-col shadow-sm">
       {/* Header Section */}
       <div className="p-6 border-b border-slate-200/60">
-        <div className="flex items-center space-x-3 mb-4">
+        <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-lg">
             <Shield className="h-6 w-6 text-white" />
           </div>
@@ -363,31 +347,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             )}
           </div>
         ))}
-      </div>
-
-      {/* Admin Profile & Logout Section */}
-      <div className="border-t border-slate-200/60 p-4 bg-slate-50/50">
-        <div className="flex items-center space-x-3 mb-4 p-3 rounded-xl bg-white border border-slate-200/60 shadow-sm">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md">
-            <User className="h-5 w-5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-900 truncate">
-              Admin User
-            </p>
-            <p className="text-xs text-slate-500 truncate">
-              admin@sarkarininja.com
-            </p>
-          </div>
-        </div>
-        <Button 
-          variant="outline" 
-          className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-all duration-200 shadow-sm"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
-        </Button>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Search, 
   Bell, 
@@ -10,7 +11,10 @@ import {
   Calendar,
   Users,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  LogOut,
+  User,
+  ChevronDown
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -20,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminHeaderProps {
   activeModule: string;
@@ -27,6 +32,8 @@ interface AdminHeaderProps {
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ activeModule, onModuleChange }) => {
+  const { toast } = useToast();
+
   const getModuleTitle = (module: string) => {
     const titles: { [key: string]: string } = {
       'dashboard': 'Dashboard Overview',
@@ -55,6 +62,15 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ activeModule, onModuleChange 
     return descriptions[module] || 'Advanced administrative controls and monitoring';
   };
 
+  const handleLogout = () => {
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out.",
+      variant: "default",
+    });
+    window.location.href = '/';
+  };
+
   return (
     <div className="bg-white border-b border-slate-200/60 shadow-sm">
       {/* Main Header */}
@@ -72,7 +88,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ activeModule, onModuleChange 
             </div>
           </div>
 
-          {/* Right Section - Actions */}
+          {/* Right Section - Actions, Profile & Logout */}
           <div className="flex items-center space-x-4">
             {/* Search */}
             <div className="relative">
@@ -112,7 +128,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ activeModule, onModuleChange 
                   </Badge>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuContent align="end" className="w-80 bg-white z-50">
                 <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
@@ -144,6 +160,45 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ activeModule, onModuleChange 
             >
               <Settings className="h-5 w-5" />
             </Button>
+
+            {/* Admin Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 transition-all duration-200">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" alt="Admin" />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-700 text-white text-sm font-medium">
+                      AU
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="hidden md:block text-left">
+                    <p className="text-sm font-semibold text-slate-900">Admin User</p>
+                    <p className="text-xs text-slate-500">admin@sarkarininja.com</p>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white z-50">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="h-4 w-4 mr-2" />
+                  Profile Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Account Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
