@@ -11,9 +11,15 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import MerchantSidebar from "@/components/MerchantSidebar";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import ChatSystem from "@/components/chat/ChatSystem";
+import MerchantAnalytics from "@/components/merchant/MerchantAnalytics";
+import MerchantBookings from "@/components/merchant/MerchantBookings";
+import MerchantPayments from "@/components/merchant/MerchantPayments";
+import MerchantProfile from "@/components/merchant/MerchantProfile";
+import MerchantSettings from "@/components/merchant/MerchantSettings";
+import SubscriptionStatus from "@/components/merchant/SubscriptionStatus";
 
 const MerchantDashboard = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
@@ -125,145 +131,148 @@ const MerchantDashboard = () => {
     setIsViewOpen(true);
   };
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return (
-          <div className="space-y-6">
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
+  const renderDashboardContent = () => {
+    return (
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => (
+            <Card key={index} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                    <p className={`text-sm ${stat.color} flex items-center mt-1`}>
+                      {stat.change}
+                    </p>
+                  </div>
+                  <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
+                    {stat.icon}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => setIsFormOpen(true)}
+              >
+                <Plus className="h-6 w-6 mb-2" />
+                Add Study Hall
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => setActiveTab("bookings")}
+              >
+                <Calendar className="h-6 w-6 mb-2" />
+                View Bookings
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-20 flex-col"
+                onClick={() => setActiveTab("analytics")}
+              >
+                <TrendingUp className="h-6 w-6 mb-2" />
+                Analytics
+              </Button>
+              <Button variant="outline" className="h-20 flex-col">
+                <DollarSign className="h-6 w-6 mb-2" />
+                Revenue Reports
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Study Halls */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Your Study Halls</CardTitle>
+              <Button onClick={() => setActiveTab("study-halls")} variant="outline" size="sm">
+                View All
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {studyHalls.slice(0, 3).map((hall) => (
+                <Card key={hall.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      {hall.mainImage && (
+                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                          <img
+                            src={hall.mainImage}
+                            alt={hall.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
                       <div>
-                        <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                        <p className={`text-sm ${stat.color} flex items-center mt-1`}>
-                          {stat.change}
-                        </p>
+                        <h3 className="font-medium text-lg">{hall.name}</h3>
+                        <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                          <MapPin className="h-4 w-4" />
+                          <span>{hall.location}</span>
+                        </div>
                       </div>
-                      <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
-                        {stat.icon}
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4 text-gray-400" />
+                          <span>{hall.capacity} seats</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                          <span>{hall.rating}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-bold text-green-600">₹{hall.pricePerDay}/day</span>
+                        <Button size="sm" variant="outline" onClick={() => openViewModal(hall)}>
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
+              
+              {studyHalls.length === 0 && (
+                <Card className="col-span-full">
+                  <CardContent className="p-8 text-center">
+                    <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Study Halls Yet</h3>
+                    <p className="text-gray-600 mb-4">Create your first study hall to start accepting bookings</p>
+                    <Button onClick={() => setIsFormOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Study Hall
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex-col"
-                    onClick={() => setIsFormOpen(true)}
-                  >
-                    <Plus className="h-6 w-6 mb-2" />
-                    Add Study Hall
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex-col"
-                    onClick={() => setActiveTab("bookings")}
-                  >
-                    <Calendar className="h-6 w-6 mb-2" />
-                    View Bookings
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="h-20 flex-col"
-                    onClick={() => setActiveTab("analytics")}
-                  >
-                    <TrendingUp className="h-6 w-6 mb-2" />
-                    Analytics
-                  </Button>
-                  <Button variant="outline" className="h-20 flex-col">
-                    <DollarSign className="h-6 w-6 mb-2" />
-                    Revenue Reports
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Study Halls */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Your Study Halls</CardTitle>
-                  <Button onClick={() => setActiveTab("study-halls")} variant="outline" size="sm">
-                    View All
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {studyHalls.slice(0, 3).map((hall) => (
-                    <Card key={hall.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          {hall.mainImage && (
-                            <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                              <img
-                                src={hall.mainImage}
-                                alt={hall.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                          <div>
-                            <h3 className="font-medium text-lg">{hall.name}</h3>
-                            <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                              <MapPin className="h-4 w-4" />
-                              <span>{hall.location}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-1">
-                              <Users className="h-4 w-4 text-gray-400" />
-                              <span>{hall.capacity} seats</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                              <span>{hall.rating}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-lg font-bold text-green-600">₹{hall.pricePerDay}/day</span>
-                            <Button size="sm" variant="outline" onClick={() => openViewModal(hall)}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  
-                  {studyHalls.length === 0 && (
-                    <Card className="col-span-full">
-                      <CardContent className="p-8 text-center">
-                        <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No Study Halls Yet</h3>
-                        <p className="text-gray-600 mb-4">Create your first study hall to start accepting bookings</p>
-                        <Button onClick={() => setIsFormOpen(true)}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create Study Hall
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return renderDashboardContent();
       case "study-halls":
         return (
           <div className="space-y-6">
@@ -355,27 +364,22 @@ const MerchantDashboard = () => {
         );
 
       case "bookings":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Bookings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-500 text-center py-8">Booking management coming soon...</p>
-            </CardContent>
-          </Card>
-        );
+        return <MerchantBookings />;
 
       case "analytics":
+        return <MerchantAnalytics />;
+
+      case "payments":
+        return <MerchantPayments />;
+
+      case "subscription":
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Analytics Dashboard</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-500 text-center py-8">Analytics dashboard coming soon...</p>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">Subscription Management</h2>
+            </div>
+            <SubscriptionStatus merchantId={currentMerchant.id.toString()} />
+          </div>
         );
 
       case "community":
@@ -399,52 +403,13 @@ const MerchantDashboard = () => {
         );
 
       case "profile":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Merchant Profile</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Business Name</label>
-                  <p className="text-lg">{currentMerchant.businessName}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Owner Name</label>
-                  <p className="text-lg">{currentMerchant.name}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Email</label>
-                  <p className="text-lg">{currentMerchant.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Phone</label>
-                  <p className="text-lg">{currentMerchant.phone}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Location</label>
-                  <p className="text-lg">{currentMerchant.location}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
+        return <MerchantProfile />;
 
       case "settings":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-500 text-center py-8">Settings panel coming soon...</p>
-            </CardContent>
-          </Card>
-        );
+        return <MerchantSettings />;
 
       default:
-        return null;
+        return renderDashboardContent();
     }
   };
 
