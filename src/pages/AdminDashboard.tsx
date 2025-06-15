@@ -24,6 +24,9 @@ import AIChatbot from "@/components/ai/AIChatbot";
 import ContentModerator from "@/components/ai/ContentModerator";
 import SmartTextAssistant from "@/components/ai/SmartTextAssistant";
 import AIAnalyticsDashboard from "@/components/ai/AIAnalyticsDashboard";
+import RoleManagement from "@/components/admin/RoleManagement";
+import UserRoleAssignment from "@/components/admin/UserRoleAssignment";
+import PermissionChecker from "@/components/admin/PermissionChecker";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -121,86 +124,154 @@ const AdminDashboard = () => {
         );
       case "students":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Students Management</h2>
-              <Button>Add New Student</Button>
+          <PermissionChecker permission="students.read" fallback={
+            <div className="text-center py-8">
+              <p className="text-gray-500">You don't have permission to view students.</p>
             </div>
-            <StudentsTable />
-          </div>
+          }>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Students Management</h2>
+                <PermissionChecker permission="students.write">
+                  <Button>Add New Student</Button>
+                </PermissionChecker>
+              </div>
+              <StudentsTable />
+            </div>
+          </PermissionChecker>
         );
       case "merchants":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Merchants Management</h2>
-              <Button>Add New Merchant</Button>
+          <PermissionChecker permission="merchants.read" fallback={
+            <div className="text-center py-8">
+              <p className="text-gray-500">You don't have permission to view merchants.</p>
             </div>
-            <MerchantsTable />
-          </div>
+          }>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Merchants Management</h2>
+                <PermissionChecker permission="merchants.write">
+                  <Button>Add New Merchant</Button>
+                </PermissionChecker>
+              </div>
+              <MerchantsTable />
+            </div>
+          </PermissionChecker>
         );
       case "study-halls":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
-              <Button>Add New Study Hall</Button>
+          <PermissionChecker permission="study_halls.read" fallback={
+            <div className="text-center py-8">
+              <p className="text-gray-500">You don't have permission to view study halls.</p>
             </div>
-            <StudyHallsTable />
-          </div>
+          }>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
+                <PermissionChecker permission="study_halls.write">
+                  <Button>Add New Study Hall</Button>
+                </PermissionChecker>
+              </div>
+              <StudyHallsTable />
+            </div>
+          </PermissionChecker>
         );
       case "payments":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Payment Transactions</h2>
-              <Button>Export Payments</Button>
+          <PermissionChecker permission="payments.read" fallback={
+            <div className="text-center py-8">
+              <p className="text-gray-500">You don't have permission to view payments.</p>
             </div>
-            <PaymentsTable />
-          </div>
+          }>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Payment Transactions</h2>
+                <PermissionChecker permission="payments.export">
+                  <Button>Export Payments</Button>
+                </PermissionChecker>
+              </div>
+              <PaymentsTable />
+            </div>
+          </PermissionChecker>
+        );
+      case "role-management":
+        return (
+          <PermissionChecker permission="users.roles" fallback={
+            <div className="text-center py-8">
+              <p className="text-gray-500">You don't have permission to manage roles.</p>
+            </div>
+          }>
+            <RoleManagement />
+          </PermissionChecker>
+        );
+      case "user-roles":
+        return (
+          <PermissionChecker permission="users.roles" fallback={
+            <div className="text-center py-8">
+              <p className="text-gray-500">You don't have permission to assign user roles.</p>
+            </div>
+          }>
+            <UserRoleAssignment />
+          </PermissionChecker>
         );
       case "transactions":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Transaction Ledger</h2>
-              <Button>Export Transactions</Button>
+          <PermissionChecker permission="payments.read">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Transaction Ledger</h2>
+                <PermissionChecker permission="payments.export">
+                  <Button>Export Transactions</Button>
+                </PermissionChecker>
+              </div>
+              <TransactionsTable />
             </div>
-            <TransactionsTable />
-          </div>
+          </PermissionChecker>
         );
       case "settle-now":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Settle Now (Payouts)</h2>
-              <Button>Process All Eligible</Button>
+          <PermissionChecker permission="payments.process">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Settle Now (Payouts)</h2>
+                <Button>Process All Eligible</Button>
+              </div>
+              <SettleNowTable />
             </div>
-            <SettleNowTable />
-          </div>
+          </PermissionChecker>
         );
       case "locations":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Locations Management</h2>
-              <Button>Add New Location</Button>
+          <PermissionChecker permission="study_halls.read">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Locations Management</h2>
+                <PermissionChecker permission="study_halls.write">
+                  <Button>Add New Location</Button>
+                </PermissionChecker>
+              </div>
+              <LocationsTable />
             </div>
-            <LocationsTable />
-          </div>
+          </PermissionChecker>
         );
       case "leads":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Leads Management</h2>
-              <Button>Export Leads</Button>
+          <PermissionChecker permission="users.read">
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Leads Management</h2>
+                <Button>Export Leads</Button>
+              </div>
+              <LeadsTable />
             </div>
-            <LeadsTable />
-          </div>
+          </PermissionChecker>
         );
       case "banners":
-        return <BannerManager />;
+        return (
+          <PermissionChecker permission="settings.write">
+            <BannerManager />
+          </PermissionChecker>
+        );
       case "community":
         return <CommunityFeed />;
       case "chat":
@@ -208,26 +279,50 @@ const AdminDashboard = () => {
       case "ai-chatbot":
         return <AIChatbot apiKey={getDeepSeekApiKey()} userType="admin" />;
       case "content-moderation":
-        return <ContentModerator apiKey={getDeepSeekApiKey()} />;
+        return (
+          <PermissionChecker permission="settings.write">
+            <ContentModerator apiKey={getDeepSeekApiKey()} />
+          </PermissionChecker>
+        );
       case "smart-text-assistant":
         return <SmartTextAssistant apiKey={getDeepSeekApiKey()} />;
       case "ai-analytics":
-        return <AIAnalyticsDashboard apiKey={getDeepSeekApiKey()} />;
+        return (
+          <PermissionChecker permission="reports.read">
+            <AIAnalyticsDashboard apiKey={getDeepSeekApiKey()} />
+          </PermissionChecker>
+        );
       case "developer-management":
-        return <DeveloperManagement />;
+        return (
+          <PermissionChecker permission="settings.write" fallback={
+            <div className="text-center py-8">
+              <p className="text-gray-500">You don't have permission to access developer settings.</p>
+            </div>
+          }>
+            <DeveloperManagement />
+          </PermissionChecker>
+        );
       case "daily-revenue":
       case "weekly-revenue":
       case "monthly-revenue":
       case "merchant-revenue":
       case "location-revenue":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Revenue Reports & Analytics</h2>
-              <Button>Export Report</Button>
+          <PermissionChecker permission="reports.read" fallback={
+            <div className="text-center py-8">
+              <p className="text-gray-500">You don't have permission to view reports.</p>
             </div>
-            <RevenueReports reportType={activeTab} />
-          </div>
+          }>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Revenue Reports & Analytics</h2>
+                <PermissionChecker permission="reports.export">
+                  <Button>Export Report</Button>
+                </PermissionChecker>
+              </div>
+              <RevenueReports reportType={activeTab} />
+            </div>
+          </PermissionChecker>
         );
       default:
         return (
