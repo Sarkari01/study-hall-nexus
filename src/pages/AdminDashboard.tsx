@@ -17,32 +17,41 @@ import {
   FileText,
   Bell
 } from "lucide-react";
-import Sidebar from "@/components/Sidebar";
+import AdminSidebar from "@/components/AdminSidebar";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("students");
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  const handleToggleExpand = (itemId: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
 
   const stats = [
+    {
+      title: "Total Students",
+      value: "2,350",
+      change: "+15.3%",
+      icon: <Users className="h-5 w-5" />,
+      color: "text-purple-600"
+    },
+    {
+      title: "Active Merchants",
+      value: "186",
+      change: "+8.2%",
+      icon: <Building2 className="h-5 w-5" />,
+      color: "text-blue-600"
+    },
     {
       title: "Total Revenue",
       value: "₹2,45,680",
       change: "+12.5%",
       icon: <DollarSign className="h-5 w-5" />,
       color: "text-green-600"
-    },
-    {
-      title: "Bookings Today",
-      value: "186",
-      change: "+8.2%",
-      icon: <Calendar className="h-5 w-5" />,
-      color: "text-blue-600"
-    },
-    {
-      title: "Active Users",
-      value: "2,350",
-      change: "+15.3%",
-      icon: <Users className="h-5 w-5" />,
-      color: "text-purple-600"
     },
     {
       title: "Growth Rate",
@@ -53,48 +62,160 @@ const AdminDashboard = () => {
     }
   ];
 
-  const settlements = [
-    { merchant: "Central Study Hub", amount: "₹15,680", status: "Completed", date: "Today" },
-    { merchant: "Elite Library", amount: "₹12,450", status: "Pending", date: "Yesterday" },
-    { merchant: "Study Zone Pro", amount: "₹8,920", status: "Processing", date: "2 days ago" },
-    { merchant: "Focus Point", amount: "₹22,150", status: "Completed", date: "3 days ago" }
-  ];
-
-  const merchants = [
-    { name: "Central Study Hub", location: "Mumbai", halls: 3, status: "Active" },
-    { name: "Elite Library", location: "Delhi", halls: 2, status: "Active" },
-    { name: "Study Zone Pro", location: "Bangalore", halls: 4, status: "Pending" },
-    { name: "Focus Point", location: "Pune", halls: 1, status: "Active" }
-  ];
-
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <TrendingUp className="h-5 w-5" /> },
-    { id: "settlements", label: "Settlements", icon: <DollarSign className="h-5 w-5" /> },
-    { id: "merchants", label: "Merchants", icon: <Building2 className="h-5 w-5" /> },
-    { id: "news", label: "News", icon: <FileText className="h-5 w-5" /> },
-    { id: "reports", label: "Reports", icon: <FileText className="h-5 w-5" /> },
-    { id: "sub-admins", label: "Sub-Admins", icon: <UserPlus className="h-5 w-5" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="h-5 w-5" /> }
-  ];
-
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar 
-        items={sidebarItems} 
-        activeItem={activeTab} 
-        onItemClick={setActiveTab}
-        title="Admin Panel"
-      />
+  const renderModuleContent = () => {
+    switch (activeTab) {
+      case "students":
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Students Management</h2>
+              <Button>Add New Student</Button>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>All Students</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Students module will be implemented in Step 2</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
       
-      <main className="flex-1 p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600">Monitor and manage your study hall network</p>
-        </div>
+      case "merchants":
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Merchants Management</h2>
+              <Button>Add New Merchant</Button>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>All Merchants</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Merchants module will be implemented in Step 3</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsContent value="dashboard" className="space-y-6">
-            {/* Stats Grid */}
+      case "study-halls":
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
+              <Button>Add New Study Hall</Button>
+            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>All Study Halls</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Study Halls module will be implemented in Step 4</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "payments":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Payments</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Transactions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Payments module will be implemented in Step 5</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "transactions":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Transactions</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Transaction Ledger</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Transactions module will be implemented in Step 6</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "settle-now":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Settle Now (Payouts)</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Payouts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Settle Now module will be implemented in Step 7</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "locations":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Locations</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Locations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Locations module will be implemented in Step 8</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "leads":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Leads</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>All Leads</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Leads module will be implemented in Step 9</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      case "daily-revenue":
+      case "weekly-revenue":
+      case "monthly-revenue":
+      case "merchant-revenue":
+      case "location-revenue":
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Revenue Reports</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Revenue Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">Revenue module will be implemented in Step 10</p>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="space-y-6">
+            {/* Dashboard Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, index) => (
                 <Card key={index} className="hover:shadow-lg transition-shadow">
@@ -116,113 +237,53 @@ const AdminDashboard = () => {
               ))}
             </div>
 
-            {/* Recent Settlements */}
+            {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Settlements</CardTitle>
+                <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {settlements.map((settlement, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{settlement.merchant}</p>
-                        <p className="text-sm text-gray-600">{settlement.date}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-semibold text-gray-900">{settlement.amount}</span>
-                        <Badge 
-                          variant={settlement.status === 'Completed' ? 'default' : 
-                                  settlement.status === 'Pending' ? 'destructive' : 'secondary'}
-                        >
-                          {settlement.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button variant="outline" className="h-20 flex-col">
+                    <Users className="h-6 w-6 mb-2" />
+                    View Students
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <Building2 className="h-6 w-6 mb-2" />
+                    Manage Merchants
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <DollarSign className="h-6 w-6 mb-2" />
+                    Process Payouts
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <TrendingUp className="h-6 w-6 mb-2" />
+                    View Reports
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
+        );
+    }
+  };
 
-          <TabsContent value="merchants" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Merchant Management</h2>
-              <Button>Add New Merchant</Button>
-            </div>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {merchants.map((merchant, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{merchant.name}</p>
-                        <p className="text-sm text-gray-600">{merchant.location} • {merchant.halls} halls</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Badge variant={merchant.status === 'Active' ? 'default' : 'secondary'}>
-                          {merchant.status}
-                        </Badge>
-                        <Button variant="outline" size="sm">Manage</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar 
+        activeItem={activeTab} 
+        onItemClick={setActiveTab}
+        expandedItems={expandedItems}
+        onToggleExpand={handleToggleExpand}
+      />
+      
+      <main className="flex-1 p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Advanced Admin Dashboard</h1>
+          <p className="text-gray-600">Comprehensive management system for study halls platform</p>
+        </div>
 
-          <TabsContent value="sub-admins" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Sub-Admin Management</h2>
-              <Button>Add Sub-Admin</Button>
-            </div>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Sub-Admin</CardTitle>
-                <p className="text-sm text-gray-600">Assign limited access to team securely.</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" placeholder="admin@example.com" />
-                  </div>
-                  <div>
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" placeholder="John Doe" />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label>Feature Access</Label>
-                  <div className="grid grid-cols-2 gap-4 mt-2">
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="settlements" className="rounded" />
-                      <Label htmlFor="settlements">Settlements</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="merchants" className="rounded" />
-                      <Label htmlFor="merchants">Merchants</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="reports" className="rounded" />
-                      <Label htmlFor="reports">Reports</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input type="checkbox" id="news" className="rounded" />
-                      <Label htmlFor="news">News Management</Label>
-                    </div>
-                  </div>
-                </div>
-                
-                <Button className="w-full">Create Sub-Admin</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {renderModuleContent()}
       </main>
     </div>
   );
