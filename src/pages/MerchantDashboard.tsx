@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Plus,
   QrCode,
@@ -15,14 +15,23 @@ import {
   Settings,
   BarChart3,
   Upload,
-  Grid3X3,
-  Tag
+  Building2,
+  Tag,
+  MapPin,
+  X,
+  AirVent,
+  Car
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [selectedLayout, setSelectedLayout] = useState("A1-F6");
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [amenities, setAmenities] = useState({
+    ac: false,
+    parking: false
+  });
 
   const stats = [
     {
@@ -50,7 +59,7 @@ const MerchantDashboard = () => {
       title: "Total Seats",
       value: "45",
       change: "0",
-      icon: <Grid3X3 className="h-5 w-5" />,
+      icon: <Building2 className="h-5 w-5" />,
       color: "text-orange-600"
     }
   ];
@@ -82,20 +91,32 @@ const MerchantDashboard = () => {
     }
   ];
 
-  const cabinGroups = [
+  const studyHalls = [
     {
-      name: "Ground Floor - Zone A",
-      seats: 20,
-      occupied: 15,
-      price: "₹50/hour",
-      layout: "A1-A20"
+      name: "Prime Study Zone - Ground Floor",
+      location: "Connaught Place, New Delhi",
+      seats: 30,
+      occupied: 22,
+      layout: "6x5 Grid (A1-F5)",
+      amenities: ["AC", "Parking"],
+      pricing: {
+        daily: 50,
+        weekly: 300,
+        monthly: 1000
+      }
     },
     {
-      name: "First Floor - Zone B",
-      seats: 25,
-      occupied: 18,
-      price: "₹60/hour",
-      layout: "B1-B25"
+      name: "Quiet Corner - First Floor",
+      location: "Karol Bagh, New Delhi",
+      seats: 20,
+      occupied: 15,
+      layout: "5x4 Grid (A1-E4)",
+      amenities: ["AC"],
+      pricing: {
+        daily: 60,
+        weekly: 350,
+        monthly: 1200
+      }
     }
   ];
 
@@ -118,49 +139,33 @@ const MerchantDashboard = () => {
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: <BarChart3 className="h-5 w-5" /> },
-    { id: "cabins", label: "Cabin Groups", icon: <Grid3X3 className="h-5 w-5" /> },
+    { id: "study-halls", label: "Study Halls", icon: <Building2 className="h-5 w-5" /> },
     { id: "bookings", label: "Bookings", icon: <Calendar className="h-5 w-5" /> },
     { id: "qr-generator", label: "QR Generator", icon: <QrCode className="h-5 w-5" /> },
     { id: "coupons", label: "Coupons", icon: <Tag className="h-5 w-5" /> },
     { id: "settings", label: "Settings", icon: <Settings className="h-5 w-5" /> }
   ];
 
-  const LayoutSelector = () => {
-    const layouts = [
-      { id: "A1-F6", name: "6x6 Grid", description: "Standard layout with 36 seats" },
-      { id: "A1-E5", name: "5x5 Grid", description: "Compact layout with 25 seats" },
-      { id: "A1-H8", name: "8x8 Grid", description: "Large layout with 64 seats" }
-    ];
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setSelectedImages(prev => [...prev, ...files]);
+  };
 
-    return (
-      <div className="space-y-3">
-        <Label>Layout Selector</Label>
-        <p className="text-sm text-gray-600">Drag to rearrange seats like a movie layout.</p>
-        <div className="grid grid-cols-1 gap-3">
-          {layouts.map((layout) => (
-            <div
-              key={layout.id}
-              className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                selectedLayout === layout.id 
-                  ? 'border-blue-600 bg-blue-50' 
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-              onClick={() => setSelectedLayout(layout.id)}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">{layout.name}</p>
-                  <p className="text-sm text-gray-600">{layout.description}</p>
-                </div>
-                <div className="w-8 h-8 bg-gray-100 rounded grid place-items-center">
-                  <Grid3X3 className="h-4 w-4" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+    if (mainImageIndex === index) {
+      setMainImageIndex(0);
+    } else if (mainImageIndex > index) {
+      setMainImageIndex(prev => prev - 1);
+    }
+  };
+
+  const setAsMainImage = (index: number) => {
+    setMainImageIndex(index);
+  };
+
+  const handleAmenityChange = (amenity: string, checked: boolean) => {
+    setAmenities(prev => ({ ...prev, [amenity]: checked }));
   };
 
   return (
@@ -232,72 +237,210 @@ const MerchantDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="cabins" className="space-y-6">
+          <TabsContent value="study-halls" className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Cabin Groups</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Cabin Group
+                Add Study Hall
               </Button>
             </div>
             
             <div className="grid lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Add New Cabin Group</CardTitle>
+                  <CardTitle>Create New Study Hall</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   <div>
-                    <Label htmlFor="groupName">Group Name</Label>
-                    <Input id="groupName" placeholder="e.g., Ground Floor - Zone A" />
-                  </div>
-                  
-                  <LayoutSelector />
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="hourlyRate">Hourly Rate</Label>
-                      <Input id="hourlyRate" placeholder="₹50" />
-                    </div>
-                    <div>
-                      <Label htmlFor="dailyRate">Daily Rate</Label>
-                      <Input id="dailyRate" placeholder="₹400" />
-                    </div>
+                    <Label htmlFor="hallName">Study Hall Name</Label>
+                    <Input id="hallName" placeholder="e.g., Prime Study Zone - Ground Floor" />
                   </div>
                   
                   <div>
-                    <Label>Upload Images</Label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                      <p className="text-xs text-gray-500">PNG, JPG up to 10MB</p>
+                    <Label htmlFor="location">Location</Label>
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input id="location" placeholder="e.g., Connaught Place, New Delhi" className="pl-10" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Upload Images (Min 1 required)</Label>
+                    <div className="space-y-4">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                        <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 mb-2">Click to upload or drag and drop</p>
+                        <p className="text-xs text-gray-500">PNG, JPG up to 10MB each</p>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <Button 
+                          variant="outline" 
+                          className="mt-2"
+                          onClick={() => document.getElementById('image-upload')?.click()}
+                        >
+                          Select Images
+                        </Button>
+                      </div>
+
+                      {selectedImages.length > 0 && (
+                        <div className="grid grid-cols-2 gap-4">
+                          {selectedImages.map((file, index) => (
+                            <div key={index} className="relative group">
+                              <div className={`border-2 rounded-lg p-2 ${index === mainImageIndex ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`Preview ${index + 1}`}
+                                  className="w-full h-24 object-cover rounded"
+                                />
+                                <div className="flex justify-between items-center mt-2">
+                                  <p className="text-xs text-gray-600 truncate">{file.name}</p>
+                                  <div className="flex gap-1">
+                                    {index !== mainImageIndex && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setAsMainImage(index)}
+                                        className="text-xs p-1"
+                                      >
+                                        Main
+                                      </Button>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => removeImage(index)}
+                                      className="text-xs p-1 text-red-600"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                              {index === mainImageIndex && (
+                                <Badge className="absolute -top-2 -right-2 bg-blue-600">Main</Badge>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label>Custom Layout Configuration</Label>
+                    <div className="grid grid-cols-2 gap-4 mt-2">
+                      <div>
+                        <Label htmlFor="rows">Number of Rows</Label>
+                        <Input id="rows" placeholder="6" type="number" min="1" max="10" />
+                      </div>
+                      <div>
+                        <Label htmlFor="cols">Seats per Row</Label>
+                        <Input id="cols" placeholder="5" type="number" min="1" max="10" />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">Layout will be: A1, A2... B1, B2... etc.</p>
+                  </div>
+
+                  <div>
+                    <Label>Amenities</Label>
+                    <div className="space-y-3 mt-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="ac" 
+                          checked={amenities.ac}
+                          onCheckedChange={(checked) => handleAmenityChange('ac', checked as boolean)}
+                        />
+                        <Label htmlFor="ac" className="flex items-center gap-2">
+                          <AirVent className="h-4 w-4" />
+                          Air Conditioning (AC)
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id="parking" 
+                          checked={amenities.parking}
+                          onCheckedChange={(checked) => handleAmenityChange('parking', checked as boolean)}
+                        />
+                        <Label htmlFor="parking" className="flex items-center gap-2">
+                          <Car className="h-4 w-4" />
+                          Parking Available
+                        </Label>
+                      </div>
                     </div>
                   </div>
                   
-                  <Button className="w-full">Create Cabin Group</Button>
+                  <div>
+                    <Label>Flexible Pricing</Label>
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                      <div>
+                        <Label htmlFor="dailyPrice">Per Day</Label>
+                        <Input id="dailyPrice" placeholder="₹50" />
+                      </div>
+                      <div>
+                        <Label htmlFor="weeklyPrice">Per Week</Label>
+                        <Input id="weeklyPrice" placeholder="₹300" />
+                      </div>
+                      <div>
+                        <Label htmlFor="monthlyPrice">Per Month</Label>
+                        <Input id="monthlyPrice" placeholder="₹1000" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button className="w-full">Create Study Hall</Button>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Existing Cabin Groups</CardTitle>
+                  <CardTitle>Existing Study Halls</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {cabinGroups.map((group, index) => (
+                    {studyHalls.map((hall, index) => (
                       <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium text-gray-900">{group.name}</h3>
-                          <Badge variant="outline">{group.layout}</Badge>
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-medium text-gray-900 mb-1">{hall.name}</h3>
+                            <div className="flex items-center text-sm text-gray-600 mb-2">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              {hall.location}
+                            </div>
+                          </div>
+                          <Badge variant="outline">{hall.layout}</Badge>
                         </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>Total Seats: {group.seats}</p>
-                          <p>Currently Occupied: {group.occupied}</p>
-                          <p>Price: {group.price}</p>
+                        
+                        <div className="text-sm text-gray-600 space-y-1 mb-3">
+                          <p>Total Seats: {hall.seats}</p>
+                          <p>Currently Occupied: {hall.occupied}</p>
+                          <div className="flex items-center gap-2">
+                            <span>Amenities:</span>
+                            {hall.amenities.map((amenity, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                {amenity === 'AC' && <AirVent className="h-3 w-3 mr-1" />}
+                                {amenity === 'Parking' && <Car className="h-3 w-3 mr-1" />}
+                                {amenity}
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-4 text-xs">
+                            <span>Daily: ₹{hall.pricing.daily}</span>
+                            <span>Weekly: ₹{hall.pricing.weekly}</span>
+                            <span>Monthly: ₹{hall.pricing.monthly}</span>
+                          </div>
                         </div>
-                        <div className="flex gap-2 mt-3">
+                        
+                        <div className="flex gap-2">
                           <Button size="sm" variant="outline">Edit</Button>
                           <Button size="sm" variant="outline">View Layout</Button>
+                          <Button size="sm" variant="outline">Images</Button>
                         </div>
                       </div>
                     ))}
@@ -320,10 +463,10 @@ const MerchantDashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label>Select Cabin Group</Label>
+                    <Label>Select Study Hall</Label>
                     <select className="w-full p-2 border rounded-lg">
-                      <option>Ground Floor - Zone A</option>
-                      <option>First Floor - Zone B</option>
+                      <option>Prime Study Zone - Ground Floor</option>
+                      <option>Quiet Corner - First Floor</option>
                     </select>
                   </div>
                   
