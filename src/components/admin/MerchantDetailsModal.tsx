@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, User, CreditCard, FileText, Upload, X, Check, AlertCircle } from "lucide-react";
+import type { Json } from "@/integrations/supabase/types";
 
 interface AddressData {
   street: string;
@@ -228,9 +230,9 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
         business_phone: data.business_phone,
         full_name: data.full_name,
         contact_number: data.contact_number,
-        business_address: data.business_address,
-        communication_address: data.communication_address,
-        bank_account_details: data.bank_account_details,
+        business_address: data.business_address as Json,
+        communication_address: data.communication_address as Json,
+        bank_account_details: data.bank_account_details as Json,
         refundable_security_deposit: data.refundable_security_deposit,
         approval_status: data.approval_status,
         verification_status: data.verification_status,
