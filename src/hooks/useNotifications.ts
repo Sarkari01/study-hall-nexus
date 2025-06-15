@@ -2,6 +2,13 @@
 import { useState, useEffect } from 'react';
 import { requestNotificationPermission, onMessageListener } from '@/config/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { updateServiceWorkerConfig } from '@/utils/serviceWorkerUtils';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 export const useNotifications = () => {
   const [fcmToken, setFcmToken] = useState<string | null>(null);
@@ -19,10 +26,29 @@ export const useNotifications = () => {
 
         setIsSupported(true);
         
+        // Update service worker with actual config
+        updateServiceWorkerConfig();
+        
         const token = await requestNotificationPermission();
         if (token) {
           setFcmToken(token);
           console.log('FCM Token stored:', token);
+          
+          // Store token in database
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase
+              .from('user_notification_tokens')
+              .upsert({
+                user_id: user.id,
+                fcm_token: token,
+                device_type: 'web',
+                is_active: true,
+                updated_at: new Date().toISOString()
+              }, {
+                onConflict: 'user_id,fcm_token'
+              });
+          }
         }
       } catch (error) {
         console.error('Error initializing FCM:', error);

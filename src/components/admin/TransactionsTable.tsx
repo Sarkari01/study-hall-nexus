@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Download, Filter, ArrowUpDown, Eye, RefreshCw } from "lucide-react";
+import { Search, Filter, ArrowUpDown, Eye, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ExportButtons from "@/components/shared/ExportButtons";
 
 interface Transaction {
   id: number;
@@ -187,12 +187,7 @@ const TransactionsTable = () => {
       return 0;
     });
 
-  const exportTransactions = () => {
-    toast({
-      title: "Export Started",
-      description: "Transaction export will be available shortly",
-    });
-  };
+  const exportColumns = ['transactionId', 'type', 'amount', 'status', 'fromAccount', 'toAccount', 'description', 'timestamp', 'feeAmount', 'netAmount', 'referenceId'];
 
   return (
     <div className="space-y-6">
@@ -235,10 +230,12 @@ const TransactionsTable = () => {
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={exportTransactions} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+            <ExportButtons 
+              data={filteredTransactions} 
+              filename="transactions" 
+              title="Transaction Ledger"
+              columns={exportColumns}
+            />
             <Button onClick={fetchTransactions} variant="outline">
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh

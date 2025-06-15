@@ -218,7 +218,6 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Payment Transactions</h2>
-              <Button>Export Payments</Button>
             </div>
             <PaymentsTable />
           </div>
@@ -228,7 +227,6 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Transaction Ledger</h2>
-              <Button>Export Transactions</Button>
             </div>
             <TransactionsTable />
           </div>
@@ -258,7 +256,6 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Leads Management</h2>
-              <Button>Export Leads</Button>
             </div>
             <LeadsTable />
           </div>
@@ -290,7 +287,6 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Revenue Reports & Analytics</h2>
-              <Button>Export Report</Button>
             </div>
             <RevenueReports reportType={activeTab} />
           </div>

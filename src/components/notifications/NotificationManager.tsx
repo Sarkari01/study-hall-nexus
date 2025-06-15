@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Bell, Send, Users, Building2, UserCheck } from "lucide-react";
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 
 const NotificationManager = () => {
   const [title, setTitle] = useState('');
@@ -28,25 +34,44 @@ const NotificationManager = () => {
 
     setSending(true);
     try {
-      // Here you would implement the actual notification sending logic
-      // This would typically involve calling a backend endpoint that uses Firebase Admin SDK
-      console.log('Sending notification:', { title, message, targetAudience });
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Mock delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      if (!session) {
+        toast({
+          title: "Error",
+          description: "Please log in to send notifications",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await supabase.functions.invoke('send-notification', {
+        body: {
+          title,
+          message,
+          targetAudience
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
       toast({
         title: "Success",
-        description: "Notification sent successfully",
+        description: `Notification sent to ${response.data.sent_count} users`,
       });
       
       setTitle('');
       setMessage('');
       setTargetAudience('all');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to send notification",
+        description: error.message || "Failed to send notification",
         variant: "destructive",
       });
     } finally {
