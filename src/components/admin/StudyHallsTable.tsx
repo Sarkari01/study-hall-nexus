@@ -240,34 +240,41 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
     console.log("Adding study hall:", data);
   };
 
-  // Create proper editData when editingStudyHall exists with all required properties
-  const editData: StudyHallFormData | null = editingStudyHall ? {
-    id: parseInt(editingStudyHall.id),
-    name: editingStudyHall.name || '',
-    merchantId: editingStudyHall.merchant_id?.toString() || '',
-    merchantName: 'Default Merchant', // Add default value
-    description: editingStudyHall.description || '',
-    location: editingStudyHall.location || '',
-    gpsLocation: { lat: 28.6139, lng: 77.2090 }, // Add default GPS location
-    capacity: editingStudyHall.capacity || 30,
-    rows: 5, // Add default value
-    seatsPerRow: 6, // Add default value
-    layout: Array.from({ length: 30 }, (_, i) => `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`), // Add default layout
-    pricePerDay: editingStudyHall.price_per_day?.toString() || '',
-    pricePerWeek: editingStudyHall.price_per_week?.toString() || '',
-    pricePerMonth: editingStudyHall.price_per_month?.toString() || '',
-    amenities: editingStudyHall.amenities || [],
-    customAmenities: [], // Add default value
-    status: editingStudyHall.status as 'draft' | 'active' | 'inactive' || 'draft',
-    images: [], // Add default value
-    mainImage: '', // Add default value
-    operatingHours: {
-      open: '09:00',
-      close: '21:00',
-      days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    },
-    qrCode: '' // Add default value
-  } : null;
+  // Helper function to convert StudyHall to StudyHallFormData
+  const convertToFormData = (studyHall: StudyHall): StudyHallFormData => {
+    return {
+      id: parseInt(studyHall.id),
+      name: studyHall.name || '',
+      merchantId: studyHall.merchant_id?.toString() || '',
+      merchantName: 'Default Merchant',
+      description: studyHall.description || '',
+      location: studyHall.location || '',
+      gpsLocation: { lat: 28.6139, lng: 77.2090 },
+      capacity: studyHall.capacity || 30,
+      rows: 5,
+      seatsPerRow: 6,
+      layout: Array.from({ length: studyHall.capacity || 30 }, (_, i) => 
+        `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`
+      ),
+      pricePerDay: studyHall.price_per_day?.toString() || '',
+      pricePerWeek: studyHall.price_per_week?.toString() || '',
+      pricePerMonth: studyHall.price_per_month?.toString() || '',
+      amenities: studyHall.amenities || [],
+      customAmenities: [],
+      status: (studyHall.status === 'maintenance' ? 'inactive' : studyHall.status) as 'draft' | 'active' | 'inactive',
+      images: [],
+      mainImage: '',
+      operatingHours: {
+        open: '09:00',
+        close: '21:00',
+        days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+      },
+      qrCode: ''
+    };
+  };
+
+  // Get editData with proper type conversion
+  const editData: StudyHallFormData | null = editingStudyHall ? convertToFormData(editingStudyHall) : null;
 
   return (
     <div className="container mx-auto py-10">
