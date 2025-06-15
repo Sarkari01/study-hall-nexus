@@ -20,6 +20,10 @@ import BannerManager from "@/components/banners/BannerManager";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import ChatSystem from "@/components/chat/ChatSystem";
 import DeveloperManagement from "@/components/admin/DeveloperManagement";
+import AIChatbot from "@/components/ai/AIChatbot";
+import ContentModerator from "@/components/ai/ContentModerator";
+import SmartTextAssistant from "@/components/ai/SmartTextAssistant";
+import AIAnalyticsDashboard from "@/components/ai/AIAnalyticsDashboard";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
