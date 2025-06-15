@@ -136,7 +136,6 @@ const AdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Students Management</h2>
-              <Button>Add New Student</Button>
             </div>
             <StudentsTable />
           </div>

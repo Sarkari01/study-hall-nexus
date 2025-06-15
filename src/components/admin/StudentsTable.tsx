@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,22 +5,23 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Search, 
   Eye, 
   Ban, 
   CheckCircle, 
   XCircle, 
-  Download, 
   Filter, 
   Calendar,
   TrendingUp,
   Users,
-  CreditCard
+  CreditCard,
+  UserPlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import StudentDetailsModal from "./StudentDetailsModal";
+import AddStudentModal from "./AddStudentModal";
+import ExportButtons from "@/components/shared/ExportButtons";
 
 interface Student {
   id: number;
@@ -44,7 +44,8 @@ const StudentsTable = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [bookingFilter, setBookingFilter] = useState<string>('all');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { toast } = useToast();
 
   // Enhanced mock data with more details
@@ -183,15 +184,11 @@ const StudentsTable = () => {
 
   const handleViewStudent = (student: Student) => {
     setSelectedStudent(student);
-    setIsModalOpen(true);
+    setIsDetailsModalOpen(true);
   };
 
-  const handleExportStudents = () => {
-    // TODO: Implement actual export functionality
-    toast({
-      title: "Export Started",
-      description: "Student data export will be ready shortly",
-    });
+  const handleAddStudent = (newStudent: Student) => {
+    setStudents(prev => [newStudent, ...prev]);
   };
 
   const filteredStudents = students.filter(student => {
@@ -221,6 +218,26 @@ const StudentsTable = () => {
     const amount = parseFloat(s.totalSpent?.replace('₹', '').replace(',', '') || '0');
     return sum + amount;
   }, 0);
+
+  // Prepare data for export
+  const exportData = filteredStudents.map(student => ({
+    'Student ID': student.id,
+    'Name': student.name,
+    'Email': student.email,
+    'Phone': student.phone,
+    'Bookings': student.bookingsCount,
+    'Total Spent': student.totalSpent,
+    'Average Session Duration': student.averageSessionDuration,
+    'Status': student.status,
+    'Member Since': student.createdAt,
+    'Last Booking': student.lastBooking || 'Never',
+    'Preferred Study Halls': student.preferredStudyHalls?.join(', ') || 'None'
+  }));
+
+  const exportColumns = [
+    'Student ID', 'Name', 'Email', 'Phone', 'Bookings', 'Total Spent',
+    'Average Session Duration', 'Status', 'Member Since', 'Last Booking', 'Preferred Study Halls'
+  ];
 
   return (
     <div className="space-y-6">
@@ -275,7 +292,7 @@ const StudentsTable = () => {
         </Card>
       </div>
 
-      {/* Enhanced Filters */}
+      {/* Enhanced Filters and Actions */}
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
@@ -315,10 +332,17 @@ const StudentsTable = () => {
               </SelectContent>
             </Select>
 
-            <Button onClick={handleExportStudents} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
+            <Button onClick={() => setIsAddModalOpen(true)} className="whitespace-nowrap">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Student
             </Button>
+
+            <ExportButtons
+              data={exportData}
+              filename="students"
+              title="Students Report"
+              columns={exportColumns}
+            />
           </div>
         </CardContent>
       </Card>
@@ -416,8 +440,15 @@ const StudentsTable = () => {
       {/* Student Details Modal */}
       <StudentDetailsModal
         student={selectedStudent}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
+
+      {/* Add Student Modal */}
+      <AddStudentModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onStudentAdded={handleAddStudent}
       />
     </div>
   );
