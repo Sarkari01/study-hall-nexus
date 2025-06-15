@@ -9,66 +9,45 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, Edit, Trash2, MapPin, Users, DollarSign, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Search, Plus, Edit, Trash2, MapPin, Users, DollarSign, CheckCircle, XCircle, Clock, Eye, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import StudyHallForm from './StudyHallForm';
+import StudyHallView from './StudyHallView';
 
 interface StudyHall {
   id: number;
-  title: string;
+  name: string;
   merchantId: number;
   merchantName: string;
   location: string;
-  gpsLocation: {
-    lat: number;
-    lng: number;
-  };
+  gpsLocation: { lat: number; lng: number };
   capacity: number;
   rows: number;
   seatsPerRow: number;
-  layout: string[];
+  layout: Array<{ id: string; status: 'available' | 'occupied' | 'maintenance' | 'disabled' }>;
   pricePerDay: number;
   pricePerWeek: number;
   pricePerMonth: number;
   amenities: string[];
-  status: 'active' | 'inactive' | 'pending' | 'rejected';
+  status: 'draft' | 'active' | 'inactive';
   rating: number;
   totalBookings: number;
   description: string;
-}
-
-interface Merchant {
-  id: number;
-  name: string;
-  businessName: string;
-  status: string;
+  images: string[];
+  mainImage: string;
+  qrCode?: string;
 }
 
 const StudyHallsTable = () => {
   const [studyHalls, setStudyHalls] = useState<StudyHall[]>([]);
-  const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedStudyHall, setSelectedStudyHall] = useState<StudyHall | null>(null);
-  const [formData, setFormData] = useState({
-    title: '',
-    merchantId: '',
-    location: '',
-    gpsLocation: { lat: 0, lng: 0 },
-    rows: '',
-    seatsPerRow: '',
-    pricePerDay: '',
-    pricePerWeek: '',
-    pricePerMonth: '',
-    description: '',
-    amenities: {
-      ac: false,
-      parking: false
-    }
-  });
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
   const mockMerchants: Merchant[] = [
@@ -80,43 +59,66 @@ const StudyHallsTable = () => {
   const mockStudyHalls: StudyHall[] = [
     {
       id: 1,
-      title: "Premium Study Room A",
+      name: "Premium Study Room A",
       merchantId: 1,
       merchantName: "Sneha Patel",
       location: "Connaught Place, New Delhi",
       gpsLocation: { lat: 28.6315, lng: 77.2167 },
-      capacity: 25,
-      rows: 5,
-      seatsPerRow: 5,
-      layout: generateLayout(5, 5),
+      capacity: 48,
+      rows: 6,
+      seatsPerRow: 8,
+      layout: Array.from({ length: 48 }, (_, i) => {
+        const row = Math.floor(i / 8);
+        const seat = (i % 8) + 1;
+        return {
+          id: `${String.fromCharCode(65 + row)}${seat}`,
+          status: Math.random() > 0.7 ? 'occupied' : 'available' as const
+        };
+      }),
       pricePerDay: 50,
       pricePerWeek: 300,
       pricePerMonth: 1000,
-      amenities: ["AC", "Parking"],
+      amenities: ["AC", "Wi-Fi", "Parking"],
       status: 'active',
       rating: 4.5,
       totalBookings: 156,
-      description: "Premium study room with modern amenities"
+      description: "Premium study room with modern amenities and comfortable seating",
+      images: [
+        "/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png",
+        "/api/placeholder/400/300"
+      ],
+      mainImage: "/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png",
+      qrCode: `${window.location.origin}/book/1`
     },
     {
       id: 2,
-      title: "Quiet Study Hall",
+      name: "Quiet Study Hall",
       merchantId: 2,
       merchantName: "Rajesh Kumar",
       location: "Karol Bagh, New Delhi",
       gpsLocation: { lat: 28.6519, lng: 77.1909 },
       capacity: 40,
-      rows: 8,
-      seatsPerRow: 5,
-      layout: generateLayout(8, 5),
+      rows: 5,
+      seatsPerRow: 8,
+      layout: Array.from({ length: 40 }, (_, i) => {
+        const row = Math.floor(i / 8);
+        const seat = (i % 8) + 1;
+        return {
+          id: `${String.fromCharCode(65 + row)}${seat}`,
+          status: Math.random() > 0.8 ? 'occupied' : 'available' as const
+        };
+      }),
       pricePerDay: 40,
       pricePerWeek: 240,
       pricePerMonth: 800,
-      amenities: ["AC"],
+      amenities: ["AC", "Water Cooler"],
       status: 'active',
       rating: 4.2,
       totalBookings: 89,
-      description: "Perfect for focused study sessions"
+      description: "Perfect for focused study sessions with minimal distractions",
+      images: ["/api/placeholder/400/300"],
+      mainImage: "/api/placeholder/400/300",
+      qrCode: `${window.location.origin}/book/2`
     }
   ];
 
@@ -140,7 +142,6 @@ const StudyHallsTable = () => {
     try {
       setTimeout(() => {
         setStudyHalls(mockStudyHalls);
-        setMerchants(mockMerchants);
         setLoading(false);
       }, 1000);
     } catch (error) {
@@ -153,200 +154,64 @@ const StudyHallsTable = () => {
     }
   };
 
-  const handleAddStudyHall = async () => {
-    try {
-      const rows = parseInt(formData.rows);
-      const seatsPerRow = parseInt(formData.seatsPerRow);
-      const selectedMerchant = merchants.find(m => m.id === parseInt(formData.merchantId));
-      
-      if (!selectedMerchant) {
-        toast({
-          title: "Error",
-          description: "Please select a merchant",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const newStudyHall: StudyHall = {
-        id: Date.now(),
-        title: formData.title,
-        merchantId: parseInt(formData.merchantId),
-        merchantName: selectedMerchant.name,
-        location: formData.location,
-        gpsLocation: formData.gpsLocation,
-        capacity: rows * seatsPerRow,
-        rows: rows,
-        seatsPerRow: seatsPerRow,
-        layout: generateLayout(rows, seatsPerRow),
-        pricePerDay: parseFloat(formData.pricePerDay),
-        pricePerWeek: parseFloat(formData.pricePerWeek),
-        pricePerMonth: parseFloat(formData.pricePerMonth),
-        description: formData.description,
-        amenities: Object.entries(formData.amenities)
-          .filter(([_, value]) => value)
-          .map(([key, _]) => key === 'ac' ? 'AC' : 'Parking'),
-        status: 'pending',
-        rating: 0,
-        totalBookings: 0
-      };
-
-      setStudyHalls(prev => [...prev, newStudyHall]);
-      resetForm();
-      setIsAddModalOpen(false);
-
-      toast({
-        title: "Success",
-        description: "Study hall added successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add study hall",
-        variant: "destructive",
-      });
-    }
+  const handleAddStudyHall = (data: any) => {
+    const newStudyHall: StudyHall = {
+      ...data,
+      id: Date.now(),
+      rating: 0,
+      totalBookings: 0,
+      qrCode: data.qrCode || `${window.location.origin}/book/${Date.now()}`
+    };
+    setStudyHalls(prev => [...prev, newStudyHall]);
   };
 
-  const handleEditStudyHall = async () => {
+  const handleEditStudyHall = (data: any) => {
     if (!selectedStudyHall) return;
-
-    try {
-      const rows = parseInt(formData.rows);
-      const seatsPerRow = parseInt(formData.seatsPerRow);
-      const selectedMerchant = merchants.find(m => m.id === parseInt(formData.merchantId));
-
-      setStudyHalls(prev => prev.map(hall => 
-        hall.id === selectedStudyHall.id 
-          ? { 
-              ...hall, 
-              title: formData.title,
-              merchantId: parseInt(formData.merchantId),
-              merchantName: selectedMerchant?.name || hall.merchantName,
-              location: formData.location,
-              gpsLocation: formData.gpsLocation,
-              capacity: rows * seatsPerRow,
-              rows: rows,
-              seatsPerRow: seatsPerRow,
-              layout: generateLayout(rows, seatsPerRow),
-              pricePerDay: parseFloat(formData.pricePerDay),
-              pricePerWeek: parseFloat(formData.pricePerWeek),
-              pricePerMonth: parseFloat(formData.pricePerMonth),
-              description: formData.description,
-              amenities: Object.entries(formData.amenities)
-                .filter(([_, value]) => value)
-                .map(([key, _]) => key === 'ac' ? 'AC' : 'Parking')
-            }
-          : hall
-      ));
-
-      setIsEditModalOpen(false);
-      setSelectedStudyHall(null);
-      resetForm();
-
-      toast({
-        title: "Success",
-        description: "Study hall updated successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update study hall",
-        variant: "destructive",
-      });
-    }
+    setStudyHalls(prev => prev.map(hall => 
+      hall.id === selectedStudyHall.id ? { ...hall, ...data } : hall
+    ));
   };
 
   const handleDeleteStudyHall = async (hallId: number) => {
     if (!confirm("Are you sure you want to delete this study hall?")) return;
-
-    try {
-      setStudyHalls(prev => prev.filter(hall => hall.id !== hallId));
-      
-      toast({
-        title: "Success",
-        description: "Study hall deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete study hall",
-        variant: "destructive",
-      });
-    }
+    setStudyHalls(prev => prev.filter(hall => hall.id !== hallId));
+    toast({
+      title: "Success",
+      description: "Study hall deleted successfully",
+    });
   };
 
   const handleStatusChange = async (hallId: number, newStatus: string) => {
-    try {
-      setStudyHalls(prev => prev.map(hall => 
-        hall.id === hallId 
-          ? { ...hall, status: newStatus as StudyHall['status'] }
-          : hall
-      ));
+    setStudyHalls(prev => prev.map(hall => 
+      hall.id === hallId 
+        ? { ...hall, status: newStatus as StudyHall['status'] }
+        : hall
+    ));
+    toast({
+      title: "Success",
+      description: `Study hall status updated to ${newStatus}`,
+    });
+  };
 
-      toast({
-        title: "Success",
-        description: `Study hall status updated to ${newStatus}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update status",
-        variant: "destructive",
-      });
-    }
+  const openViewModal = (hall: StudyHall) => {
+    setSelectedStudyHall(hall);
+    setIsViewOpen(true);
   };
 
   const openEditModal = (hall: StudyHall) => {
     setSelectedStudyHall(hall);
-    setFormData({
-      title: hall.title,
-      merchantId: hall.merchantId.toString(),
-      location: hall.location,
-      gpsLocation: hall.gpsLocation,
-      rows: hall.rows.toString(),
-      seatsPerRow: hall.seatsPerRow.toString(),
-      pricePerDay: hall.pricePerDay.toString(),
-      pricePerWeek: hall.pricePerWeek.toString(),
-      pricePerMonth: hall.pricePerMonth.toString(),
-      description: hall.description,
-      amenities: {
-        ac: hall.amenities.includes('AC'),
-        parking: hall.amenities.includes('Parking')
-      }
-    });
-    setIsEditModalOpen(true);
+    setIsEditing(true);
+    setIsFormOpen(true);
   };
 
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      merchantId: '',
-      location: '',
-      gpsLocation: { lat: 0, lng: 0 },
-      rows: '',
-      seatsPerRow: '',
-      pricePerDay: '',
-      pricePerWeek: '',
-      pricePerMonth: '',
-      description: '',
-      amenities: {
-        ac: false,
-        parking: false
-      }
-    });
-  };
-
-  const handleLocationSelect = (location: string, coordinates: { lat: number; lng: number }) => {
-    setFormData(prev => ({
-      ...prev,
-      location,
-      gpsLocation: coordinates
-    }));
+  const openAddModal = () => {
+    setSelectedStudyHall(null);
+    setIsEditing(false);
+    setIsFormOpen(true);
   };
 
   const filteredStudyHalls = studyHalls.filter(hall => {
-    const matchesSearch = hall.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = hall.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          hall.merchantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          hall.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || hall.status === statusFilter;
@@ -428,8 +293,7 @@ const StudyHallsTable = () => {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
@@ -444,199 +308,10 @@ const StudyHallsTable = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Study Hall
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Add New Study Hall</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="title">Study Hall Title</Label>
-                      <Input
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="Enter study hall title"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="merchant">Select Merchant</Label>
-                      <Select value={formData.merchantId} onValueChange={(value) => setFormData(prev => ({ ...prev, merchantId: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose merchant" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {merchants.filter(m => m.status === 'active').map(merchant => (
-                            <SelectItem key={merchant.id} value={merchant.id.toString()}>
-                              {merchant.name} - {merchant.businessName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="location">Location with GPS</Label>
-                    <div className="space-y-2">
-                      <Input
-                        id="location"
-                        value={formData.location}
-                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                        placeholder="Enter address (e.g., Connaught Place, New Delhi)"
-                      />
-                      <div className="text-xs text-gray-500">
-                        GPS: Lat {formData.gpsLocation.lat.toFixed(6)}, Lng {formData.gpsLocation.lng.toFixed(6)}
-                      </div>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          // Simulate GPS location capture
-                          const lat = 28.6315 + (Math.random() - 0.5) * 0.1;
-                          const lng = 77.2167 + (Math.random() - 0.5) * 0.1;
-                          handleLocationSelect(formData.location, { lat, lng });
-                        }}
-                      >
-                        📍 Capture GPS Location
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Cabin Layout (Movie Theater Style)</Label>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <Label htmlFor="rows">Number of Rows</Label>
-                        <Input
-                          id="rows"
-                          type="number"
-                          value={formData.rows}
-                          onChange={(e) => setFormData(prev => ({ ...prev, rows: e.target.value }))}
-                          placeholder="6"
-                          min="1" max="10"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="seatsPerRow">Seats per Row</Label>
-                        <Input
-                          id="seatsPerRow"
-                          type="number"
-                          value={formData.seatsPerRow}
-                          onChange={(e) => setFormData(prev => ({ ...prev, seatsPerRow: e.target.value }))}
-                          placeholder="5"
-                          min="1" max="10"
-                        />
-                      </div>
-                    </div>
-                    {formData.rows && formData.seatsPerRow && (
-                      <div className="mt-2 p-2 bg-gray-50 rounded">
-                        <p className="text-sm text-gray-600">
-                          Layout Preview: {generateLayout(parseInt(formData.rows), parseInt(formData.seatsPerRow)).slice(0, 6).join(', ')}
-                          {parseInt(formData.rows) * parseInt(formData.seatsPerRow) > 6 && '...'}
-                        </p>
-                        <p className="text-sm font-medium">Total Capacity: {parseInt(formData.rows || '0') * parseInt(formData.seatsPerRow || '0')} seats</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label>Flexible Pricing</Label>
-                    <div className="grid grid-cols-3 gap-4 mt-2">
-                      <div>
-                        <Label htmlFor="pricePerDay">📅 Per Day (₹)</Label>
-                        <Input
-                          id="pricePerDay"
-                          type="number"
-                          value={formData.pricePerDay}
-                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerDay: e.target.value }))}
-                          placeholder="50"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="pricePerWeek">📆 Per Week (₹)</Label>
-                        <Input
-                          id="pricePerWeek"
-                          type="number"
-                          value={formData.pricePerWeek}
-                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerWeek: e.target.value }))}
-                          placeholder="300"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="pricePerMonth">🗓️ Per Month (₹)</Label>
-                        <Input
-                          id="pricePerMonth"
-                          type="number"
-                          value={formData.pricePerMonth}
-                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerMonth: e.target.value }))}
-                          placeholder="1000"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Amenities</Label>
-                    <div className="space-y-3 mt-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="ac" 
-                          checked={formData.amenities.ac}
-                          onCheckedChange={(checked) => setFormData(prev => ({
-                            ...prev,
-                            amenities: { ...prev.amenities, ac: checked as boolean }
-                          }))}
-                        />
-                        <Label htmlFor="ac" className="flex items-center gap-2">
-                          ❄️ Air Conditioning (AC)
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="parking" 
-                          checked={formData.amenities.parking}
-                          onCheckedChange={(checked) => setFormData(prev => ({
-                            ...prev,
-                            amenities: { ...prev.amenities, parking: checked as boolean }
-                          }))}
-                        />
-                        <Label htmlFor="parking" className="flex items-center gap-2">
-                          🚗 Parking Available
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Enter description"
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleAddStudyHall}>
-                      Add Study Hall
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={openAddModal}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Study Hall
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -660,7 +335,6 @@ const StudyHallsTable = () => {
                   <TableHead>Location</TableHead>
                   <TableHead>Layout</TableHead>
                   <TableHead>Pricing</TableHead>
-                  <TableHead>Amenities</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -669,10 +343,21 @@ const StudyHallsTable = () => {
                 {filteredStudyHalls.map((hall) => (
                   <TableRow key={hall.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{hall.title}</div>
-                        <div className="text-sm text-gray-500">Rating: {hall.rating} ⭐</div>
-                        <div className="text-sm text-gray-500">{hall.totalBookings} bookings</div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
+                          {hall.mainImage ? (
+                            <img src={hall.mainImage} alt={hall.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <MapPin className="h-5 w-5 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium">{hall.name}</div>
+                          <div className="text-sm text-gray-500">Rating: {hall.rating} ⭐</div>
+                          <div className="text-sm text-gray-500">{hall.totalBookings} bookings</div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -697,24 +382,22 @@ const StudyHallsTable = () => {
                         <Users className="h-4 w-4 mr-1 text-gray-400" />
                         <div>
                           <div className="text-sm font-medium">{hall.capacity} seats</div>
-                          <div className="text-xs text-gray-500">{hall.rows}x{hall.seatsPerRow} grid</div>
+                          <div className="text-xs text-gray-500">{hall.rows}×{hall.seatsPerRow} grid</div>
+                          <div className="text-xs text-green-600">
+                            {hall.layout.filter(s => s.status === 'available').length} available
+                          </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         <div className="text-sm font-medium">₹{hall.pricePerDay}/day</div>
-                        <div className="text-xs text-gray-500">₹{hall.pricePerWeek}/week</div>
-                        <div className="text-xs text-gray-500">₹{hall.pricePerMonth}/month</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {hall.amenities.map(amenity => (
-                          <Badge key={amenity} variant="outline" className="text-xs">
-                            {amenity === 'AC' ? '❄️' : '🚗'} {amenity}
-                          </Badge>
-                        ))}
+                        {hall.pricePerWeek > 0 && (
+                          <div className="text-xs text-gray-500">₹{hall.pricePerWeek}/week</div>
+                        )}
+                        {hall.pricePerMonth > 0 && (
+                          <div className="text-xs text-gray-500">₹{hall.pricePerMonth}/month</div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -727,14 +410,16 @@ const StudyHallsTable = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
+                          <SelectItem value="draft">Draft</SelectItem>
                           <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
+                        <Button variant="ghost" size="sm" onClick={() => openViewModal(hall)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => openEditModal(hall)}>
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -751,194 +436,27 @@ const StudyHallsTable = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Study Hall</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="edit-title">Study Hall Title</Label>
-                <Input
-                  id="edit-title"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Enter study hall title"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-merchant">Select Merchant</Label>
-                <Select value={formData.merchantId} onValueChange={(value) => setFormData(prev => ({ ...prev, merchantId: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose merchant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {merchants.filter(m => m.status === 'active').map(merchant => (
-                      <SelectItem key={merchant.id} value={merchant.id.toString()}>
-                        {merchant.name} - {merchant.businessName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+      {/* Study Hall Form Modal */}
+      <StudyHallForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSubmit={isEditing ? handleEditStudyHall : handleAddStudyHall}
+        editData={isEditing ? selectedStudyHall : null}
+        isAdmin={true}
+      />
 
-            <div>
-              <Label htmlFor="edit-location">Location with GPS</Label>
-              <div className="space-y-2">
-                <Input
-                  id="edit-location"
-                  value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  placeholder="Enter address (e.g., Connaught Place, New Delhi)"
-                />
-                <div className="text-xs text-gray-500">
-                  GPS: Lat {formData.gpsLocation.lat.toFixed(6)}, Lng {formData.gpsLocation.lng.toFixed(6)}
-                </div>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    // Simulate GPS location capture
-                    const lat = 28.6315 + (Math.random() - 0.5) * 0.1;
-                    const lng = 77.2167 + (Math.random() - 0.5) * 0.1;
-                    handleLocationSelect(formData.location, { lat, lng });
-                  }}
-                >
-                  📍 Capture GPS Location
-                </Button>
-              </div>
-            </div>
-
-            <div>
-              <Label>Cabin Layout (Movie Theater Style)</Label>
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                <div>
-                  <Label htmlFor="edit-rows">Number of Rows</Label>
-                  <Input
-                    id="edit-rows"
-                    type="number"
-                    value={formData.rows}
-                    onChange={(e) => setFormData(prev => ({ ...prev, rows: e.target.value }))}
-                    placeholder="6"
-                    min="1" max="10"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-seatsPerRow">Seats per Row</Label>
-                  <Input
-                    id="edit-seatsPerRow"
-                    type="number"
-                    value={formData.seatsPerRow}
-                    onChange={(e) => setFormData(prev => ({ ...prev, seatsPerRow: e.target.value }))}
-                    placeholder="5"
-                    min="1" max="10"
-                  />
-                </div>
-              </div>
-              {formData.rows && formData.seatsPerRow && (
-                <div className="mt-2 p-2 bg-gray-50 rounded">
-                  <p className="text-sm text-gray-600">
-                    Layout Preview: {generateLayout(parseInt(formData.rows), parseInt(formData.seatsPerRow)).slice(0, 6).join(', ')}
-                    {parseInt(formData.rows) * parseInt(formData.seatsPerRow) > 6 && '...'}
-                  </p>
-                  <p className="text-sm font-medium">Total Capacity: {parseInt(formData.rows || '0') * parseInt(formData.seatsPerRow || '0')} seats</p>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <Label>Flexible Pricing</Label>
-              <div className="grid grid-cols-3 gap-4 mt-2">
-                <div>
-                  <Label htmlFor="edit-pricePerDay">📅 Per Day (₹)</Label>
-                  <Input
-                    id="edit-pricePerDay"
-                    type="number"
-                    value={formData.pricePerDay}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pricePerDay: e.target.value }))}
-                    placeholder="50"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-pricePerWeek">📆 Per Week (₹)</Label>
-                  <Input
-                    id="edit-pricePerWeek"
-                    type="number"
-                    value={formData.pricePerWeek}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pricePerWeek: e.target.value }))}
-                    placeholder="300"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-pricePerMonth">🗓️ Per Month (₹)</Label>
-                  <Input
-                    id="edit-pricePerMonth"
-                    type="number"
-                    value={formData.pricePerMonth}
-                    onChange={(e) => setFormData(prev => ({ ...prev, pricePerMonth: e.target.value }))}
-                    placeholder="1000"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label>Amenities</Label>
-              <div className="space-y-3 mt-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="edit-ac" 
-                    checked={formData.amenities.ac}
-                    onCheckedChange={(checked) => setFormData(prev => ({
-                      ...prev,
-                      amenities: { ...prev.amenities, ac: checked as boolean }
-                    }))}
-                  />
-                  <Label htmlFor="edit-ac" className="flex items-center gap-2">
-                    ❄️ Air Conditioning (AC)
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="edit-parking" 
-                    checked={formData.amenities.parking}
-                    onCheckedChange={(checked) => setFormData(prev => ({
-                      ...prev,
-                      amenities: { ...prev.amenities, parking: checked as boolean }
-                    }))}
-                  />
-                  <Label htmlFor="edit-parking" className="flex items-center gap-2">
-                    🚗 Parking Available
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="edit-description">Description</Label>
-              <Textarea
-                id="edit-description"
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter description"
-              />
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleEditStudyHall}>
-                Update Study Hall
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Study Hall View Modal */}
+      {selectedStudyHall && (
+        <StudyHallView
+          studyHall={selectedStudyHall}
+          isOpen={isViewOpen}
+          onClose={() => setIsViewOpen(false)}
+          onEdit={() => {
+            setIsViewOpen(false);
+            openEditModal(selectedStudyHall);
+          }}
+        />
+      )}
     </div>
   );
 };

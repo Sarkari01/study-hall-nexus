@@ -1,296 +1,156 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Plus,
-  QrCode,
-  Users,
-  Calendar,
-  DollarSign,
-  Settings,
-  BarChart3,
-  Upload,
-  Building2,
-  Tag,
-  MapPin,
-  X
-} from "lucide-react";
-import Sidebar from "@/components/Sidebar";
+import { Users, DollarSign, Calendar, TrendingUp, Building2, MapPin, Star, Eye, Plus } from "lucide-react";
+import StudyHallForm from "@/components/admin/StudyHallForm";
+import StudyHallView from "@/components/admin/StudyHallView";
 import { useToast } from "@/hooks/use-toast";
 
 const MerchantDashboard = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
+  const [studyHalls, setStudyHalls] = useState([
+    {
+      id: 1,
+      name: "Premium Study Room A",
+      location: "Connaught Place, New Delhi",
+      gpsLocation: { lat: 28.6315, lng: 77.2167 },
+      capacity: 48,
+      rows: 6,
+      seatsPerRow: 8,
+      layout: Array.from({ length: 48 }, (_, i) => {
+        const row = Math.floor(i / 8);
+        const seat = (i % 8) + 1;
+        return {
+          id: `${String.fromCharCode(65 + row)}${seat}`,
+          status: Math.random() > 0.7 ? 'occupied' : 'available' as const
+        };
+      }),
+      pricePerDay: 50,
+      pricePerWeek: 300,
+      pricePerMonth: 1000,
+      amenities: ["AC", "Wi-Fi", "Parking"],
+      status: 'active',
+      rating: 4.5,
+      totalBookings: 156,
+      description: "Premium study room with modern amenities",
+      images: ["/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png"],
+      mainImage: "/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png",
+      qrCode: `${window.location.origin}/book/1`,
+      merchantId: 1,
+      merchantName: "Sneha Patel"
+    }
+  ]);
+
   const { toast } = useToast();
 
-  // Current logged-in merchant (auto-filled)
   const currentMerchant = {
     id: 1,
     name: "Sneha Patel",
     businessName: "StudySpace Pro",
-    email: "sneha@studyspace.com"
+    email: "sneha@studyspace.com",
+    phone: "+91 98765 43210",
+    location: "New Delhi"
   };
-
-  const [formData, setFormData] = useState({
-    title: '',
-    location: '',
-    gpsLocation: { lat: 0, lng: 0 },
-    rows: '',
-    seatsPerRow: '',
-    pricePerDay: '',
-    pricePerWeek: '',
-    pricePerMonth: '',
-    description: '',
-    amenities: {
-      ac: false,
-      parking: false
-    }
-  });
 
   const stats = [
     {
-      title: "Today's Bookings",
-      value: "24",
-      change: "+8",
-      icon: <Calendar className="h-5 w-5" />,
+      title: "Total Study Halls",
+      value: studyHalls.length.toString(),
+      change: "+2 this month",
+      icon: <Building2 className="h-5 w-5" />,
       color: "text-blue-600"
     },
     {
-      title: "Revenue Today",
-      value: "₹12,560",
-      change: "+15.2%",
-      icon: <DollarSign className="h-5 w-5" />,
+      title: "Total Bookings",
+      value: studyHalls.reduce((sum, hall) => sum + hall.totalBookings, 0).toString(),
+      change: "+12% from last month",
+      icon: <Calendar className="h-5 w-5" />,
       color: "text-green-600"
     },
     {
-      title: "Occupancy Rate",
-      value: "78%",
-      change: "+5%",
-      icon: <Users className="h-5 w-5" />,
+      title: "Monthly Revenue",
+      value: "₹45,680",
+      change: "+8.5% from last month",
+      icon: <DollarSign className="h-5 w-5" />,
       color: "text-purple-600"
     },
     {
-      title: "Total Seats",
-      value: "45",
-      change: "0",
-      icon: <Building2 className="h-5 w-5" />,
-      color: "text-orange-600"
+      title: "Average Rating",
+      value: (studyHalls.reduce((sum, hall) => sum + hall.rating, 0) / studyHalls.length).toFixed(1),
+      change: "+0.2 from last month",
+      icon: <Star className="h-5 w-5" />,
+      color: "text-yellow-600"
     }
   ];
 
-  const bookings = [
-    {
-      user: "Rahul Kumar",
-      seat: "A2",
-      duration: "4 hours",
-      amount: "₹200",
-      status: "Paid",
-      time: "09:00 AM"
-    },
-    {
-      user: "Priya Sharma",
-      seat: "B5",
-      duration: "6 hours",
-      amount: "₹300",
-      status: "Unpaid",
-      time: "10:30 AM"
-    },
-    {
-      user: "Arjun Patel",
-      seat: "C1",
-      duration: "8 hours",
-      amount: "₹400",
-      status: "Paid",
-      time: "08:00 AM"
-    }
-  ];
-
-  const studyHalls = [
-    {
-      name: "Prime Study Zone - Ground Floor",
-      location: "Connaught Place, New Delhi",
-      seats: 30,
-      occupied: 22,
-      layout: "6x5 Grid (A1-F5)",
-      amenities: ["AC", "Parking"],
-      pricing: {
-        daily: 50,
-        weekly: 300,
-        monthly: 1000
-      }
-    },
-    {
-      name: "Quiet Corner - First Floor",
-      location: "Karol Bagh, New Delhi",
-      seats: 20,
-      occupied: 15,
-      layout: "5x4 Grid (A1-E4)",
-      amenities: ["AC"],
-      pricing: {
-        daily: 60,
-        weekly: 350,
-        monthly: 1200
-      }
-    }
-  ];
-
-  const coupons = [
-    {
-      code: "STUDENT20",
-      discount: "20%",
-      expiry: "31 Dec 2024",
-      used: 45,
-      limit: 100
-    },
-    {
-      code: "FIRST50",
-      discount: "₹50",
-      expiry: "15 Jul 2024",
-      used: 23,
-      limit: 50
-    }
-  ];
-
-  const sidebarItems = [
-    { id: "dashboard", label: "Dashboard", icon: <BarChart3 className="h-5 w-5" /> },
-    { id: "study-halls", label: "Study Halls", icon: <Building2 className="h-5 w-5" /> },
-    { id: "bookings", label: "Bookings", icon: <Calendar className="h-5 w-5" /> },
-    { id: "qr-generator", label: "QR Generator", icon: <QrCode className="h-5 w-5" /> },
-    { id: "coupons", label: "Coupons", icon: <Tag className="h-5 w-5" /> },
-    { id: "settings", label: "Settings", icon: <Settings className="h-5 w-5" /> }
-  ];
-
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    setSelectedImages(prev => [...prev, ...files]);
+  const handleAddStudyHall = (data: any) => {
+    const newStudyHall = {
+      ...data,
+      id: Date.now(),
+      merchantId: currentMerchant.id,
+      merchantName: currentMerchant.name,
+      rating: 0,
+      totalBookings: 0,
+      qrCode: data.qrCode || `${window.location.origin}/book/${Date.now()}`
+    };
+    setStudyHalls(prev => [...prev, newStudyHall]);
+    toast({
+      title: "Success",
+      description: "Study hall created successfully",
+    });
   };
 
-  const removeImage = (index: number) => {
-    setSelectedImages(prev => prev.filter((_, i) => i !== index));
-    if (mainImageIndex === index) {
-      setMainImageIndex(0);
-    } else if (mainImageIndex > index) {
-      setMainImageIndex(prev => prev - 1);
-    }
+  const handleEditStudyHall = (data: any) => {
+    if (!selectedStudyHall) return;
+    setStudyHalls(prev => prev.map(hall => 
+      hall.id === selectedStudyHall.id ? { ...hall, ...data } : hall
+    ));
+    toast({
+      title: "Success",
+      description: "Study hall updated successfully",
+    });
   };
 
-  const setAsMainImage = (index: number) => {
-    setMainImageIndex(index);
-  };
-
-  const handleLocationSelect = (location: string, coordinates: { lat: number; lng: number }) => {
-    setFormData(prev => ({
-      ...prev,
-      location,
-      gpsLocation: coordinates
-    }));
-  };
-
-  const generateLayout = (rows: number, seatsPerRow: number): string[] => {
-    const layout = [];
-    for (let i = 0; i < rows; i++) {
-      const rowLetter = String.fromCharCode(65 + i); // A, B, C, etc.
-      for (let j = 1; j <= seatsPerRow; j++) {
-        layout.push(`${rowLetter}${j}`);
-      }
-    }
-    return layout;
-  };
-
-  const handleCreateStudyHall = () => {
-    try {
-      const rows = parseInt(formData.rows);
-      const seatsPerRow = parseInt(formData.seatsPerRow);
-      
-      if (!formData.title || !formData.location || !rows || !seatsPerRow) {
-        toast({
-          title: "Error",
-          description: "Please fill all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create study hall with current merchant auto-filled
-      const newStudyHall = {
-        title: formData.title,
-        merchantId: currentMerchant.id,
-        merchantName: currentMerchant.name,
-        location: formData.location,
-        gpsLocation: formData.gpsLocation,
-        capacity: rows * seatsPerRow,
-        layout: generateLayout(rows, seatsPerRow),
-        pricing: {
-          daily: parseFloat(formData.pricePerDay),
-          weekly: parseFloat(formData.pricePerWeek),
-          monthly: parseFloat(formData.pricePerMonth)
-        },
-        amenities: Object.entries(formData.amenities)
-          .filter(([_, value]) => value)
-          .map(([key, _]) => key === 'ac' ? 'AC' : 'Parking'),
-        description: formData.description,
-        images: selectedImages
-      };
-
-      console.log('Creating study hall:', newStudyHall);
-
-      // Reset form
-      setFormData({
-        title: '',
-        location: '',
-        gpsLocation: { lat: 0, lng: 0 },
-        rows: '',
-        seatsPerRow: '',
-        pricePerDay: '',
-        pricePerWeek: '',
-        pricePerMonth: '',
-        description: '',
-        amenities: {
-          ac: false,
-          parking: false
-        }
-      });
-      setSelectedImages([]);
-      setMainImageIndex(0);
-
-      toast({
-        title: "Success",
-        description: "Study hall created successfully! It's now pending approval.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to create study hall",
-        variant: "destructive",
-      });
-    }
+  const openViewModal = (hall: any) => {
+    setSelectedStudyHall(hall);
+    setIsViewOpen(true);
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar 
-        items={sidebarItems} 
-        activeItem={activeTab} 
-        onItemClick={setActiveTab}
-        title="Merchant Panel"
-      />
-      
-      <main className="flex-1 p-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Merchant Dashboard</h1>
-          <p className="text-gray-600">Welcome back, {currentMerchant.name}!</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Merchant Dashboard</h1>
+              <p className="text-gray-600">Welcome back, {currentMerchant.name}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                {currentMerchant.businessName}
+              </Badge>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsContent value="dashboard" className="space-y-6">
-            {/* Stats Grid */}
+      <div className="container mx-auto px-6 py-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="study-halls">Study Halls</TabsTrigger>
+            <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {stats.map((stat, index) => (
                 <Card key={index} className="hover:shadow-lg transition-shadow">
@@ -300,7 +160,7 @@ const MerchantDashboard = () => {
                         <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
                         <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                         <p className={`text-sm ${stat.color} flex items-center mt-1`}>
-                          +{stat.change} from yesterday
+                          {stat.change}
                         </p>
                       </div>
                       <div className={`p-3 rounded-full bg-gray-100 ${stat.color}`}>
@@ -312,468 +172,263 @@ const MerchantDashboard = () => {
               ))}
             </div>
 
-            {/* Recent Bookings */}
+            {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>Today's Bookings</CardTitle>
+                <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {bookings.map((booking, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{booking.user}</p>
-                        <p className="text-sm text-gray-600">
-                          Seat {booking.seat} • {booking.duration} • {booking.time}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-semibold text-gray-900">{booking.amount}</span>
-                        <Badge 
-                          variant={booking.status === 'Paid' ? 'default' : 'destructive'}
-                        >
-                          {booking.status}
-                        </Badge>
-                      </div>
-                    </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button 
+                    variant="outline" 
+                    className="h-20 flex-col"
+                    onClick={() => setIsFormOpen(true)}
+                  >
+                    <Plus className="h-6 w-6 mb-2" />
+                    Add Study Hall
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <Calendar className="h-6 w-6 mb-2" />
+                    View Bookings
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <TrendingUp className="h-6 w-6 mb-2" />
+                    Analytics
+                  </Button>
+                  <Button variant="outline" className="h-20 flex-col">
+                    <DollarSign className="h-6 w-6 mb-2" />
+                    Revenue Reports
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Study Halls */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Your Study Halls</CardTitle>
+                  <Button onClick={() => setActiveTab("study-halls")} variant="outline" size="sm">
+                    View All
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {studyHalls.slice(0, 3).map((hall) => (
+                    <Card key={hall.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          {hall.mainImage && (
+                            <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                              <img
+                                src={hall.mainImage}
+                                alt={hall.name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-medium text-lg">{hall.name}</h3>
+                            <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                              <MapPin className="h-4 w-4" />
+                              <span>{hall.location}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-1">
+                              <Users className="h-4 w-4 text-gray-400" />
+                              <span>{hall.capacity} seats</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                              <span>{hall.rating}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-green-600">₹{hall.pricePerDay}/day</span>
+                            <Button size="sm" variant="outline" onClick={() => openViewModal(hall)}>
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
+                  
+                  {studyHalls.length === 0 && (
+                    <Card className="col-span-full">
+                      <CardContent className="p-8 text-center">
+                        <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No Study Halls Yet</h3>
+                        <p className="text-gray-600 mb-4">Create your first study hall to start accepting bookings</p>
+                        <Button onClick={() => setIsFormOpen(true)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Study Hall
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="study-halls" className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
-              <Button>
+              <Button onClick={() => setIsFormOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Study Hall
+                Add New Study Hall
               </Button>
             </div>
-            
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Study Hall</CardTitle>
-                  <p className="text-sm text-gray-600">Merchant: {currentMerchant.name} ({currentMerchant.businessName})</p>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <Label htmlFor="hallName">Study Hall Name</Label>
-                    <Input 
-                      id="hallName" 
-                      value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="e.g., Prime Study Zone - Ground Floor" 
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="location">Location with GPS</Label>
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input 
-                          id="location" 
-                          value={formData.location}
-                          onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                          placeholder="e.g., Connaught Place, New Delhi" 
-                          className="pl-10" 
-                        />
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        GPS: Lat {formData.gpsLocation.lat.toFixed(6)}, Lng {formData.gpsLocation.lng.toFixed(6)}
-                      </div>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          // Simulate GPS location capture
-                          const lat = 28.6315 + (Math.random() - 0.5) * 0.1;
-                          const lng = 77.2167 + (Math.random() - 0.5) * 0.1;
-                          handleLocationSelect(formData.location, { lat, lng });
-                        }}
-                      >
-                        📍 Capture GPS Location
-                      </Button>
-                    </div>
-                  </div>
 
-                  <div>
-                    <Label>Upload Images (Min 1 required)</Label>
-                    <div className="space-y-4">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                        <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600 mb-2">Click to upload or drag and drop</p>
-                        <p className="text-xs text-gray-500">PNG, JPG up to 10MB each</p>
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          id="image-upload"
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {studyHalls.map((hall) => (
+                <Card key={hall.id} className="hover:shadow-lg transition-shadow">
+                  <CardContent className="p-0">
+                    {hall.mainImage && (
+                      <div className="aspect-video bg-gray-100 overflow-hidden rounded-t-lg">
+                        <img
+                          src={hall.mainImage}
+                          alt={hall.name}
+                          className="w-full h-full object-cover"
                         />
-                        <Button 
-                          variant="outline" 
-                          className="mt-2"
-                          onClick={() => document.getElementById('image-upload')?.click()}
-                        >
-                          Select Images
-                        </Button>
-                      </div>
-
-                      {selectedImages.length > 0 && (
-                        <div className="grid grid-cols-2 gap-4">
-                          {selectedImages.map((file, index) => (
-                            <div key={index} className="relative group">
-                              <div className={`border-2 rounded-lg p-2 ${index === mainImageIndex ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                                <img
-                                  src={URL.createObjectURL(file)}
-                                  alt={`Preview ${index + 1}`}
-                                  className="w-full h-24 object-cover rounded"
-                                />
-                                <div className="flex justify-between items-center mt-2">
-                                  <p className="text-xs text-gray-600 truncate">{file.name}</p>
-                                  <div className="flex gap-1">
-                                    {index !== mainImageIndex && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setAsMainImage(index)}
-                                        className="text-xs p-1"
-                                      >
-                                        Main
-                                      </Button>
-                                    )}
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => removeImage(index)}
-                                      className="text-xs p-1 text-red-600"
-                                    >
-                                      <X className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                              {index === mainImageIndex && (
-                                <Badge className="absolute -top-2 -right-2 bg-blue-600">Main</Badge>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label>Cabin Layout Configuration (Movie Theater Style)</Label>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div>
-                        <Label htmlFor="rows">Number of Rows</Label>
-                        <Input 
-                          id="rows" 
-                          value={formData.rows}
-                          onChange={(e) => setFormData(prev => ({ ...prev, rows: e.target.value }))}
-                          placeholder="6" 
-                          type="number" 
-                          min="1" 
-                          max="10" 
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cols">Seats per Row</Label>
-                        <Input 
-                          id="cols" 
-                          value={formData.seatsPerRow}
-                          onChange={(e) => setFormData(prev => ({ ...prev, seatsPerRow: e.target.value }))}
-                          placeholder="5" 
-                          type="number" 
-                          min="1" 
-                          max="10" 
-                        />
-                      </div>
-                    </div>
-                    {formData.rows && formData.seatsPerRow && (
-                      <div className="mt-2 p-2 bg-gray-50 rounded">
-                        <p className="text-sm text-gray-600">
-                          Layout Preview: {generateLayout(parseInt(formData.rows), parseInt(formData.seatsPerRow)).slice(0, 6).join(', ')}
-                          {parseInt(formData.rows) * parseInt(formData.seatsPerRow) > 6 && '...'}
-                        </p>
-                        <p className="text-sm font-medium">Total Capacity: {parseInt(formData.rows || '0') * parseInt(formData.seatsPerRow || '0')} seats</p>
                       </div>
                     )}
-                  </div>
-
-                  <div>
-                    <Label>Amenities</Label>
-                    <div className="space-y-3 mt-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="ac" 
-                          checked={formData.amenities.ac}
-                          onCheckedChange={(checked) => setFormData(prev => ({
-                            ...prev,
-                            amenities: { ...prev.amenities, ac: checked as boolean }
-                          }))}
-                        />
-                        <Label htmlFor="ac" className="flex items-center gap-2">
-                          ❄️ Air Conditioning (AC)
-                        </Label>
+                    <div className="p-6 space-y-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-bold text-lg">{hall.name}</h3>
+                          <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                            <MapPin className="h-4 w-4" />
+                            <span>{hall.location}</span>
+                          </div>
+                        </div>
+                        <Badge 
+                          variant={hall.status === 'active' ? 'default' : 'secondary'}
+                          className={hall.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                        >
+                          {hall.status}
+                        </Badge>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id="parking" 
-                          checked={formData.amenities.parking}
-                          onCheckedChange={(checked) => setFormData(prev => ({
-                            ...prev,
-                            amenities: { ...prev.amenities, parking: checked as boolean }
-                          }))}
-                        />
-                        <Label htmlFor="parking" className="flex items-center gap-2">
-                          🚗 Parking Available
-                        </Label>
+
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-gray-400" />
+                          <span>{hall.capacity} seats</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span>{hall.totalBookings} bookings</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                          <span>{hall.rating} rating</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4 text-gray-400" />
+                          <span>₹{hall.pricePerDay}/day</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1">
+                        {hall.amenities.slice(0, 3).map(amenity => (
+                          <Badge key={amenity} variant="outline" className="text-xs">
+                            {amenity}
+                          </Badge>
+                        ))}
+                        {hall.amenities.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{hall.amenities.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => openViewModal(hall)} className="flex-1">
+                          <Eye className="h-4 w-4 mr-1" />
+                          View Details
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          Edit
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <Label>Flexible Pricing</Label>
-                    <div className="grid grid-cols-3 gap-4 mt-2">
-                      <div>
-                        <Label htmlFor="dailyPrice">📅 Per Day</Label>
-                        <Input 
-                          id="dailyPrice" 
-                          value={formData.pricePerDay}
-                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerDay: e.target.value }))}
-                          placeholder="₹50" 
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="weeklyPrice">📆 Per Week</Label>
-                        <Input 
-                          id="weeklyPrice" 
-                          value={formData.pricePerWeek}
-                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerWeek: e.target.value }))}
-                          placeholder="₹300" 
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="monthlyPrice">🗓️ Per Month</Label>
-                        <Input 
-                          id="monthlyPrice" 
-                          value={formData.pricePerMonth}
-                          onChange={(e) => setFormData(prev => ({ ...prev, pricePerMonth: e.target.value }))}
-                          placeholder="₹1000" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Describe your study hall..."
-                    />
-                  </div>
-                  
-                  <Button className="w-full" onClick={handleCreateStudyHall}>
-                    Create Study Hall
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Existing Study Halls</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {studyHalls.map((hall, index) => (
-                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="font-medium text-gray-900 mb-1">{hall.name}</h3>
-                            <div className="flex items-center text-sm text-gray-600 mb-2">
-                              <MapPin className="h-3 w-3 mr-1" />
-                              {hall.location}
-                            </div>
-                          </div>
-                          <Badge variant="outline">{hall.layout}</Badge>
-                        </div>
-                        
-                        <div className="text-sm text-gray-600 space-y-1 mb-3">
-                          <p>Total Seats: {hall.seats}</p>
-                          <p>Currently Occupied: {hall.occupied}</p>
-                          <div className="flex items-center gap-2">
-                            <span>Amenities:</span>
-                            {hall.amenities.map((amenity, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs">
-                                {amenity === 'AC' ? '❄️' : '🚗'} {amenity}
-                              </Badge>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-4 text-xs">
-                            <span>📅 Daily: ₹{hall.pricing.daily}</span>
-                            <span>📆 Weekly: ₹{hall.pricing.weekly}</span>
-                            <span>🗓️ Monthly: ₹{hall.pricing.monthly}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">Edit</Button>
-                          <Button size="sm" variant="outline">View Layout</Button>
-                          <Button size="sm" variant="outline">Images</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </TabsContent>
 
-          <TabsContent value="qr-generator" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">QR Code Generator</h2>
-            </div>
-            
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Generate QR Code</CardTitle>
-                  <p className="text-sm text-gray-600">Create QR posters to increase walk-in bookings.</p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Select Study Hall</Label>
-                    <select className="w-full p-2 border rounded-lg">
-                      <option>Prime Study Zone - Ground Floor</option>
-                      <option>Quiet Corner - First Floor</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <Label>QR Code Type</Label>
-                    <div className="grid grid-cols-2 gap-4 mt-2">
-                      <div className="flex items-center space-x-2">
-                        <input type="radio" id="booking" name="qrType" className="rounded" />
-                        <Label htmlFor="booking">Direct Booking</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input type="radio" id="info" name="qrType" className="rounded" />
-                        <Label htmlFor="info">Hall Information</Label>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Button className="w-full">Generate QR Code</Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>QR Code Preview</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <div className="w-48 h-48 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                    <QrCode className="h-24 w-24 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    QR code will appear here after generation
-                  </p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1">Download PNG</Button>
-                    <Button variant="outline" className="flex-1">Download PDF</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="bookings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Bookings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-500 text-center py-8">Booking management coming soon...</p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="coupons" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Coupon Management</h2>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Coupon
-              </Button>
-            </div>
-            
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create New Coupon</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Merchant Profile</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="couponCode">Coupon Code</Label>
-                    <Input id="couponCode" placeholder="e.g., STUDENT20" />
+                    <label className="text-sm font-medium text-gray-600">Business Name</label>
+                    <p className="text-lg">{currentMerchant.businessName}</p>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Discount Type</Label>
-                      <select className="w-full p-2 border rounded-lg">
-                        <option>Percentage</option>
-                        <option>Fixed Amount</option>
-                      </select>
-                    </div>
-                    <div>
-                      <Label htmlFor="discountValue">Discount Value</Label>
-                      <Input id="discountValue" placeholder="20" />
-                    </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Owner Name</label>
+                    <p className="text-lg">{currentMerchant.name}</p>
                   </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="expiryDate">Expiry Date</Label>
-                      <Input id="expiryDate" type="date" />
-                    </div>
-                    <div>
-                      <Label htmlFor="usageLimit">Usage Limit</Label>
-                      <Input id="usageLimit" placeholder="100" />
-                    </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Email</label>
+                    <p className="text-lg">{currentMerchant.email}</p>
                   </div>
-                  
-                  <Button className="w-full">Create Coupon</Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Active Coupons</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {coupons.map((coupon, index) => (
-                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-mono font-bold text-gray-900">{coupon.code}</h3>
-                          <Badge variant="outline">{coupon.discount}</Badge>
-                        </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>Expires: {coupon.expiry}</p>
-                          <p>Used: {coupon.used}/{coupon.limit}</p>
-                        </div>
-                        <div className="flex gap-2 mt-3">
-                          <Button size="sm" variant="outline">Edit</Button>
-                          <Button size="sm" variant="outline">Deactivate</Button>
-                        </div>
-                      </div>
-                    ))}
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Phone</label>
+                    <p className="text-lg">{currentMerchant.phone}</p>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Location</label>
+                    <p className="text-lg">{currentMerchant.location}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
-      </main>
+
+        {/* Study Hall Form Modal */}
+        <StudyHallForm
+          isOpen={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={handleAddStudyHall}
+          editData={null}
+          isAdmin={false}
+          currentMerchant={currentMerchant}
+        />
+
+        {/* Study Hall View Modal */}
+        {selectedStudyHall && (
+          <StudyHallView
+            studyHall={selectedStudyHall}
+            isOpen={isViewOpen}
+            onClose={() => setIsViewOpen(false)}
+            onEdit={() => {
+              setIsViewOpen(false);
+              // Open edit modal functionality can be added here
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };
