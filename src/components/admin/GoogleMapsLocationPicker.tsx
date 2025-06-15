@@ -45,11 +45,11 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           libraries: ['places', 'geometry']
         });
 
-        const google = await loader.load();
+        await loader.load();
         
-        if (!mapRef.current) return;
+        if (!mapRef.current || !window.google) return;
 
-        const mapInstance = new google.maps.Map(mapRef.current, {
+        const mapInstance = new window.google.maps.Map(mapRef.current, {
           center: { lat: currentLocation.lat, lng: currentLocation.lng },
           zoom: 15,
           mapTypeControl: true,
@@ -58,7 +58,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
         });
 
         // Create initial marker
-        const markerInstance = new google.maps.Marker({
+        const markerInstance = new window.google.maps.Marker({
           position: { lat: currentLocation.lat, lng: currentLocation.lng },
           map: mapInstance,
           draggable: true,
@@ -106,7 +106,9 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
       markerInstance.setPosition({ lat, lng });
       
       // Reverse geocoding to get address
-      const geocoder = new google.maps.Geocoder();
+      if (!window.google) return;
+      
+      const geocoder = new window.google.maps.Geocoder();
       const response = await geocoder.geocode({ location: { lat, lng } });
       
       let address = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -127,10 +129,10 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
   };
 
   const searchLocation = async () => {
-    if (!map || !searchQuery.trim()) return;
+    if (!map || !searchQuery.trim() || !window.google) return;
 
     try {
-      const geocoder = new google.maps.Geocoder();
+      const geocoder = new window.google.maps.Geocoder();
       const response = await geocoder.geocode({ address: searchQuery });
 
       if (response.results && response.results[0]) {
