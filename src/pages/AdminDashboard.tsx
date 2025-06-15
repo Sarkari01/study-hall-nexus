@@ -40,25 +40,23 @@ import UpcomingMerchants from "@/components/admin/UpcomingMerchants";
 import GeneralSettings from "@/components/admin/GeneralSettings";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useToast } from "@/hooks/use-toast";
-
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
 
   // Initialize FCM
   const {
     fcmToken
   } = useNotifications();
-  
   const handleToggleExpand = (itemId: string) => {
     setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
   };
-  
   const getDeepSeekApiKey = (): string | undefined => {
     return localStorage.getItem('deepseek_api_key') || undefined;
   };
-
   const handleLogout = () => {
     toast({
       title: "Logged out",
@@ -67,14 +65,12 @@ const AdminDashboard = () => {
     // In a real app, you would clear the session and redirect
     window.location.href = '/';
   };
-
   const handleProfileClick = () => {
     toast({
       title: "Profile",
       description: "Profile settings coming soon!"
     });
   };
-
   const renderDashboardContent = () => <div className="space-y-6">
       {/* Enhanced Statistics Cards */}
       <DashboardStats />
@@ -93,33 +89,8 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("students")}>
-              <Users className="h-6 w-6 mb-2" />
-              View Students
-            </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("merchants")}>
-              <Building2 className="h-6 w-6 mb-2" />
-              Manage Merchants
-            </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("transactions")}>
-              <DollarSign className="h-6 w-6 mb-2" />
-              View Transactions
-            </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("study-halls")}>
-              <Calendar className="h-6 w-6 mb-2" />
-              Study Halls
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      
     </div>;
-
   const renderModuleContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -259,7 +230,6 @@ const AdminDashboard = () => {
         return renderDashboardContent();
     }
   };
-
   return <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar activeItem={activeTab} onItemClick={setActiveTab} expandedItems={expandedItems} onToggleExpand={handleToggleExpand} />
       
@@ -331,5 +301,4 @@ const AdminDashboard = () => {
       </main>
     </div>;
 };
-
 export default AdminDashboard;

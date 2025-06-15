@@ -209,25 +209,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </div>
 
       {/* Admin Profile & Logout Section */}
-      <div className="mt-auto border-t border-gray-200 p-4">
-        <div className="flex items-center space-x-3 mb-4 p-2 rounded-lg bg-gray-50">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-            <User className="h-4 w-4 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
-              Admin User
-            </p>
-            <p className="text-xs text-gray-500 truncate">
-              admin@sarkarininja.com
-            </p>
-          </div>
-        </div>
-        <Button variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300" onClick={handleLogout}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Logout
-        </Button>
-      </div>
+      
     </div>;
 };
 export default AdminSidebar;
