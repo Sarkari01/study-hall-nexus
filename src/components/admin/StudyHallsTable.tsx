@@ -351,7 +351,7 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
 
       {viewingStudyHall && (
         <StudyHallView
-          studyHall={convertToFormData(viewingStudyHall)}
+          studyHall={viewingStudyHall}
           isOpen={showViewStudyHall}
           onClose={() => {
             setShowViewStudyHall(false);
