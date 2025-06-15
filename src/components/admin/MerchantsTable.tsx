@@ -11,12 +11,20 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import MerchantDetailsModal from "./MerchantDetailsModal";
 
+interface AddressData {
+  street: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+}
+
 interface MerchantProfile {
   id: string;
   user_id: string;
   business_name: string;
   business_phone: string;
-  business_address: any;
+  business_address: AddressData;
   full_name: string;
   contact_number: string;
   approval_status: 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -41,6 +49,16 @@ const MerchantsTable = () => {
     fetchMerchants();
   }, []);
 
+  const safeParseJson = (data: any, fallback: any) => {
+    if (!data) return fallback;
+    if (typeof data === 'object') return data;
+    try {
+      return JSON.parse(data);
+    } catch {
+      return fallback;
+    }
+  };
+
   const fetchMerchants = async () => {
     setLoading(true);
     try {
@@ -51,7 +69,21 @@ const MerchantsTable = () => {
 
       if (error) throw error;
 
-      setMerchants(data || []);
+      // Type-cast and parse the data properly
+      const typedMerchants: MerchantProfile[] = (data || []).map(merchant => ({
+        ...merchant,
+        business_address: safeParseJson(merchant.business_address, {
+          street: '',
+          city: '',
+          state: '',
+          postal_code: '',
+          country: 'India'
+        }),
+        approval_status: (merchant.approval_status || 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended',
+        verification_status: (merchant.verification_status || 'unverified') as 'unverified' | 'pending' | 'verified'
+      }));
+
+      setMerchants(typedMerchants);
     } catch (error) {
       console.error('Error fetching merchants:', error);
       toast({
@@ -102,7 +134,7 @@ const MerchantsTable = () => {
 
       setMerchants(prev => prev.map(merchant => 
         merchant.id === merchantId 
-          ? { ...merchant, [field]: newStatus }
+          ? { ...merchant, [field]: newStatus as any }
           : merchant
       ));
 

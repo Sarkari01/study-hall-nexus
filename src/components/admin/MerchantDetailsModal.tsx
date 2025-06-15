@@ -15,6 +15,21 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, User, CreditCard, FileText, Upload, X, Check, AlertCircle } from "lucide-react";
 
+interface AddressData {
+  street: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+}
+
+interface BankAccountData {
+  account_number: string;
+  ifsc_code: string;
+  bank_name: string;
+  account_holder_name: string;
+}
+
 interface MerchantProfile {
   id: string;
   user_id: string;
@@ -22,31 +37,14 @@ interface MerchantProfile {
   business_phone: string;
   business_logo_url?: string;
   slide_images: string[];
-  business_address: {
-    street: string;
-    city: string;
-    state: string;
-    postal_code: string;
-    country: string;
-  };
+  business_address: AddressData;
   trade_license_url?: string;
   refundable_security_deposit: number;
   aadhaar_card_url?: string;
   full_name: string;
   contact_number: string;
-  communication_address?: {
-    street: string;
-    city: string;
-    state: string;
-    postal_code: string;
-    country: string;
-  };
-  bank_account_details?: {
-    account_number: string;
-    ifsc_code: string;
-    bank_name: string;
-    account_holder_name: string;
-  };
+  communication_address?: AddressData;
+  bank_account_details?: BankAccountData;
   approval_status: 'pending' | 'approved' | 'rejected' | 'suspended';
   verification_status: 'unverified' | 'pending' | 'verified';
   onboarding_completed: boolean;
@@ -116,6 +114,16 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
     }
   }, [isOpen, merchantId, mode]);
 
+  const safeParseJson = (data: any, fallback: any) => {
+    if (!data) return fallback;
+    if (typeof data === 'object') return data;
+    try {
+      return JSON.parse(data);
+    } catch {
+      return fallback;
+    }
+  };
+
   const fetchMerchantDetails = async () => {
     if (!merchantId) return;
     
@@ -129,36 +137,58 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
 
       if (error) throw error;
 
-      setMerchant(data);
+      // Parse and type-cast the data properly
+      const merchantData: MerchantProfile = {
+        ...data,
+        business_address: safeParseJson(data.business_address, {
+          street: '',
+          city: '',
+          state: '',
+          postal_code: '',
+          country: 'India'
+        }),
+        communication_address: safeParseJson(data.communication_address, {
+          street: '',
+          city: '',
+          state: '',
+          postal_code: '',
+          country: 'India'
+        }),
+        bank_account_details: safeParseJson(data.bank_account_details, {
+          account_number: '',
+          ifsc_code: '',
+          bank_name: '',
+          account_holder_name: ''
+        }),
+        approval_status: (data.approval_status || 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended',
+        verification_status: (data.verification_status || 'unverified') as 'unverified' | 'pending' | 'verified',
+        slide_images: data.slide_images || []
+      };
+
+      setMerchant(merchantData);
       form.reset({
-        business_name: data.business_name || '',
-        business_phone: data.business_phone || '',
-        full_name: data.full_name || '',
-        contact_number: data.contact_number || '',
-        business_address: data.business_address || {
+        business_name: merchantData.business_name || '',
+        business_phone: merchantData.business_phone || '',
+        full_name: merchantData.full_name || '',
+        contact_number: merchantData.contact_number || '',
+        business_address: merchantData.business_address,
+        communication_address: merchantData.communication_address || {
           street: '',
           city: '',
           state: '',
           postal_code: '',
           country: 'India'
         },
-        communication_address: data.communication_address || {
-          street: '',
-          city: '',
-          state: '',
-          postal_code: '',
-          country: 'India'
-        },
-        bank_account_details: data.bank_account_details || {
+        bank_account_details: merchantData.bank_account_details || {
           account_number: '',
           ifsc_code: '',
           bank_name: '',
           account_holder_name: ''
         },
-        refundable_security_deposit: data.refundable_security_deposit || 0,
-        approval_status: data.approval_status || 'pending',
-        verification_status: data.verification_status || 'unverified',
-        notes: data.notes || ''
+        refundable_security_deposit: merchantData.refundable_security_deposit || 0,
+        approval_status: merchantData.approval_status,
+        verification_status: merchantData.verification_status,
+        notes: merchantData.notes || ''
       });
     } catch (error) {
       console.error('Error fetching merchant details:', error);
