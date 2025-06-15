@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { MapPin, Upload, X, Plus, Minus, QrCode, Download, Copy } from "lucide-r
 import { useToast } from "@/hooks/use-toast";
 import SeatLayoutDesigner from './SeatLayoutDesigner';
 import QRCodeDisplay from './QRCodeDisplay';
+import GoogleMapsLocationPicker from './GoogleMapsLocationPicker';
 
 interface StudyHallFormData {
   id?: number;
@@ -81,6 +81,7 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
 
   const [newAmenity, setNewAmenity] = useState('');
   const [showQRCode, setShowQRCode] = useState(false);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { toast } = useToast();
 
   const defaultAmenities = ['AC', 'Wi-Fi', 'Parking', 'Power Outlets', 'Water Cooler', 'Washroom'];
@@ -198,6 +199,19 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
     setShowQRCode(true);
   };
 
+  const handleLocationSelect = (locationData: { lat: number; lng: number; address: string }) => {
+    setFormData(prev => ({
+      ...prev,
+      location: locationData.address,
+      gpsLocation: { lat: locationData.lat, lng: locationData.lng }
+    }));
+    setShowLocationPicker(false);
+    toast({
+      title: "Location Updated",
+      description: "Study hall location has been updated successfully",
+    });
+  };
+
   const handleSubmit = () => {
     if (!formData.name || !formData.location || !formData.pricePerDay) {
       toast({
@@ -290,11 +304,12 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
                 <div>
                   <Label htmlFor="location">Location with GPS *</Label>
                   <div className="space-y-2 mt-1">
-                    <Input
+                    <Textarea
                       id="location"
                       value={formData.location}
                       onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                       placeholder="Enter complete address"
+                      rows={2}
                     />
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <MapPin className="h-4 w-4" />
@@ -304,14 +319,10 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        const lat = 28.6315 + (Math.random() - 0.5) * 0.1;
-                        const lng = 77.2167 + (Math.random() - 0.5) * 0.1;
-                        setFormData(prev => ({ ...prev, gpsLocation: { lat, lng } }));
-                      }}
+                      onClick={() => setShowLocationPicker(true)}
                       className="w-full"
                     >
-                      📍 Capture GPS Location
+                      🗺️ Select Location on Map
                     </Button>
                   </div>
                 </div>
@@ -561,6 +572,28 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
             {editData ? 'Update Study Hall' : 'Create Study Hall'}
           </Button>
         </div>
+
+        {/* Google Maps Location Picker Modal */}
+        <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Select Study Hall Location</DialogTitle>
+            </DialogHeader>
+            <GoogleMapsLocationPicker
+              initialLocation={{
+                lat: formData.gpsLocation.lat,
+                lng: formData.gpsLocation.lng,
+                address: formData.location
+              }}
+              onLocationSelect={handleLocationSelect}
+            />
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button variant="outline" onClick={() => setShowLocationPicker(false)}>
+                Cancel
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* QR Code Modal */}
         {showQRCode && formData.qrCode && (

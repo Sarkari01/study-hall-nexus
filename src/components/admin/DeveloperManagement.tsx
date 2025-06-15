@@ -90,10 +90,10 @@ const DeveloperManagement = () => {
     {
       id: '1',
       name: 'Google Maps API',
-      key: 'AIzaSyC1234567890abcdef',
-      description: 'Used for location services and map integration',
+      key: 'AIzaSyD5pi7yo0QubYKjSC86ZG0Q7IyvCm-qXg4',
+      description: 'Used for location services and map integration in study hall creation',
       status: 'active',
-      lastUsed: '2024-01-15',
+      lastUsed: new Date().toISOString().split('T')[0],
       createdAt: '2024-01-01',
       environment: 'production',
       provider: 'Google',
@@ -155,6 +155,21 @@ const DeveloperManagement = () => {
     environment: 'production',
     provider: ''
   });
+
+  // Store API keys in localStorage for components to access
+  React.useEffect(() => {
+    // Store Google Maps API key
+    const googleMapsKey = apiKeys.find(key => key.provider === 'Google' && key.name === 'Google Maps API' && key.status === 'active');
+    if (googleMapsKey) {
+      localStorage.setItem('google_maps_api_key', googleMapsKey.key);
+    }
+
+    // Store DeepSeek API key
+    const deepseekKey = apiKeys.find(key => key.provider === 'DeepSeek' && key.status === 'active');
+    if (deepseekKey) {
+      localStorage.setItem('deepseek_api_key', deepseekKey.key);
+    }
+  }, [apiKeys]);
 
   // Firebase configuration functions
   const startEditingFirebase = () => {
@@ -226,20 +241,6 @@ const DeveloperManagement = () => {
     if (key.length <= 8) return key;
     return key.substring(0, 4) + '•'.repeat(key.length - 8) + key.substring(key.length - 4);
   };
-
-  // Function to get DeepSeek API key for other components
-  const getDeepSeekApiKey = (): string | undefined => {
-    const deepseekKey = apiKeys.find(key => key.provider === 'DeepSeek' && key.status === 'active');
-    return deepseekKey?.key;
-  };
-
-  // Store the API key in localStorage for components to access
-  React.useEffect(() => {
-    const deepseekKey = getDeepSeekApiKey();
-    if (deepseekKey) {
-      localStorage.setItem('deepseek_api_key', deepseekKey);
-    }
-  }, [apiKeys]);
 
   const toggleKeyVisibility = (keyId: string) => {
     setShowKeys(prev => ({
@@ -378,7 +379,19 @@ const DeveloperManagement = () => {
       </div>
 
       {/* Status Banners */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div>
+                <h3 className="font-medium text-green-900">Google Maps Configured</h3>
+                <p className="text-sm text-green-700">Location services active</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-green-200 bg-green-50">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -588,7 +601,6 @@ const DeveloperManagement = () => {
         </TabsContent>
 
         <TabsContent value="api-keys" className="space-y-6">
-          {/* Add New API Key */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -663,7 +675,6 @@ const DeveloperManagement = () => {
             </CardContent>
           </Card>
 
-          {/* Existing API Keys */}
           <Card>
             <CardHeader>
               <CardTitle>Existing API Keys</CardTitle>
