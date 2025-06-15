@@ -38,24 +38,21 @@ import RecentActivities from "@/components/admin/RecentActivities";
 import UpcomingMerchants from "@/components/admin/UpcomingMerchants";
 import GeneralSettings from "@/components/admin/GeneralSettings";
 import { useNotifications } from "@/hooks/useNotifications";
-
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  
+
   // Initialize FCM
-  const { fcmToken } = useNotifications();
-  
+  const {
+    fcmToken
+  } = useNotifications();
   const handleToggleExpand = (itemId: string) => {
     setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
   };
-  
   const getDeepSeekApiKey = (): string | undefined => {
     return localStorage.getItem('deepseek_api_key') || undefined;
   };
-  
-  const renderDashboardContent = () => (
-    <div className="space-y-6">
+  const renderDashboardContent = () => <div className="space-y-6">
       {/* Enhanced Statistics Cards */}
       <DashboardStats />
 
@@ -98,150 +95,118 @@ const AdminDashboard = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-  
+    </div>;
   const renderModuleContent = () => {
     switch (activeTab) {
       case "dashboard":
         return renderDashboardContent();
       case "students":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Students Management</h2>
             </div>
             <StudentsTable />
-          </div>
-        );
+          </div>;
       case "merchants":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Merchants Management</h2>
             </div>
             <MerchantsTable />
-          </div>
-        );
+          </div>;
       case "study-halls":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
             </div>
             <StudyHallsTable />
-          </div>
-        );
+          </div>;
       case "bookings":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Bookings Management</h2>
             </div>
             <BookingsTable />
-          </div>
-        );
+          </div>;
       case "subscription-plans":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Subscription Plans</h2>
             </div>
             <SubscriptionPlansTable />
-          </div>
-        );
+          </div>;
       case "merchant-subscriptions":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Merchant Subscriptions</h2>
             </div>
             <MerchantSubscriptionsTable />
-          </div>
-        );
+          </div>;
       case "payment-history":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Payment History</h2>
             </div>
             <PaymentHistoryTable />
-          </div>
-        );
+          </div>;
       case "coupons":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Coupon Management</h2>
             </div>
             <CouponsTable />
-          </div>
-        );
+          </div>;
       case "reward-rules":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Reward Rules</h2>
             </div>
             <RewardRulesTable />
-          </div>
-        );
+          </div>;
       case "wallet-management":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Wallet Management</h2>
             </div>
             <WalletManagement />
-          </div>
-        );
+          </div>;
       case "payments":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Payment Transactions</h2>
             </div>
             <PaymentsTable />
-          </div>
-        );
+          </div>;
       case "transactions":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Transaction Ledger</h2>
             </div>
             <TransactionsTable />
-          </div>
-        );
+          </div>;
       case "settle-now":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Settle Now (Payouts)</h2>
-              <Button>Process All Eligible</Button>
+              
+              
             </div>
             <SettleNowTable />
-          </div>
-        );
+          </div>;
       case "locations":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Locations Management</h2>
               <Button>Add New Location</Button>
             </div>
             <LocationsTable />
-          </div>
-        );
+          </div>;
       case "leads":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Leads Management</h2>
             </div>
             <LeadsTable />
-          </div>
-        );
+          </div>;
       case "banners":
         return <BannerManager />;
       case "community":
@@ -267,41 +232,26 @@ const AdminDashboard = () => {
       case "monthly-revenue":
       case "merchant-revenue":
       case "location-revenue":
-        return (
-          <div className="space-y-6">
+        return <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Revenue Reports & Analytics</h2>
             </div>
             <RevenueReports reportType={activeTab} />
-          </div>
-        );
+          </div>;
       default:
         return renderDashboardContent();
     }
   };
-  
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar 
-        activeItem={activeTab} 
-        onItemClick={setActiveTab} 
-        expandedItems={expandedItems} 
-        onToggleExpand={handleToggleExpand} 
-      />
+  return <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar activeItem={activeTab} onItemClick={setActiveTab} expandedItems={expandedItems} onToggleExpand={handleToggleExpand} />
       
       <main className="flex-1 p-6 overflow-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">
-            {activeTab === 'dashboard' ? 'Dashboard' : 
-             activeTab === 'general-settings' ? 'General Settings' :
-             activeTab === 'bookings' ? 'Bookings Management' :
-             'Management Console'}
+            {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'general-settings' ? 'General Settings' : activeTab === 'bookings' ? 'Bookings Management' : 'Management Console'}
           </h1>
           <p className="text-gray-600">
-            {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' :
-             activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' :
-             activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' :
-             'Advanced administrative controls and monitoring'}
+            {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 'Advanced administrative controls and monitoring'}
           </p>
         </div>
 
@@ -309,8 +259,6 @@ const AdminDashboard = () => {
           {renderModuleContent()}
         </div>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default AdminDashboard;
