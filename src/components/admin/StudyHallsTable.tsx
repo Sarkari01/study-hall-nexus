@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   ColumnDef,
@@ -241,7 +240,7 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
   };
 
   // Helper function to convert StudyHall to StudyHallFormData
-  const convertToFormData = (studyHall: StudyHall): StudyHallFormData => {
+  const convertToFormData = (studyHall: StudyHall): StudyHallFormData & { rating: number; totalBookings: number } => {
     return {
       id: parseInt(studyHall.id),
       name: studyHall.name || '',
@@ -269,7 +268,9 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
         close: '21:00',
         days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
       },
-      qrCode: ''
+      qrCode: '',
+      rating: studyHall.rating,
+      totalBookings: studyHall.total_bookings
     };
   };
 
