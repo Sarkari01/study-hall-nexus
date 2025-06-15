@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, MapPin, User, Eye } from "lucide-react";
+import { Clock, MapPin, User, Eye, Building2 } from "lucide-react";
 
 interface RecentBooking {
   id: string;
