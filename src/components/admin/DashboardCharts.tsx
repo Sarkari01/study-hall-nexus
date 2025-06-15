@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+
 const DashboardCharts = () => {
   // Revenue trend data
   const revenueData = [{
@@ -113,6 +115,7 @@ const DashboardCharts = () => {
     hour: '22:00',
     active: 89
   }];
+
   const chartConfig = {
     revenue: {
       label: "Revenue",
@@ -127,6 +130,92 @@ const DashboardCharts = () => {
       color: "#ffc658"
     }
   };
-  return;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Revenue Trend Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Weekly Revenue Trend</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px]">
+            <LineChart data={revenueData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Line type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={2} />
+            </LineChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Booking Distribution Pie Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Booking Distribution by Time</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px]">
+            <PieChart>
+              <Pie
+                data={bookingDistribution}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {bookingDistribution.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <ChartTooltip content={<ChartTooltipContent />} />
+            </PieChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Top Merchants Performance */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Top Merchants Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px]">
+            <BarChart data={merchantData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="revenue" fill="#82ca9d" />
+            </BarChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Student Activity Area Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Daily Student Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px]">
+            <AreaChart data={studentActivityData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="hour" />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Area type="monotone" dataKey="active" stroke="#ffc658" fill="#ffc658" fillOpacity={0.6} />
+            </AreaChart>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
 };
+
 export default DashboardCharts;
