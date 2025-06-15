@@ -77,6 +77,32 @@ interface StudyHallFormData {
   qrCode?: string;
 }
 
+// Interface for StudyHallView component
+interface StudyHallViewData {
+  id: number;
+  name: string;
+  merchantId: number;
+  merchantName: string;
+  location: string;
+  gpsLocation: { lat: number; lng: number };
+  capacity: number;
+  rows: number;
+  seatsPerRow: number;
+  layout: Array<{ id: string; status: 'available' | 'occupied' | 'maintenance' | 'disabled' }>;
+  pricePerDay: number;
+  pricePerWeek: number;
+  pricePerMonth: number;
+  amenities: string[];
+  customAmenities?: string[];
+  status: 'draft' | 'active' | 'inactive';
+  rating: number;
+  totalBookings: number;
+  description: string;
+  images: string[];
+  mainImage: string;
+  qrCode?: string;
+}
+
 interface DataTableProps {
   data: StudyHall[];
 }
@@ -239,8 +265,39 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
     console.log("Adding study hall:", data);
   };
 
+  // Helper function to convert StudyHall to StudyHallViewData
+  const convertToViewData = (studyHall: StudyHall): StudyHallViewData => {
+    return {
+      id: parseInt(studyHall.id),
+      name: studyHall.name || '',
+      merchantId: parseInt(studyHall.merchant_id || '1'),
+      merchantName: 'Default Merchant',
+      description: studyHall.description || '',
+      location: studyHall.location || '',
+      gpsLocation: { lat: 28.6139, lng: 77.2090 },
+      capacity: studyHall.capacity || 30,
+      rows: 5,
+      seatsPerRow: 6,
+      layout: Array.from({ length: studyHall.capacity || 30 }, (_, i) => ({
+        id: `${String.fromCharCode(65 + Math.floor(i / 6))}${(i % 6) + 1}`,
+        status: Math.random() > 0.7 ? 'occupied' : 'available' as 'available' | 'occupied' | 'maintenance' | 'disabled'
+      })),
+      pricePerDay: studyHall.price_per_day || 0,
+      pricePerWeek: studyHall.price_per_week || 0,
+      pricePerMonth: studyHall.price_per_month || 0,
+      amenities: studyHall.amenities || [],
+      customAmenities: [],
+      status: (studyHall.status === 'maintenance' ? 'inactive' : studyHall.status) as 'draft' | 'active' | 'inactive',
+      images: [],
+      mainImage: '',
+      qrCode: '',
+      rating: studyHall.rating,
+      totalBookings: studyHall.total_bookings
+    };
+  };
+
   // Helper function to convert StudyHall to StudyHallFormData
-  const convertToFormData = (studyHall: StudyHall): StudyHallFormData & { rating: number; totalBookings: number } => {
+  const convertToFormData = (studyHall: StudyHall): StudyHallFormData => {
     return {
       id: parseInt(studyHall.id),
       name: studyHall.name || '',
@@ -268,9 +325,7 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
         close: '21:00',
         days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
       },
-      qrCode: '',
-      rating: studyHall.rating,
-      totalBookings: studyHall.total_bookings
+      qrCode: ''
     };
   };
 
@@ -351,7 +406,7 @@ const StudyHallsTable: React.FC<DataTableProps> = ({ data }) => {
 
       {viewingStudyHall && (
         <StudyHallView
-          studyHall={viewingStudyHall}
+          studyHall={convertToViewData(viewingStudyHall)}
           isOpen={showViewStudyHall}
           onClose={() => {
             setShowViewStudyHall(false);
