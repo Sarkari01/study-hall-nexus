@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,13 @@ const TransactionsTable = () => {
 
       if (error) throw error;
 
-      setTransactions(data || []);
+      // Type assertion to ensure status field matches our interface
+      const typedTransactions = (data || []).map(transaction => ({
+        ...transaction,
+        status: transaction.status as 'completed' | 'pending' | 'failed' | 'cancelled'
+      }));
+
+      setTransactions(typedTransactions);
     } catch (error) {
       console.error('Error fetching transactions:', error);
       toast({
