@@ -374,7 +374,7 @@ const BookingsTable: React.FC = () => {
                 Clear Filters
               </Button>
               <ExportButtons 
-                title="Export Bookings"
+                title="Bookings Data"
                 data={filteredBookings} 
                 filename="bookings"
                 columns={[
