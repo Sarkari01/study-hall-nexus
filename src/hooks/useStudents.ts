@@ -34,7 +34,13 @@ export const useStudents = () => {
 
       if (error) throw error;
 
-      setStudents(data || []);
+      // Type assertion to ensure status field matches our interface
+      const typedStudents = (data || []).map(student => ({
+        ...student,
+        status: student.status as 'active' | 'inactive' | 'suspended'
+      }));
+
+      setStudents(typedStudents);
       setError(null);
     } catch (err) {
       console.error('Error fetching students:', err);

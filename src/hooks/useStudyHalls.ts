@@ -40,7 +40,13 @@ export const useStudyHalls = () => {
 
       if (error) throw error;
 
-      setStudyHalls(data || []);
+      // Type assertion to ensure status field matches our interface
+      const typedStudyHalls = (data || []).map(hall => ({
+        ...hall,
+        status: hall.status as 'draft' | 'active' | 'inactive' | 'maintenance'
+      }));
+
+      setStudyHalls(typedStudyHalls);
       setError(null);
     } catch (err) {
       console.error('Error fetching study halls:', err);

@@ -72,7 +72,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({
         email: student.email,
         phone: student.phone,
         total_bookings: student.total_bookings,
-        status: student.status,
+        status: student.status as 'active' | 'inactive' | 'suspended',
         created_at: student.created_at,
         total_spent: student.total_spent,
         average_session_duration: student.average_session_duration,
