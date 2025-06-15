@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus, FileText, Bell, MessageSquare, Megaphone } from "lucide-react";
 import AdminSidebar from "@/components/AdminSidebar";
+import AdminHeader from "@/components/admin/AdminHeader";
 import StudentsTable from "@/components/admin/StudentsTable";
 import MerchantsTable from "@/components/admin/MerchantsTable";
 import StudyHallsTable from "@/components/admin/StudyHallsTable";
@@ -73,27 +73,27 @@ const AdminDashboard = () => {
       </div>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="shadow-sm border-slate-200/60">
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle className="text-slate-900">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("students")}>
-              <Users className="h-6 w-6 mb-2" />
-              View Students
+            <Button variant="outline" className="h-20 flex-col hover:bg-blue-50 hover:border-blue-200 transition-all duration-200" onClick={() => setActiveTab("students")}>
+              <Users className="h-6 w-6 mb-2 text-blue-600" />
+              <span className="text-sm font-medium">View Students</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("merchants")}>
-              <Building2 className="h-6 w-6 mb-2" />
-              Manage Merchants
+            <Button variant="outline" className="h-20 flex-col hover:bg-green-50 hover:border-green-200 transition-all duration-200" onClick={() => setActiveTab("merchants")}>
+              <Building2 className="h-6 w-6 mb-2 text-green-600" />
+              <span className="text-sm font-medium">Manage Merchants</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("payments")}>
-              <DollarSign className="h-6 w-6 mb-2" />
-              View Payments
+            <Button variant="outline" className="h-20 flex-col hover:bg-purple-50 hover:border-purple-200 transition-all duration-200" onClick={() => setActiveTab("payments")}>
+              <DollarSign className="h-6 w-6 mb-2 text-purple-600" />
+              <span className="text-sm font-medium">View Payments</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col" onClick={() => setActiveTab("study-halls")}>
-              <Calendar className="h-6 w-6 mb-2" />
-              Study Halls
+            <Button variant="outline" className="h-20 flex-col hover:bg-orange-50 hover:border-orange-200 transition-all duration-200" onClick={() => setActiveTab("study-halls")}>
+              <Calendar className="h-6 w-6 mb-2 text-orange-600" />
+              <span className="text-sm font-medium">Study Halls</span>
             </Button>
           </div>
         </CardContent>
@@ -272,7 +272,7 @@ const AdminDashboard = () => {
   };
   
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-slate-50">
       <AdminSidebar 
         activeItem={activeTab} 
         onItemClick={setActiveTab} 
@@ -280,22 +280,16 @@ const AdminDashboard = () => {
         onToggleExpand={handleToggleExpand} 
       />
       
-      <main className="flex-1 p-6 overflow-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {activeTab === 'dashboard' ? 'Dashboard' : 
-             activeTab === 'general-settings' ? 'General Settings' :
-             'Management Console'}
-          </h1>
-          <p className="text-gray-600">
-            {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' :
-             activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' :
-             'Advanced administrative controls and monitoring'}
-          </p>
-        </div>
-
-        <div className="max-w-full">
-          {renderModuleContent()}
+      <main className="flex-1 flex flex-col">
+        <AdminHeader 
+          activeModule={activeTab}
+          onModuleChange={setActiveTab}
+        />
+        
+        <div className="flex-1 p-6 overflow-auto">
+          <div className="max-w-full">
+            {renderModuleContent()}
+          </div>
         </div>
       </main>
     </div>
