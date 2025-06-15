@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, DollarSign, Clock, CheckCircle, AlertCircle, Send } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Search, DollarSign, Clock, CheckCircle, AlertCircle, Send, Edit, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PayoutRequest {
@@ -18,10 +20,98 @@ interface PayoutRequest {
   minimumPayout: number;
   lastPayout: string;
   bankAccount: string;
-  status: 'eligible' | 'processing' | 'completed' | 'on_hold';
+  status: 'eligible' | 'processing' | 'completed' | 'on_hold' | 'pending' | 'rejected' | 'success';
   autoPayoutEnabled: boolean;
   pendingDays: number;
+  remarks?: string;
+  lastUpdatedBy?: string;
+  lastUpdatedAt?: string;
 }
+
+interface StatusChangeModalProps {
+  payout: PayoutRequest;
+  isOpen: boolean;
+  onClose: () => void;
+  onStatusChange: (payoutId: number, newStatus: string, remarks: string) => void;
+}
+
+const StatusChangeModal: React.FC<StatusChangeModalProps> = ({ payout, isOpen, onClose, onStatusChange }) => {
+  const [selectedStatus, setSelectedStatus] = useState(payout.status);
+  const [remarks, setRemarks] = useState('');
+
+  const statusOptions = [
+    { value: 'on_hold', label: 'On Hold', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'pending', label: 'Pending', color: 'bg-blue-100 text-blue-800' },
+    { value: 'rejected', label: 'Rejected', color: 'bg-red-100 text-red-800' },
+    { value: 'processing', label: 'Processing', color: 'bg-purple-100 text-purple-800' },
+    { value: 'success', label: 'Success', color: 'bg-green-100 text-green-800' },
+    { value: 'eligible', label: 'Eligible', color: 'bg-gray-100 text-gray-800' }
+  ];
+
+  const handleSubmit = () => {
+    if (!remarks.trim()) {
+      return;
+    }
+    onStatusChange(payout.id, selectedStatus, remarks);
+    onClose();
+    setRemarks('');
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Change Status - {payout.merchantName}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="status">New Status</Label>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded text-xs ${option.color}`}>
+                        {option.label}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="remarks">Remarks/Notes *</Label>
+            <Textarea
+              id="remarks"
+              placeholder="Enter reason for status change..."
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              className="min-h-[80px]"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit}
+              disabled={!remarks.trim()}
+            >
+              Update Status
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const SettleNowTable = () => {
   const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
@@ -29,6 +119,8 @@ const SettleNowTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedPayouts, setSelectedPayouts] = useState<number[]>([]);
+  const [statusModalOpen, setStatusModalOpen] = useState(false);
+  const [selectedPayout, setSelectedPayout] = useState<PayoutRequest | null>(null);
   const { toast } = useToast();
 
   const mockPayouts: PayoutRequest[] = [
@@ -43,7 +135,10 @@ const SettleNowTable = () => {
       bankAccount: "HDFC Bank ***4567",
       status: 'eligible',
       autoPayoutEnabled: true,
-      pendingDays: 7
+      pendingDays: 7,
+      remarks: "",
+      lastUpdatedBy: "Admin",
+      lastUpdatedAt: "2024-06-14 10:30 AM"
     },
     {
       id: 2,
@@ -54,9 +149,12 @@ const SettleNowTable = () => {
       minimumPayout: 500,
       lastPayout: "2024-06-10",
       bankAccount: "SBI Bank ***8901",
-      status: 'eligible',
+      status: 'on_hold',
       autoPayoutEnabled: false,
-      pendingDays: 4
+      pendingDays: 4,
+      remarks: "KYC verification pending",
+      lastUpdatedBy: "Admin",
+      lastUpdatedAt: "2024-06-13 02:15 PM"
     },
     {
       id: 3,
@@ -107,12 +205,39 @@ const SettleNowTable = () => {
     }
   };
 
+  const handleStatusChange = (payoutId: number, newStatus: string, remarks: string) => {
+    setPayouts(prev => prev.map(payout => 
+      payout.id === payoutId 
+        ? { 
+            ...payout, 
+            status: newStatus as PayoutRequest['status'],
+            remarks,
+            lastUpdatedBy: "Current Admin",
+            lastUpdatedAt: new Date().toLocaleString()
+          } 
+        : payout
+    ));
+
+    toast({
+      title: "Status Updated",
+      description: `Status changed to ${newStatus.replace('_', ' ')} for ${payouts.find(p => p.id === payoutId)?.merchantName}`,
+    });
+  };
+
+  const openStatusModal = (payout: PayoutRequest) => {
+    setSelectedPayout(payout);
+    setStatusModalOpen(true);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'eligible': return 'default';
       case 'processing': return 'secondary';
-      case 'completed': return 'outline';
-      case 'on_hold': return 'destructive';
+      case 'completed':
+      case 'success': return 'outline';
+      case 'on_hold':
+      case 'rejected': return 'destructive';
+      case 'pending': return 'secondary';
       default: return 'secondary';
     }
   };
@@ -121,8 +246,11 @@ const SettleNowTable = () => {
     switch (status) {
       case 'eligible': return <DollarSign className="h-4 w-4" />;
       case 'processing': return <Clock className="h-4 w-4" />;
-      case 'completed': return <CheckCircle className="h-4 w-4" />;
-      case 'on_hold': return <AlertCircle className="h-4 w-4" />;
+      case 'completed':
+      case 'success': return <CheckCircle className="h-4 w-4" />;
+      case 'on_hold':
+      case 'rejected': return <AlertCircle className="h-4 w-4" />;
+      case 'pending': return <Clock className="h-4 w-4" />;
       default: return <Clock className="h-4 w-4" />;
     }
   };
@@ -254,8 +382,10 @@ const SettleNowTable = () => {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="eligible">Eligible</SelectItem>
                 <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="success">Success</SelectItem>
                 <SelectItem value="on_hold">On Hold</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
             <Button 
@@ -304,6 +434,7 @@ const SettleNowTable = () => {
                   <TableHead>Last Payout</TableHead>
                   <TableHead>Days Pending</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Remarks</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -358,22 +489,52 @@ const SettleNowTable = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center">
+                      <div className="flex items-center gap-2">
                         {getStatusIcon(payout.status)}
-                        <Badge variant={getStatusColor(payout.status)} className="ml-2">
+                        <Badge variant={getStatusColor(payout.status)}>
                           {payout.status.replace('_', ' ').charAt(0).toUpperCase() + payout.status.slice(1)}
                         </Badge>
                       </div>
+                      {payout.lastUpdatedAt && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          Updated: {payout.lastUpdatedAt}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="max-w-xs">
+                      {payout.remarks && (
+                        <div className="text-sm">
+                          <div className="truncate" title={payout.remarks}>
+                            {payout.remarks}
+                          </div>
+                          {payout.lastUpdatedBy && (
+                            <div className="text-xs text-gray-500">
+                              By: {payout.lastUpdatedBy}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        size="sm" 
-                        onClick={() => processPayout(payout.id)}
-                        disabled={payout.status !== 'eligible' || payout.availableAmount < payout.minimumPayout}
-                        variant={payout.status === 'eligible' ? "default" : "outline"}
-                      >
-                        {payout.status === 'eligible' ? 'Pay Now' : 'View'}
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => openStatusModal(payout)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          Status
+                        </Button>
+                        {payout.status === 'eligible' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => processPayout(payout.id)}
+                            disabled={payout.availableAmount < payout.minimumPayout}
+                          >
+                            Pay Now
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -382,6 +543,19 @@ const SettleNowTable = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Status Change Modal */}
+      {selectedPayout && (
+        <StatusChangeModal
+          payout={selectedPayout}
+          isOpen={statusModalOpen}
+          onClose={() => {
+            setStatusModalOpen(false);
+            setSelectedPayout(null);
+          }}
+          onStatusChange={handleStatusChange}
+        />
+      )}
     </div>
   );
 };
