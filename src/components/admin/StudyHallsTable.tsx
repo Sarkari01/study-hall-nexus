@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useStudyHalls } from "@/hooks/useStudyHalls";
+import { supabase } from "@/integrations/supabase/client";
 import StudyHallForm from "./StudyHallForm";
 import ExportButtons from "@/components/shared/ExportButtons";
 
