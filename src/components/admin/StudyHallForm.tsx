@@ -87,7 +87,19 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
 
   useEffect(() => {
     if (editData) {
-      setFormData(editData);
+      // Ensure all required properties exist with proper defaults
+      setFormData({
+        ...editData,
+        amenities: editData.amenities || [],
+        customAmenities: editData.customAmenities || [],
+        images: editData.images || [],
+        layout: editData.layout || [],
+        pricePerDay: editData.pricePerDay?.toString() || '',
+        pricePerWeek: editData.pricePerWeek?.toString() || '',
+        pricePerMonth: editData.pricePerMonth?.toString() || '',
+        merchantId: editData.merchantId?.toString() || '',
+        status: editData.status || 'draft'
+      });
     } else if (!isAdmin && currentMerchant) {
       setFormData(prev => ({
         ...prev,
