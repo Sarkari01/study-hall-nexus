@@ -427,6 +427,137 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_documents: {
+        Row: {
+          created_at: string | null
+          document_name: string | null
+          document_type: string
+          document_url: string
+          file_size: number | null
+          id: string
+          merchant_id: string | null
+          mime_type: string | null
+          rejection_reason: string | null
+          updated_at: string | null
+          verification_status: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          document_name?: string | null
+          document_type: string
+          document_url: string
+          file_size?: number | null
+          id?: string
+          merchant_id?: string | null
+          mime_type?: string | null
+          rejection_reason?: string | null
+          updated_at?: string | null
+          verification_status?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          document_name?: string | null
+          document_type?: string
+          document_url?: string
+          file_size?: number | null
+          id?: string
+          merchant_id?: string | null
+          mime_type?: string | null
+          rejection_reason?: string | null
+          updated_at?: string | null
+          verification_status?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_documents_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_profiles: {
+        Row: {
+          aadhaar_card_url: string | null
+          approval_status: string | null
+          bank_account_details: Json | null
+          business_address: Json
+          business_logo_url: string | null
+          business_name: string
+          business_phone: string
+          communication_address: Json | null
+          contact_number: string
+          created_at: string | null
+          created_by: string | null
+          full_name: string
+          id: string
+          notes: string | null
+          onboarding_completed: boolean | null
+          refundable_security_deposit: number | null
+          slide_images: string[] | null
+          trade_license_url: string | null
+          updated_at: string | null
+          updated_by: string | null
+          user_id: string | null
+          verification_status: string | null
+        }
+        Insert: {
+          aadhaar_card_url?: string | null
+          approval_status?: string | null
+          bank_account_details?: Json | null
+          business_address: Json
+          business_logo_url?: string | null
+          business_name: string
+          business_phone: string
+          communication_address?: Json | null
+          contact_number: string
+          created_at?: string | null
+          created_by?: string | null
+          full_name: string
+          id?: string
+          notes?: string | null
+          onboarding_completed?: boolean | null
+          refundable_security_deposit?: number | null
+          slide_images?: string[] | null
+          trade_license_url?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          user_id?: string | null
+          verification_status?: string | null
+        }
+        Update: {
+          aadhaar_card_url?: string | null
+          approval_status?: string | null
+          bank_account_details?: Json | null
+          business_address?: Json
+          business_logo_url?: string | null
+          business_name?: string
+          business_phone?: string
+          communication_address?: Json | null
+          contact_number?: string
+          created_at?: string | null
+          created_by?: string | null
+          full_name?: string
+          id?: string
+          notes?: string | null
+          onboarding_completed?: boolean | null
+          refundable_security_deposit?: number | null
+          slide_images?: string[] | null
+          trade_license_url?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          user_id?: string | null
+          verification_status?: string | null
+        }
+        Relationships: []
+      }
       notification_logs: {
         Row: {
           created_at: string | null
