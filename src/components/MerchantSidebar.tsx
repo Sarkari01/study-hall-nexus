@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building2, Calendar, DollarSign, BarChart3, Settings, User, Home, MessageSquare, Users, CreditCard, UserPlus, ChevronRight } from "lucide-react";
+import { Building2, Calendar, DollarSign, BarChart3, Settings, User, Home, MessageSquare, Users, CreditCard, UserPlus, Shield } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,67 +18,72 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
   merchantName,
   businessName
 }) => {
-  const menuItems = [
+  const mainMenuItems = [
     {
       title: "Overview",
       value: "overview",
       icon: Home,
-      badge: null
+      description: "Dashboard overview"
     },
     {
       title: "Study Halls",
       value: "study-halls",
       icon: Building2,
-      badge: "3"
+      description: "Manage your spaces"
     },
     {
       title: "Bookings",
       value: "bookings",
       icon: Calendar,
-      badge: "12"
+      description: "View reservations"
     },
     {
       title: "Transactions",
       value: "transactions",
       icon: CreditCard,
-      badge: null
+      description: "Financial history"
     },
     {
       title: "Analytics",
       value: "analytics",
       icon: BarChart3,
-      badge: null
-    },
+      description: "Performance insights"
+    }
+  ];
+
+  const managementItems = [
     {
       title: "Team Management",
       value: "team",
       icon: UserPlus,
-      badge: "2",
-      hasChevron: true
+      description: "Manage incharge users"
     },
     {
       title: "Community",
       value: "community",
       icon: MessageSquare,
-      badge: null
+      description: "Community posts"
     },
     {
       title: "Chat",
       value: "chat",
       icon: Users,
-      badge: "3"
-    },
+      description: "Customer support"
+    }
+  ];
+
+  const settingsItems = [
     {
       title: "Profile",
       value: "profile",
       icon: User,
-      badge: null
+      description: "Business profile"
     },
     {
       title: "Settings",
       value: "settings",
       icon: Settings,
-      badge: null
+      description: "Account settings"
     }
   ];
 
@@ -87,64 +92,129 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
   };
 
   return (
-    <Sidebar className="border-r border-green-100 bg-white w-72">
-      <SidebarHeader className="p-6 border-b border-green-50">
+    <Sidebar className="border-r border-gray-200">
+      <SidebarHeader className="p-6 border-b border-gray-100">
         <div className="space-y-4">
-          <div>
-            <h2 className="text-green-800 font-bold text-2xl mb-1">Sarkari Ninja</h2>
-            <p className="text-sm text-green-600">Advanced Management System</p>
+          {/* Logo/Brand */}
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <Building2 className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Sarkari Ninja</h2>
+              <p className="text-xs text-gray-500">Merchant Panel</p>
+            </div>
+          </div>
+          
+          {/* Merchant Info Card */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 space-y-3">
+            <div className="flex items-center space-x-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src="/placeholder-avatar.jpg" />
+                <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
+                  {getInitials(merchantName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{merchantName}</p>
+                <p className="text-xs text-gray-600">Business Owner</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="w-full bg-white/60 text-blue-700 border-blue-200 justify-center">
+              {businessName}
+            </Badge>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-0 py-4">
+      <SidebarContent className="px-4 py-2">
         <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 py-2">
+            Dashboard
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-4">
-              {menuItems.map((item) => (
+            <SidebarMenu className="space-y-1">
+              {mainMenuItems.map(item => (
                 <SidebarMenuItem key={item.value}>
                   <SidebarMenuButton 
                     asChild 
                     isActive={activeTab === item.value} 
                     onClick={() => onTabChange(item.value)}
-                    className="group w-full h-12"
+                    className="group relative"
                   >
-                    <button className={`w-full flex items-center justify-between px-3 py-3 rounded-lg text-left transition-all duration-200 ${
-                      activeTab === item.value 
-                        ? 'bg-green-600 text-white shadow-md' 
-                        : 'text-gray-700 hover:bg-green-50 hover:text-green-700'
-                    }`}>
-                      <div className="flex items-center space-x-3">
-                        <div className={`flex-shrink-0 ${
-                          activeTab === item.value ? 'text-white' : 'text-green-500'
-                        }`}>
-                          <item.icon className="h-5 w-5" />
+                    <button className="w-full text-left hover:bg-gray-50 transition-colors duration-200">
+                      <div className="flex items-center space-x-3 py-2 px-3 rounded-lg">
+                        <item.icon className={`h-5 w-5 ${activeTab === item.value ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'}`} />
+                        <div className="flex-1">
+                          <span className={`text-sm font-medium ${activeTab === item.value ? 'text-blue-600' : 'text-gray-700'}`}>
+                            {item.title}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
                         </div>
-                        <span className={`text-sm font-medium ${
-                          activeTab === item.value ? 'text-white' : 'text-gray-700'
-                        }`}>
-                          {item.title}
-                        </span>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        {item.badge && (
-                          <Badge 
-                            variant="secondary" 
-                            className={`text-xs px-2 py-0.5 font-medium ${
-                              activeTab === item.value 
-                                ? 'bg-white/20 text-white border-white/30' 
-                                : 'bg-green-100 text-green-700 border-green-200'
-                            }`}
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                        {item.hasChevron && (
-                          <ChevronRight className={`h-4 w-4 ${
-                            activeTab === item.value ? 'text-white' : 'text-green-500'
-                          }`} />
-                        )}
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 py-2">
+            Management
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {managementItems.map(item => (
+                <SidebarMenuItem key={item.value}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={activeTab === item.value} 
+                    onClick={() => onTabChange(item.value)}
+                    className="group relative"
+                  >
+                    <button className="w-full text-left hover:bg-gray-50 transition-colors duration-200">
+                      <div className="flex items-center space-x-3 py-2 px-3 rounded-lg">
+                        <item.icon className={`h-5 w-5 ${activeTab === item.value ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'}`} />
+                        <div className="flex-1">
+                          <span className={`text-sm font-medium ${activeTab === item.value ? 'text-blue-600' : 'text-gray-700'}`}>
+                            {item.title}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 py-2">
+            Account
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              {settingsItems.map(item => (
+                <SidebarMenuItem key={item.value}>
+                  <SidebarMenuButton 
+                    asChild 
+                    isActive={activeTab === item.value} 
+                    onClick={() => onTabChange(item.value)}
+                    className="group relative"
+                  >
+                    <button className="w-full text-left hover:bg-gray-50 transition-colors duration-200">
+                      <div className="flex items-center space-x-3 py-2 px-3 rounded-lg">
+                        <item.icon className={`h-5 w-5 ${activeTab === item.value ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'}`} />
+                        <div className="flex-1">
+                          <span className={`text-sm font-medium ${activeTab === item.value ? 'text-blue-600' : 'text-gray-700'}`}>
+                            {item.title}
+                          </span>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+                        </div>
                       </div>
                     </button>
                   </SidebarMenuButton>
@@ -155,18 +225,13 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-green-100">
-        <div className="flex items-center space-x-3 p-3 rounded-lg bg-green-50">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src="/placeholder-avatar.jpg" />
-            <AvatarFallback className="bg-green-100 text-green-700 font-semibold text-sm">
-              {getInitials(merchantName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-green-800 truncate">{merchantName}</p>
-            <p className="text-xs text-green-600 truncate">{businessName}</p>
-          </div>
+      <SidebarFooter className="p-4 border-t border-gray-100">
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>Sarkari Ninja v2.0</span>
+          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+            <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+            Online
+          </Badge>
         </div>
       </SidebarFooter>
     </Sidebar>
