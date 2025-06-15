@@ -1,11 +1,9 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Users, Building2, Calendar, ArrowRightLeft, DollarSign, MapPin, UserPlus, TrendingUp, ChevronDown, ChevronRight, LayoutDashboard, Megaphone, MessageSquare, Users2, Settings, Code, Package, Gift, Wallet, Percent, Bell, LogOut, User, BookOpen } from "lucide-react";
+import { Users, Building2, Calendar, CreditCard, ArrowRightLeft, DollarSign, MapPin, UserPlus, TrendingUp, ChevronDown, ChevronRight, LayoutDashboard, Megaphone, MessageSquare, Users2, Settings, Code, Package, Gift, Wallet, Percent, Bell, LogOut, User, BookOpen } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
-
 interface AdminSidebarItem {
   id: string;
   label: string;
@@ -16,14 +14,12 @@ interface AdminSidebarItem {
     label: string;
   }>;
 }
-
 interface AdminSidebarProps {
   activeItem: string;
   onItemClick: (itemId: string) => void;
   expandedItems: string[];
   onToggleExpand: (itemId: string) => void;
 }
-
 const sidebarItems: AdminSidebarItem[] = [{
   id: "dashboard",
   label: "Dashboard",
@@ -78,6 +74,10 @@ const sidebarItems: AdminSidebarItem[] = [{
   id: "notifications",
   label: "Push Notifications",
   icon: <Bell className="h-5 w-5" />
+}, {
+  id: "payments",
+  label: "Payments",
+  icon: <CreditCard className="h-5 w-5" />
 }, {
   id: "transactions",
   label: "Transactions",
@@ -158,7 +158,6 @@ const sidebarItems: AdminSidebarItem[] = [{
     label: "Developer Management"
   }]
 }];
-
 const AdminSidebar: React.FC<AdminSidebarProps> = ({
   activeItem,
   onItemClick,
@@ -180,13 +179,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   return <div className="w-72 bg-white border-r border-gray-200 min-h-screen flex flex-col">
       <div className="p-6">
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-white" />
-            </div>
-            <h2 className="text-gray-900 font-bold text-4xl">Sarkari Ninja</h2>
-          </div>
-          <p className="text-sm text-gray-600">Advanced Management System</p>
+          <h2 className="text-gray-900 font-bold text-4xl">Sarkari Ninja</h2>
+          <p className="text-zinc-950 font-extrabold text-3xl">Advanced Management System</p>
         </div>
         
         <nav className="space-y-2 flex-1">
@@ -236,5 +230,4 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </div>
     </div>;
 };
-
 export default AdminSidebar;
