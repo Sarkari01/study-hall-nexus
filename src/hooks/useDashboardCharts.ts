@@ -86,27 +86,34 @@ export const useDashboardCharts = () => {
 
       const revenueData = Array.from(revenueByDay.values());
 
-      // Fetch merchant performance data
+      // Fetch merchants separately
       const { data: merchants, error: merchantsError } = await supabase
         .from('merchant_profiles')
-        .select(`
-          full_name,
-          business_name,
-          study_halls (
-            total_revenue,
-            total_bookings
-          )
-        `)
+        .select('full_name, business_name')
         .limit(5);
 
       if (merchantsError) throw merchantsError;
 
-      const merchantData = merchants?.map(merchant => ({
-        name: merchant.business_name || merchant.full_name,
-        revenue: merchant.study_halls?.reduce((sum, hall) => sum + (hall.total_revenue || 0), 0) || 0,
-        bookings: merchant.study_halls?.reduce((sum, hall) => sum + (hall.total_bookings || 0), 0) || 0,
-        growth: Math.random() * 30 // Mock growth for now
-      })) || [];
+      // Fetch study halls separately to get revenue data
+      const { data: studyHalls, error: studyHallsError } = await supabase
+        .from('study_halls')
+        .select('merchant_id, total_revenue, total_bookings');
+
+      if (studyHallsError) throw studyHallsError;
+
+      // Combine merchant and study hall data
+      const merchantData = merchants?.map(merchant => {
+        const merchantStudyHalls = studyHalls?.filter(hall => hall.merchant_id === merchant.id) || [];
+        const totalRevenue = merchantStudyHalls.reduce((sum, hall) => sum + (hall.total_revenue || 0), 0);
+        const totalBookings = merchantStudyHalls.reduce((sum, hall) => sum + (hall.total_bookings || 0), 0);
+        
+        return {
+          name: merchant.business_name || merchant.full_name,
+          revenue: totalRevenue,
+          bookings: totalBookings,
+          growth: Math.random() * 30 // Mock growth for now
+        };
+      }) || [];
 
       // Fetch booking distribution by time
       const { data: timeBookings, error: timeError } = await supabase

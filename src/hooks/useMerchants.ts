@@ -26,26 +26,36 @@ export const useMerchants = () => {
   const fetchMerchants = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch merchants first
+      const { data: merchantsData, error: merchantsError } = await supabase
         .from('merchant_profiles')
-        .select(`
-          *,
-          study_halls (
-            total_revenue,
-            id
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (merchantsError) throw merchantsError;
 
-      const typedMerchants = (data || []).map(merchant => ({
-        ...merchant,
-        verification_status: merchant.verification_status as 'unverified' | 'pending' | 'verified' | 'rejected',
-        approval_status: merchant.approval_status as 'pending' | 'approved' | 'rejected',
-        total_revenue: merchant.study_halls?.reduce((sum: number, hall: any) => sum + (hall.total_revenue || 0), 0) || 0,
-        total_study_halls: merchant.study_halls?.length || 0
-      }));
+      // Fetch study halls separately
+      const { data: studyHalls, error: studyHallsError } = await supabase
+        .from('study_halls')
+        .select('merchant_id, total_revenue, id');
+
+      if (studyHallsError) throw studyHallsError;
+
+      // Combine the data
+      const typedMerchants = (merchantsData || []).map(merchant => {
+        const merchantStudyHalls = studyHalls?.filter(hall => hall.merchant_id === merchant.id) || [];
+        const totalRevenue = merchantStudyHalls.reduce((sum: number, hall: any) => sum + (hall.total_revenue || 0), 0);
+        const totalStudyHalls = merchantStudyHalls.length;
+
+        return {
+          ...merchant,
+          verification_status: merchant.verification_status as 'unverified' | 'pending' | 'verified' | 'rejected',
+          approval_status: merchant.approval_status as 'pending' | 'approved' | 'rejected',
+          total_revenue: totalRevenue,
+          total_study_halls: totalStudyHalls
+        };
+      });
 
       setMerchants(typedMerchants);
       setError(null);
