@@ -49,23 +49,28 @@ export const useNotifications = () => {
         // Only set up listener if FCM is properly initialized
         if (!fcmToken) return;
 
-        const unsubscribe = await onMessageListener();
+        const messageListener = await onMessageListener();
         
-        return unsubscribe;
+        // Return a cleanup function
+        return () => {
+          // No cleanup needed for onMessage listener
+          console.log('Message listener cleanup');
+        };
       } catch (error) {
         console.error('Error setting up message listener:', error);
+        return () => {}; // Return empty cleanup function on error
       }
     };
 
-    let unsubscribe: (() => void) | undefined;
+    let cleanup: (() => void) | undefined;
 
-    setupMessageListener().then((unsub) => {
-      unsubscribe = unsub;
+    setupMessageListener().then((cleanupFn) => {
+      cleanup = cleanupFn;
     });
 
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
+      if (cleanup) {
+        cleanup();
       }
     };
   }, [fcmToken, toast]);
