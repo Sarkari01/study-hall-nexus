@@ -1,30 +1,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Search, 
-  Eye, 
-  Edit,
-  MapPin,
-  Users,
-  DollarSign,
-  Star,
-  Building2,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  Plus
-} from "lucide-react";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useStudyHalls } from "@/hooks/useStudyHalls";
 import { supabase } from "@/integrations/supabase/client";
 import StudyHallForm from "./StudyHallForm";
-import ExportButtons from "@/components/shared/ExportButtons";
+import StudyHallStats from "./StudyHallStats";
+import StudyHallFilters from "./StudyHallFilters";
+import StudyHallTableRow from "./StudyHallTableRow";
 import ErrorBoundary from "./ErrorBoundary";
 
 const StudyHallsTable = () => {
@@ -65,7 +49,6 @@ const StudyHallsTable = () => {
 
       if (error) throw error;
 
-      // Type the data properly before adding to state
       const typedStudyHall = {
         ...data,
         status: data.status as 'draft' | 'active' | 'inactive' | 'maintenance'
@@ -141,106 +124,24 @@ const StudyHallsTable = () => {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card key="total-halls">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Building2 className="h-8 w-8 text-blue-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Total Study Halls</p>
-                  <p className="text-2xl font-bold">{statistics.totalHalls}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card key="active-halls">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Active Halls</p>
-                  <p className="text-2xl font-bold">{statistics.activeHalls}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card key="total-capacity">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Users className="h-8 w-8 text-orange-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Total Capacity</p>
-                  <p className="text-2xl font-bold">{statistics.totalCapacity}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card key="total-revenue">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <DollarSign className="h-8 w-8 text-purple-600" />
-                <div>
-                  <p className="text-sm text-gray-600">Total Revenue</p>
-                  <p className="text-2xl font-bold">₹{statistics.totalRevenue.toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <StudyHallStats
+          totalHalls={statistics.totalHalls}
+          activeHalls={statistics.activeHalls}
+          totalCapacity={statistics.totalCapacity}
+          totalRevenue={statistics.totalRevenue}
+        />
 
-        {/* Filters and Actions */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search by name or location..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                </SelectContent>
-              </Select>
+        <StudyHallFilters
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          onCreateClick={() => setShowCreateForm(true)}
+          isSubmitting={isSubmitting}
+          exportData={exportData}
+          exportColumns={exportColumns}
+        />
 
-              <Button 
-                onClick={() => setShowCreateForm(true)}
-                className="bg-blue-600 hover:bg-blue-700"
-                disabled={isSubmitting}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Study Hall
-              </Button>
-
-              <ExportButtons
-                data={exportData}
-                filename="study-halls"
-                title="Study Halls Report"
-                columns={exportColumns}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Study Halls Table */}
         <Card>
           <CardHeader>
             <CardTitle>Study Halls ({filteredStudyHalls.length})</CardTitle>
@@ -268,76 +169,11 @@ const StudyHallsTable = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredStudyHalls.map((hall) => (
-                      <TableRow key={hall.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{hall.name}</span>
-                            {hall.is_featured && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Star className="h-3 w-3 mr-1" />
-                                Featured
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3 text-gray-400" />
-                            {hall.location}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{hall.capacity} seats</Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">₹{hall.price_per_day}</TableCell>
-                        <TableCell className="font-medium text-green-600">
-                          ₹{hall.total_revenue?.toLocaleString() || 0}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{hall.total_bookings}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                            {hall.rating.toFixed(1)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={hall.status === 'active' ? 'default' : 'secondary'}
-                            className={hall.status === 'active' ? 'bg-green-100 text-green-800' : ''}
-                          >
-                            {hall.status === 'active' ? (
-                              <>
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Active
-                              </>
-                            ) : (
-                              <>
-                                <XCircle className="h-3 w-3 mr-1" />
-                                {hall.status}
-                              </>
-                            )}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant={hall.status === 'active' ? 'destructive' : 'default'}
-                              size="sm"
-                              onClick={() => toggleStudyHallStatus(hall.id, hall.status)}
-                            >
-                              {hall.status === 'active' ? 'Deactivate' : 'Activate'}
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                      <StudyHallTableRow
+                        key={hall.id}
+                        hall={hall}
+                        onToggleStatus={toggleStudyHallStatus}
+                      />
                     ))}
                   </TableBody>
                 </Table>
@@ -346,7 +182,6 @@ const StudyHallsTable = () => {
           </CardContent>
         </Card>
 
-        {/* Study Hall Creation Form */}
         {showCreateForm && (
           <StudyHallForm
             isOpen={showCreateForm}
