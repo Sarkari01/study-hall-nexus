@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, CreditCard, Users, Building2, Calendar } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, CreditCard, Users, Building2, Calendar, Edit2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Payment {
@@ -14,10 +15,10 @@ interface Payment {
   user: string;
   userEmail: string;
   amount: number;
-  method: 'card' | 'upi' | 'netbanking' | 'wallet';
+  method: 'card' | 'upi' | 'netbanking' | 'wallet' | 'cash';
   studyHall: string;
   merchant: string;
-  status: 'completed' | 'pending' | 'failed' | 'refunded';
+  status: 'paid' | 'unpaid' | 'cash' | 'failed' | 'refunded';
   transactionId: string;
   date: string;
   bookingPeriod: string;
@@ -29,6 +30,9 @@ const PaymentsTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>('');
   const { toast } = useToast();
 
   // Mock data for payments
@@ -41,7 +45,7 @@ const PaymentsTable = () => {
       method: 'upi',
       studyHall: "Premium Study Lounge",
       merchant: "Sneha Patel",
-      status: 'completed',
+      status: 'paid',
       transactionId: "TXN001234567890",
       date: "2024-06-14 10:30 AM",
       bookingPeriod: "3 hours"
@@ -54,7 +58,7 @@ const PaymentsTable = () => {
       method: 'card',
       studyHall: "Kumar Study Centers",
       merchant: "Rajesh Kumar",
-      status: 'completed',
+      status: 'paid',
       transactionId: "TXN001234567891",
       date: "2024-06-14 09:15 AM",
       bookingPeriod: "1 day"
@@ -67,7 +71,7 @@ const PaymentsTable = () => {
       method: 'wallet',
       studyHall: "Tech Park Study Space",
       merchant: "Amit Singh",
-      status: 'pending',
+      status: 'unpaid',
       transactionId: "TXN001234567892",
       date: "2024-06-14 08:45 AM",
       bookingPeriod: "1.5 hours"
@@ -80,7 +84,7 @@ const PaymentsTable = () => {
       method: 'netbanking',
       studyHall: "Student Study Zone",
       merchant: "Sneha Patel",
-      status: 'completed',
+      status: 'paid',
       transactionId: "TXN001234567893",
       date: "2024-06-13 02:20 PM",
       bookingPeriod: "1 month"
@@ -90,11 +94,11 @@ const PaymentsTable = () => {
       user: "Vikram Yadav",
       userEmail: "vikram.y@email.com",
       amount: 100,
-      method: 'upi',
+      method: 'cash',
       studyHall: "Premium Study Lounge",
       merchant: "Sneha Patel",
-      status: 'failed',
-      transactionId: "TXN001234567894",
+      status: 'cash',
+      transactionId: "CASH001234567894",
       date: "2024-06-13 11:30 AM",
       bookingPeriod: "2 hours"
     },
@@ -140,11 +144,23 @@ const PaymentsTable = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'default';
-      case 'pending': return 'secondary';
+      case 'paid': return 'default';
+      case 'cash': return 'default';
+      case 'unpaid': return 'secondary';
       case 'failed': return 'destructive';
       case 'refunded': return 'outline';
       default: return 'secondary';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid': return <CheckCircle className="h-3 w-3 mr-1" />;
+      case 'cash': return <CheckCircle className="h-3 w-3 mr-1" />;
+      case 'unpaid': return <Clock className="h-3 w-3 mr-1" />;
+      case 'failed': return <XCircle className="h-3 w-3 mr-1" />;
+      case 'refunded': return <XCircle className="h-3 w-3 mr-1" />;
+      default: return <Clock className="h-3 w-3 mr-1" />;
     }
   };
 
@@ -154,8 +170,34 @@ const PaymentsTable = () => {
       case 'upi': return <CreditCard className="h-4 w-4 mr-1" />;
       case 'netbanking': return <CreditCard className="h-4 w-4 mr-1" />;
       case 'wallet': return <CreditCard className="h-4 w-4 mr-1" />;
+      case 'cash': return <CreditCard className="h-4 w-4 mr-1" />;
       default: return <CreditCard className="h-4 w-4 mr-1" />;
     }
+  };
+
+  const handleUpdateStatus = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setNewStatus(payment.status);
+    setIsUpdateDialogOpen(true);
+  };
+
+  const confirmStatusUpdate = () => {
+    if (!selectedPayment || !newStatus) return;
+
+    setPayments(prev => prev.map(payment => 
+      payment.id === selectedPayment.id 
+        ? { ...payment, status: newStatus as any }
+        : payment
+    ));
+
+    toast({
+      title: "Payment Status Updated",
+      description: `Payment status changed to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`,
+    });
+
+    setIsUpdateDialogOpen(false);
+    setSelectedPayment(null);
+    setNewStatus('');
   };
 
   const filteredPayments = payments.filter(payment => {
@@ -195,6 +237,7 @@ const PaymentsTable = () => {
                 <SelectItem value="upi">UPI</SelectItem>
                 <SelectItem value="netbanking">Net Banking</SelectItem>
                 <SelectItem value="wallet">Wallet</SelectItem>
+                <SelectItem value="cash">Cash</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -203,8 +246,9 @@ const PaymentsTable = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="cash">Cash</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
                 <SelectItem value="refunded">Refunded</SelectItem>
               </SelectContent>
@@ -236,6 +280,7 @@ const PaymentsTable = () => {
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Transaction ID</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -273,7 +318,8 @@ const PaymentsTable = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusColor(payment.status)}>
+                      <Badge variant={getStatusColor(payment.status)} className="flex items-center w-fit">
+                        {getStatusIcon(payment.status)}
                         {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                       </Badge>
                     </TableCell>
@@ -285,6 +331,17 @@ const PaymentsTable = () => {
                         {payment.transactionId}
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleUpdateStatus(payment)}
+                        className="flex items-center gap-1"
+                      >
+                        <Edit2 className="h-3 w-3" />
+                        Update Status
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -292,6 +349,50 @@ const PaymentsTable = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Update Status Dialog */}
+      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Payment Status</DialogTitle>
+            <DialogDescription>
+              Change the payment status for {selectedPayment?.user}'s transaction of ₹{selectedPayment?.amount}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Current Status</label>
+              <p className="text-sm text-gray-600 capitalize">{selectedPayment?.status}</p>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium">New Status</label>
+              <Select value={newStatus} onValueChange={setNewStatus}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select new status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="refunded">Refunded</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsUpdateDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmStatusUpdate} disabled={!newStatus || newStatus === selectedPayment?.status}>
+              Update Status
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

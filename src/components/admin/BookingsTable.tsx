@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -375,6 +374,7 @@ const BookingsTable: React.FC = () => {
                 Clear Filters
               </Button>
               <ExportButtons 
+                title="Export Bookings"
                 data={filteredBookings} 
                 filename="bookings"
                 columns={[
