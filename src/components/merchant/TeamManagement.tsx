@@ -13,7 +13,7 @@ import { UserPlus, Search, Mail, Phone, Shield, Edit, Trash2, MoreHorizontal, Us
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 
-interface TeamMember {
+interface InchargeUser {
   id: string;
   name: string;
   email: string;
@@ -28,7 +28,7 @@ interface TeamMember {
 }
 
 const TeamManagement = () => {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
+  const [inchargeUsers, setInchargeUsers] = useState<InchargeUser[]>([
     {
       id: '1',
       name: 'Amit Kumar',
@@ -73,7 +73,7 @@ const TeamManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newMember, setNewMember] = useState({
+  const [newUser, setNewUser] = useState({
     name: '',
     email: '',
     phone: '',
@@ -95,67 +95,67 @@ const TeamManagement = () => {
     pending: 'bg-yellow-100 text-yellow-800'
   };
 
-  const handleAddMember = () => {
-    const member: TeamMember = {
+  const handleAddInchargeUser = () => {
+    const user: InchargeUser = {
       id: Date.now().toString(),
-      name: newMember.name,
-      email: newMember.email,
-      phone: newMember.phone,
-      role: newMember.role as 'manager' | 'supervisor' | 'staff',
+      name: newUser.name,
+      email: newUser.email,
+      phone: newUser.phone,
+      role: newUser.role as 'manager' | 'supervisor' | 'staff',
       status: 'pending',
-      permissions: getDefaultPermissions(newMember.role),
+      permissions: getDefaultPermissions(newUser.role),
       joinedDate: new Date().toISOString().split('T')[0],
       lastActive: 'Never',
       studyHallsAssigned: []
     };
 
-    setTeamMembers(prev => [...prev, member]);
-    setNewMember({ name: '', email: '', phone: '', role: 'staff', studyHallsAssigned: [] });
+    setInchargeUsers(prev => [...prev, user]);
+    setNewUser({ name: '', email: '', phone: '', role: 'staff', studyHallsAssigned: [] });
     setIsAddModalOpen(false);
     
     toast({
       title: "Success",
-      description: "Team member invitation sent successfully",
+      description: "Incharge user invitation sent successfully",
     });
   };
 
   const getDefaultPermissions = (role: string) => {
     switch (role) {
       case 'manager':
-        return ['manage_bookings', 'view_analytics', 'manage_staff', 'financial_access'];
+        return ['manage_bookings', 'view_analytics', 'manage_staff', 'study_hall_access'];
       case 'supervisor':
-        return ['manage_bookings', 'view_analytics'];
+        return ['manage_bookings', 'view_analytics', 'study_hall_access'];
       case 'staff':
-        return ['view_bookings'];
+        return ['view_bookings', 'study_hall_access'];
       default:
-        return ['view_bookings'];
+        return ['study_hall_access'];
     }
   };
 
-  const handleStatusChange = (memberId: string, newStatus: 'active' | 'inactive') => {
-    setTeamMembers(prev => prev.map(member => 
-      member.id === memberId ? { ...member, status: newStatus } : member
+  const handleStatusChange = (userId: string, newStatus: 'active' | 'inactive') => {
+    setInchargeUsers(prev => prev.map(user => 
+      user.id === userId ? { ...user, status: newStatus } : user
     ));
     
     toast({
       title: "Status Updated",
-      description: `Team member status changed to ${newStatus}`,
+      description: `Incharge user status changed to ${newStatus}`,
     });
   };
 
-  const handleDeleteMember = (memberId: string) => {
-    setTeamMembers(prev => prev.filter(member => member.id !== memberId));
+  const handleDeleteUser = (userId: string) => {
+    setInchargeUsers(prev => prev.filter(user => user.id !== userId));
     toast({
-      title: "Member Removed",
-      description: "Team member has been removed successfully",
+      title: "User Removed",
+      description: "Incharge user has been removed successfully",
     });
   };
 
-  const filteredMembers = teamMembers.filter(member => {
-    const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
-    const matchesRole = roleFilter === 'all' || member.role === roleFilter;
+  const filteredUsers = inchargeUsers.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     return matchesSearch && matchesStatus && matchesRole;
   });
 
@@ -177,27 +177,27 @@ const TeamManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Team Management</h2>
-          <p className="text-gray-600">Manage your incharge users and their permissions</p>
+          <h2 className="text-2xl font-bold text-gray-900">Incharge User Management</h2>
+          <p className="text-gray-600">Manage your study hall incharge users and their permissions</p>
         </div>
         <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
           <DialogTrigger asChild>
             <Button className="bg-blue-600 hover:bg-blue-700">
               <UserPlus className="h-4 w-4 mr-2" />
-              Add Team Member
+              Add Incharge User
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Add New Team Member</DialogTitle>
+              <DialogTitle>Add New Incharge User</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input
                   id="name"
-                  value={newMember.name}
-                  onChange={(e) => setNewMember(prev => ({ ...prev, name: e.target.value }))}
+                  value={newUser.name}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, name: e.target.value }))}
                   placeholder="Enter full name"
                 />
               </div>
@@ -206,8 +206,8 @@ const TeamManagement = () => {
                 <Input
                   id="email"
                   type="email"
-                  value={newMember.email}
-                  onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
+                  value={newUser.email}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="Enter email address"
                 />
               </div>
@@ -215,27 +215,32 @@ const TeamManagement = () => {
                 <Label htmlFor="phone">Phone Number</Label>
                 <Input
                   id="phone"
-                  value={newMember.phone}
-                  onChange={(e) => setNewMember(prev => ({ ...prev, phone: e.target.value }))}
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, phone: e.target.value }))}
                   placeholder="Enter phone number"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={newMember.role} onValueChange={(value) => setNewMember(prev => ({ ...prev, role: value }))}>
+                <Label htmlFor="role">Incharge Role</Label>
+                <Select value={newUser.role} onValueChange={(value) => setNewUser(prev => ({ ...prev, role: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="supervisor">Supervisor</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="staff">Staff Incharge</SelectItem>
+                    <SelectItem value="supervisor">Supervisor Incharge</SelectItem>
+                    <SelectItem value="manager">Manager Incharge</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>Note:</strong> Incharge users will have access to manage study hall operations, bookings, and assigned duties only.
+                </p>
+              </div>
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddMember} disabled={!newMember.name || !newMember.email}>
+                <Button onClick={handleAddInchargeUser} disabled={!newUser.name || !newUser.email}>
                   Send Invitation
                 </Button>
               </div>
@@ -251,8 +256,8 @@ const TeamManagement = () => {
             <div className="flex items-center">
               <Users className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm text-gray-600">Total Members</p>
-                <p className="text-2xl font-bold">{teamMembers.length}</p>
+                <p className="text-sm text-gray-600">Total Incharge Users</p>
+                <p className="text-2xl font-bold">{inchargeUsers.length}</p>
               </div>
             </div>
           </CardContent>
@@ -263,7 +268,7 @@ const TeamManagement = () => {
               <Crown className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Managers</p>
-                <p className="text-2xl font-bold">{teamMembers.filter(m => m.role === 'manager').length}</p>
+                <p className="text-2xl font-bold">{inchargeUsers.filter(u => u.role === 'manager').length}</p>
               </div>
             </div>
           </CardContent>
@@ -274,7 +279,7 @@ const TeamManagement = () => {
               <Shield className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Supervisors</p>
-                <p className="text-2xl font-bold">{teamMembers.filter(m => m.role === 'supervisor').length}</p>
+                <p className="text-2xl font-bold">{inchargeUsers.filter(u => u.role === 'supervisor').length}</p>
               </div>
             </div>
           </CardContent>
@@ -287,7 +292,7 @@ const TeamManagement = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Active</p>
-                <p className="text-2xl font-bold">{teamMembers.filter(m => m.status === 'active').length}</p>
+                <p className="text-2xl font-bold">{inchargeUsers.filter(u => u.status === 'active').length}</p>
               </div>
             </div>
           </CardContent>
@@ -302,7 +307,7 @@ const TeamManagement = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search team members..."
+                  placeholder="Search incharge users..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -337,16 +342,16 @@ const TeamManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Team Members Table */}
+      {/* Incharge Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Team Members ({filteredMembers.length})</CardTitle>
+          <CardTitle>Incharge Users ({filteredUsers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Member</TableHead>
+                <TableHead>Incharge User</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Assigned Halls</TableHead>
@@ -355,46 +360,46 @@ const TeamManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredMembers.map((member) => (
-                <TableRow key={member.id}>
+              {filteredUsers.map((user) => (
+                <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={member.avatar} />
+                        <AvatarImage src={user.avatar} />
                         <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
-                          {getInitials(member.name)}
+                          {getInitials(user.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium text-gray-900">{member.name}</div>
+                        <div className="font-medium text-gray-900">{user.name}</div>
                         <div className="flex items-center text-sm text-gray-500 space-x-4">
                           <span className="flex items-center">
                             <Mail className="h-3 w-3 mr-1" />
-                            {member.email}
+                            {user.email}
                           </span>
                           <span className="flex items-center">
                             <Phone className="h-3 w-3 mr-1" />
-                            {member.phone}
+                            {user.phone}
                           </span>
                         </div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={`${roleColors[member.role]} flex items-center space-x-1 w-fit`}>
-                      {getRoleIcon(member.role)}
-                      <span className="capitalize">{member.role}</span>
+                    <Badge className={`${roleColors[user.role]} flex items-center space-x-1 w-fit`}>
+                      {getRoleIcon(user.role)}
+                      <span className="capitalize">{user.role}</span>
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge className={statusColors[member.status]}>
-                      {member.status}
+                    <Badge className={statusColors[user.status]}>
+                      {user.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {member.studyHallsAssigned.length > 0 ? (
-                        member.studyHallsAssigned.slice(0, 2).map(hall => (
+                      {user.studyHallsAssigned.length > 0 ? (
+                        user.studyHallsAssigned.slice(0, 2).map(hall => (
                           <Badge key={hall} variant="outline" className="text-xs mr-1">
                             {hall}
                           </Badge>
@@ -402,19 +407,19 @@ const TeamManagement = () => {
                       ) : (
                         <span className="text-gray-400 text-sm">None assigned</span>
                       )}
-                      {member.studyHallsAssigned.length > 2 && (
+                      {user.studyHallsAssigned.length > 2 && (
                         <Badge variant="outline" className="text-xs">
-                          +{member.studyHallsAssigned.length - 2} more
+                          +{user.studyHallsAssigned.length - 2} more
                         </Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      {member.lastActive === 'Never' ? (
+                      {user.lastActive === 'Never' ? (
                         <span className="text-gray-400">Never</span>
                       ) : (
-                        <span>{new Date(member.lastActive).toLocaleDateString()}</span>
+                        <span>{new Date(user.lastActive).toLocaleDateString()}</span>
                       )}
                     </div>
                   </TableCell>
@@ -432,23 +437,23 @@ const TeamManagement = () => {
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                           <Edit className="h-4 w-4 mr-2" />
-                          Edit Member
+                          Edit User
                         </DropdownMenuItem>
-                        {member.status === 'active' ? (
-                          <DropdownMenuItem onClick={() => handleStatusChange(member.id, 'inactive')}>
+                        {user.status === 'active' ? (
+                          <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'inactive')}>
                             Deactivate
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem onClick={() => handleStatusChange(member.id, 'active')}>
+                          <DropdownMenuItem onClick={() => handleStatusChange(user.id, 'active')}>
                             Activate
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem 
                           className="text-red-600"
-                          onClick={() => handleDeleteMember(member.id)}
+                          onClick={() => handleDeleteUser(user.id)}
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Remove Member
+                          Remove User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
