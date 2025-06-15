@@ -3,12 +3,7 @@ import { useState, useEffect } from 'react';
 import { requestNotificationPermission, onMessageListener } from '@/config/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { updateServiceWorkerConfig } from '@/utils/serviceWorkerUtils';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/integrations/supabase/client';
 
 export const useNotifications = () => {
   const [fcmToken, setFcmToken] = useState<string | null>(null);
