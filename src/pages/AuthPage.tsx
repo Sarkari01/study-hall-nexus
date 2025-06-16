@@ -8,14 +8,15 @@ import { Eye, EyeOff, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+
 const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const navigate = useNavigate();
+  const { user, userRole } = useAuth();
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -27,20 +28,26 @@ const AuthPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
 
-  // Check if user is already authenticated
+  // Check if user is already authenticated and redirect based on role
   useEffect(() => {
-    const checkAuth = async () => {
-      const {
-        data: {
-          session
-        }
-      } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/admin');
+    if (user && userRole) {
+      switch (userRole) {
+        case 'admin':
+          navigate('/admin');
+          break;
+        case 'merchant':
+          navigate('/merchant');
+          break;
+        case 'student':
+          navigate('/student');
+          break;
+        default:
+          navigate('/');
+          break;
       }
-    };
-    checkAuth();
-  }, [navigate]);
+    }
+  }, [user, userRole, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -128,13 +135,14 @@ const AuthPage = () => {
       setLoading(false);
     }
   };
-  return <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Building2 className="h-12 w-12 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Sarkari Ninja Admin</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Portal</h1>
           <p className="text-gray-600 mt-2">Manage your study hall platform</p>
         </div>
 
@@ -206,11 +214,24 @@ const AuthPage = () => {
 
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">
+            Are you a merchant?{" "}
+            <button 
+              onClick={() => navigate('/merchant/auth')}
+              className="text-blue-600 hover:underline"
+            >
+              Register/Login here
+            </button>
+          </p>
+          <p className="text-sm text-gray-600 mt-2">
             Need help? Contact support at{" "}
-            <a href="mailto:support@example.com" className="text-blue-600 hover:underline">support@Sarkarininja.com</a>
+            <a href="mailto:support@sarkarininja.com" className="text-blue-600 hover:underline">
+              support@sarkarininja.com
+            </a>
           </p>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default AuthPage;
