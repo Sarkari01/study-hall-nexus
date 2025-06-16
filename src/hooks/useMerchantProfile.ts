@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -29,21 +28,30 @@ interface CreateMerchantProfileData {
 }
 
 export const useMerchantProfile = () => {
-  const { user, userProfile } = useAuth();
+  // Mock user data for development mode
+  const mockUser = {
+    id: 'demo-merchant-user-id',
+    email: 'demo@merchant.com'
+  };
+  
+  const mockUserProfile = {
+    role: 'merchant'
+  };
+
   const [merchantProfile, setMerchantProfile] = useState<MerchantProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchMerchantProfile = async () => {
-    if (!user?.id) {
-      console.log('useMerchantProfile: No user ID available');
+    if (!mockUser?.id) {
+      console.log('useMerchantProfile: No user ID available (development mode)');
       setLoading(false);
       return;
     }
 
-    console.log('useMerchantProfile: Fetching merchant profile for user:', user.id);
-    console.log('useMerchantProfile: User profile role:', userProfile?.role);
+    console.log('useMerchantProfile: Fetching merchant profile for user:', mockUser.id);
+    console.log('useMerchantProfile: User profile role:', mockUserProfile?.role);
 
     try {
       setLoading(true);
@@ -52,7 +60,7 @@ export const useMerchantProfile = () => {
       const { data, error: fetchError } = await supabase
         .from('merchant_profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', mockUser.id)
         .maybeSingle();
 
       if (fetchError) {
@@ -72,13 +80,13 @@ export const useMerchantProfile = () => {
   };
 
   const createMerchantProfile = async (profileData: CreateMerchantProfileData) => {
-    if (!user?.id) {
+    if (!mockUser?.id) {
       throw new Error('User not authenticated');
     }
 
     try {
       const insertData = {
-        user_id: user.id,
+        user_id: mockUser.id,
         business_name: profileData.business_name,
         business_phone: profileData.business_phone,
         full_name: profileData.full_name,
@@ -87,7 +95,7 @@ export const useMerchantProfile = () => {
         approval_status: profileData.approval_status || 'pending',
         verification_status: profileData.verification_status || 'unverified',
         onboarding_completed: profileData.onboarding_completed || false,
-        email: user.email
+        email: mockUser.email
       };
 
       const { data, error: createError } = await supabase
@@ -157,25 +165,25 @@ export const useMerchantProfile = () => {
 
   useEffect(() => {
     console.log('useMerchantProfile: useEffect triggered', { 
-      user: !!user, 
-      userProfileRole: userProfile?.role,
+      user: !!mockUser, 
+      userProfileRole: mockUserProfile?.role,
       loading: loading 
     });
     
-    if (user && userProfile?.role === 'merchant') {
+    if (mockUser && mockUserProfile?.role === 'merchant') {
       fetchMerchantProfile();
-    } else if (user && userProfile && userProfile.role !== 'merchant') {
-      console.log('useMerchantProfile: User is not a merchant, role:', userProfile.role);
+    } else if (mockUser && mockUserProfile && mockUserProfile.role !== 'merchant') {
+      console.log('useMerchantProfile: User is not a merchant, role:', mockUserProfile.role);
       setError('Access denied: This account is not a merchant account');
       setLoading(false);
-    } else if (user && !userProfile) {
+    } else if (mockUser && !mockUserProfile) {
       console.log('useMerchantProfile: User exists but profile is not loaded yet');
       // Keep loading until userProfile is available
     } else {
       console.log('useMerchantProfile: No user available');
       setLoading(false);
     }
-  }, [user, userProfile]);
+  }, [mockUser, mockUserProfile]);
 
   return {
     merchantProfile,
