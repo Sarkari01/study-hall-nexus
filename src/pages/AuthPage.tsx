@@ -31,6 +31,12 @@ const AuthPage = () => {
 
   // Check if user is already authenticated and redirect to appropriate dashboard
   useEffect(() => {
+    console.log('AuthPage: Checking auth state', { 
+      authLoading, 
+      user: !!user, 
+      userRole: userRole?.name 
+    });
+    
     if (!authLoading && user && userRole) {
       const roleRoutes = {
         admin: '/admin',
@@ -42,7 +48,8 @@ const AuthPage = () => {
       };
       
       const route = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/dashboard';
-      navigate(route);
+      console.log('AuthPage: Redirecting to:', route);
+      navigate(route, { replace: true });
     }
   }, [user, userRole, authLoading, navigate]);
 
@@ -70,7 +77,9 @@ const AuthPage = () => {
           title: "Success",
           description: "Successfully logged in!"
         });
-        // Redirect will happen automatically via useEffect
+        
+        // Let the useEffect handle the redirect after auth state updates
+        console.log('Login successful, waiting for auth state update...');
       }
     } catch (error) {
       toast({

@@ -126,10 +126,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRole = async (profile: UserProfile) => {
     try {
+      console.log('Fetching role for profile:', profile);
       let roleData = null;
 
       // First try to get role from custom_role_id
       if (profile.custom_role_id) {
+        console.log('Looking up role by custom_role_id:', profile.custom_role_id);
         const { data: customRole, error: customRoleError } = await supabase
           .from('custom_roles')
           .select('*')
@@ -137,12 +139,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (!customRoleError && customRole) {
+          console.log('Found role by custom_role_id:', customRole);
           roleData = customRole;
+        } else {
+          console.error('Error fetching custom role:', customRoleError);
         }
       }
 
       // Fallback to role string if no custom role found
       if (!roleData && profile.role) {
+        console.log('Fallback: Looking up role by name:', profile.role);
         const { data: systemRole, error: systemRoleError } = await supabase
           .from('custom_roles')
           .select('*')
@@ -151,17 +157,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (!systemRoleError && systemRole) {
+          console.log('Found role by name:', systemRole);
           roleData = systemRole;
           
           // Update profile with the role ID
-          await supabase
+          const { error: updateError } = await supabase
             .from('user_profiles')
             .update({ custom_role_id: systemRole.id })
             .eq('id', profile.id);
+            
+          if (updateError) {
+            console.error('Error updating profile with role ID:', updateError);
+          }
+        } else {
+          console.error('Error fetching system role:', systemRoleError);
         }
       }
 
-      console.log('User role found:', roleData);
+      console.log('Final role data:', roleData);
       return roleData;
     } catch (error) {
       console.error('Error fetching user role:', error);
