@@ -39,33 +39,39 @@ import DashboardStats from "@/components/admin/DashboardStats";
 import DashboardCharts from "@/components/admin/DashboardCharts";
 import RecentActivities from "@/components/admin/RecentActivities";
 import UpcomingMerchants from "@/components/admin/UpcomingMerchants";
+import DashboardOverview from "@/components/admin/DashboardOverview";
 import GeneralSettings from "@/components/admin/GeneralSettings";
 import ErrorBoundary from "@/components/admin/ErrorBoundary";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useDashboardData } from "@/hooks/useDashboardData";
 import { useToast } from "@/hooks/use-toast";
 import SafeStudyHallsWrapper from "@/components/admin/SafeStudyHallsWrapper";
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const {
-    toast
-  } = useToast();
-  const {
-    user,
-    signOut
-  } = useAuth();
+  const { toast } = useToast();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
+  // Enhanced dashboard data management
+  const dashboardData = useDashboardData();
+
   // Initialize FCM
-  const {
-    fcmToken
-  } = useNotifications();
+  const { fcmToken } = useNotifications();
+
   const handleToggleExpand = (itemId: string) => {
-    setExpandedItems(prev => prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]);
+    setExpandedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId) 
+        : [...prev, itemId]
+    );
   };
+
   const getDeepSeekApiKey = (): string | undefined => {
     return localStorage.getItem('deepseek_api_key') || undefined;
   };
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -82,12 +88,14 @@ const AdminDashboard = () => {
       });
     }
   };
+
   const handleProfileClick = () => {
     toast({
       title: "Profile",
       description: "Profile settings coming soon!"
     });
   };
+
   const handleError = (error: Error) => {
     console.error('Dashboard error:', error);
     toast({
@@ -96,7 +104,17 @@ const AdminDashboard = () => {
       variant: "destructive"
     });
   };
-  const renderDashboardContent = () => <div className="space-y-6">
+
+  const renderDashboardContent = () => (
+    <div className="space-y-6">
+      {/* Dashboard Overview */}
+      <ErrorBoundary onError={handleError}>
+        <DashboardOverview 
+          onRefresh={dashboardData.refreshAll}
+          loading={dashboardData.loading}
+        />
+      </ErrorBoundary>
+
       {/* Enhanced Statistics Cards */}
       <ErrorBoundary onError={handleError}>
         <DashboardStats />
@@ -120,110 +138,147 @@ const AdminDashboard = () => {
           </ErrorBoundary>
         </div>
       </div>
-    </div>;
+
+      {/* Last Refresh Indicator */}
+      {dashboardData.lastRefresh && (
+        <div className="text-center text-sm text-gray-500">
+          Last updated: {dashboardData.lastRefresh.toLocaleTimeString()}
+        </div>
+      )}
+    </div>
+  );
+
   const renderModuleContent = () => {
     const content = (() => {
       switch (activeTab) {
         case "dashboard":
           return renderDashboardContent();
         case "students":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Students Management</h2>
               </div>
               <StudentsTable />
-            </div>;
+            </div>
+          );
         case "merchants":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Merchants Management</h2>
               </div>
               <MerchantsTable />
-            </div>;
+            </div>
+          );
         case "study-halls":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
               </div>
               <SafeStudyHallsWrapper />
-            </div>;
+            </div>
+          );
         case "bookings":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Bookings Management</h2>
               </div>
               <BookingsTable />
-            </div>;
+            </div>
+          );
         case "subscription-plans":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Subscription Plans</h2>
               </div>
               <SubscriptionPlansTable />
-            </div>;
+            </div>
+          );
         case "merchant-subscriptions":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Merchant Subscriptions</h2>
               </div>
               <MerchantSubscriptionsTable />
-            </div>;
+            </div>
+          );
         case "payment-history":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Payment History</h2>
               </div>
               <PaymentHistoryTable />
-            </div>;
+            </div>
+          );
         case "coupons":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Coupon Management</h2>
               </div>
               <CouponsTable />
-            </div>;
+            </div>
+          );
         case "reward-rules":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Reward Rules</h2>
               </div>
               <RewardRulesTable />
-            </div>;
+            </div>
+          );
         case "wallet-management":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Wallet Management</h2>
               </div>
               <WalletManagement />
-            </div>;
+            </div>
+          );
         case "transactions":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Transaction Ledger</h2>
               </div>
               <TransactionsTable />
-            </div>;
+            </div>
+          );
         case "settle-now":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
               </div>
               <SettleNowTable />
-            </div>;
+            </div>
+          );
         case "locations":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Locations Management</h2>
                 <Button>Add New Location</Button>
               </div>
               <LocationsTable />
-            </div>;
+            </div>
+          );
         case "leads":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Leads Management</h2>
               </div>
               <LeadsTable />
-            </div>;
+            </div>
+          );
         case "banners":
           return <BannerManager />;
         case "community":
@@ -249,33 +304,51 @@ const AdminDashboard = () => {
         case "monthly-revenue":
         case "merchant-revenue":
         case "location-revenue":
-          return <div className="space-y-6">
+          return (
+            <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Revenue Reports & Analytics</h2>
               </div>
               <RevenueReports reportType={activeTab} />
-            </div>;
+            </div>
+          );
         default:
           return renderDashboardContent();
       }
     })();
-    return <ErrorBoundary onError={handleError}>
+
+    return (
+      <ErrorBoundary onError={handleError}>
         {content}
-      </ErrorBoundary>;
+      </ErrorBoundary>
+    );
   };
-  return <ErrorBoundary onError={handleError}>
+
+  return (
+    <ErrorBoundary onError={handleError}>
       <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar activeItem={activeTab} onItemClick={setActiveTab} expandedItems={expandedItems} onToggleExpand={handleToggleExpand} />
+        <AdminSidebar 
+          activeItem={activeTab} 
+          onItemClick={setActiveTab} 
+          expandedItems={expandedItems} 
+          onToggleExpand={handleToggleExpand} 
+        />
         
         <main className="flex-1 p-6 overflow-auto">
           {/* Header with title and profile section */}
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'general-settings' ? 'General Settings' : activeTab === 'bookings' ? 'Bookings Management' : 'Management Console'}
+                {activeTab === 'dashboard' ? 'Dashboard' : 
+                 activeTab === 'general-settings' ? 'General Settings' : 
+                 activeTab === 'bookings' ? 'Bookings Management' : 
+                 'Management Console'}
               </h1>
               <p className="text-gray-600">
-                {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 'Advanced administrative controls and monitoring'}
+                {activeTab === 'dashboard' ? 'Comprehensive management system for study halls platform' : 
+                 activeTab === 'general-settings' ? 'Configure platform-wide settings and preferences' : 
+                 activeTab === 'bookings' ? 'Manage and monitor all study hall bookings' : 
+                 'Advanced administrative controls and monitoring'}
               </p>
             </div>
 
@@ -336,6 +409,8 @@ const AdminDashboard = () => {
           </div>
         </main>
       </div>
-    </ErrorBoundary>;
+    </ErrorBoundary>
+  );
 };
+
 export default AdminDashboard;
