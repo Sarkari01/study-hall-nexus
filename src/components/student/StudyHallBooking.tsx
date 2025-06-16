@@ -11,7 +11,7 @@ import StudyHallInformation from "./booking/StudyHallInformation";
 import BookingDetailsForm from "./booking/BookingDetailsForm";
 import BookingSummaryCard from "./booking/BookingSummaryCard";
 import AdvancedSeatSelection from "./AdvancedSeatSelection";
-import PaymentProcessor from "./PaymentProcessor";
+import EkqrPaymentProcessor from "./EkqrPaymentProcessor";
 import BookingConfirmation from "./BookingConfirmation";
 
 interface StudyHallBookingProps {
@@ -30,7 +30,16 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
   });
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
+  const [tempBookingId, setTempBookingId] = useState<string>('');
   const { toast } = useToast();
+
+  // Mock customer details - in real app, get from auth/profile
+  const customerDetails = {
+    name: 'Demo Student',
+    email: 'student@demo.com',
+    mobile: '9876543210',
+    userId: 'demo-student-id'
+  };
 
   const handleSeatSelection = (seatId: string) => {
     setSelectedSeats(prev => 
@@ -53,10 +62,11 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
     setProcessing(true);
     
     try {
+      // First create the booking record
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
-          student_id: (await supabase.auth.getUser()).data.user?.id,
+          student_id: customerDetails.userId,
           study_hall_id: studyHall.id,
           booking_date: bookingForm.startDate,
           start_time: bookingForm.startTime,
@@ -71,6 +81,7 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
 
       if (bookingError) throw bookingError;
 
+      // Create seat bookings
       const seatPromises = selectedSeats.map(seatId => 
         supabase
           .from('booking_seats')
@@ -81,16 +92,6 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
       );
 
       await Promise.all(seatPromises);
-
-      await supabase
-        .from('payment_transactions')
-        .insert({
-          booking_id: booking.id,
-          amount: calculateTotal() * 1.23,
-          payment_method: 'upi',
-          payment_status: 'completed',
-          gateway_transaction_id: transactionId
-        });
 
       setConfirmedBooking({
         bookingReference: booking.booking_reference,
@@ -136,6 +137,7 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
     setSelectedSeats([]);
     setBookingForm({ startDate: '', startTime: '09:00', endTime: '17:00' });
     setConfirmedBooking(null);
+    setTempBookingId('');
     setActiveTab('details');
     onClose();
   };
@@ -218,15 +220,17 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
             </TabsContent>
 
             <TabsContent value="payment" className="space-y-6">
-              <PaymentProcessor
+              <EkqrPaymentProcessor
                 totalAmount={calculateTotal()}
                 bookingDetails={{
                   studyHallName: studyHall.name,
                   selectedSeats,
                   bookingDate: bookingForm.startDate,
                   startTime: bookingForm.startTime,
-                  endTime: bookingForm.endTime
+                  endTime: bookingForm.endTime,
+                  bookingId: tempBookingId
                 }}
+                customerDetails={customerDetails}
                 onPaymentSuccess={handlePaymentSuccess}
                 onPaymentCancel={handlePaymentCancel}
               />
