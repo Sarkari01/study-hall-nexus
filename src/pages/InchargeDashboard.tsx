@@ -1,117 +1,100 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
-import { Building2, Users, Clock, CheckCircle } from 'lucide-react';
+import { Building2, Users, Clock, CheckCircle, LogOut } from 'lucide-react';
+import HallOperations from '@/components/incharge/HallOperations';
 
 const InchargeDashboard = () => {
-  const { userProfile } = useAuth();
+  const [activeTab, setActiveTab] = useState('operations');
+  const { userProfile, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Building2 className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Incharge Dashboard</h1>
-              <p className="text-gray-600">Welcome, {userProfile?.full_name || 'Incharge'}</p>
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-white shadow-sm border-r min-h-screen">
+          <div className="p-6">
+            <div className="flex items-center space-x-2 mb-8">
+              <Building2 className="h-8 w-8 text-blue-600" />
+              <span className="text-xl font-bold">Incharge Portal</span>
             </div>
+            
+            <nav className="space-y-2">
+              <Button
+                variant={activeTab === 'operations' ? 'default' : 'ghost'}
+                className="w-full justify-start"
+                onClick={() => setActiveTab('operations')}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Hall Operations
+              </Button>
+              <Button
+                variant={activeTab === 'schedule' ? 'default' : 'ghost'}
+                className="w-full justify-start"
+                onClick={() => setActiveTab('schedule')}
+              >
+                <Clock className="mr-2 h-4 w-4" />
+                Schedule
+              </Button>
+              <Button
+                variant={activeTab === 'reports' ? 'default' : 'ghost'}
+                className="w-full justify-start"
+                onClick={() => setActiveTab('reports')}
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Reports
+              </Button>
+            </nav>
+          </div>
+          
+          <div className="absolute bottom-4 left-4 right-4">
+            <Button variant="outline" className="w-full" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Current users</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Bookings</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Scheduled today</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Occupancy Rate</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0%</div>
-              <p className="text-xs text-muted-foreground">Current capacity</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Hall Status</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">Open</div>
-              <p className="text-xs text-muted-foreground">Operating hours</p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Hall Operations</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center">
-                <Users className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">Manage Check-ins</p>
-                <p className="text-sm text-gray-500">Handle student check-in and check-out</p>
+        <div className="flex-1">
+          <div className="bg-white border-b px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  {activeTab === 'operations' && 'Hall Operations'}
+                  {activeTab === 'schedule' && 'Schedule Management'}
+                  {activeTab === 'reports' && 'Reports & Analytics'}
+                </h1>
+                <p className="text-gray-600">
+                  Welcome, {userProfile?.full_name || 'Incharge'}
+                </p>
               </div>
-              <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center">
-                <Clock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-600">View Schedule</p>
-                <p className="text-sm text-gray-500">Today's booking schedule and timing</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Check-ins</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <div className="text-gray-400 mb-2">No recent check-ins</div>
-                <p className="text-sm text-gray-500">Student check-in activity will appear here</p>
+          <div className="p-6">
+            {activeTab === 'operations' && <HallOperations />}
+            {activeTab === 'schedule' && (
+              <div className="text-center py-12">
+                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Schedule Management</h3>
+                <p className="text-gray-500">Manage booking schedules and time slots</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Seat Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
+            )}
+            {activeTab === 'reports' && (
+              <div className="text-center py-12">
                 <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">Seat layout coming soon</p>
-                <p className="text-sm text-gray-500">Visual seat management and allocation tools</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Reports & Analytics</h3>
+                <p className="text-gray-500">View hall performance and usage statistics</p>
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </div>
       </div>
     </div>
