@@ -119,7 +119,7 @@ const RoleManagement = () => {
     }
 
     try {
-      // Get the role ID
+      // Get the role ID with proper typing
       const { data: roleData, error: roleError } = await supabase
         .from('custom_roles')
         .select('id')
@@ -127,6 +127,7 @@ const RoleManagement = () => {
         .single();
 
       if (roleError) throw roleError;
+      if (!roleData) throw new Error('Role not found');
 
       // Update user profile with new role
       const { error: updateError } = await supabase
