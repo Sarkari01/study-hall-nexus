@@ -398,8 +398,8 @@ const MerchantDashboard = () => {
         <MerchantSidebar 
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          merchantName={merchantProfile.full_name}
-          businessName={merchantProfile.business_name}
+          merchantName={merchantProfile?.full_name || ''}
+          businessName={merchantProfile?.business_name || ''}
         />
         <SidebarInset>
           <div className="flex flex-col min-h-screen">
@@ -421,7 +421,7 @@ const MerchantDashboard = () => {
                       {activeTab === 'profile' && 'Business Profile'}
                       {activeTab === 'settings' && 'Account Settings'}
                     </h1>
-                    <p className="text-gray-600">Welcome back, {merchantProfile.full_name}</p>
+                    <p className="text-gray-600">Welcome back, {merchantProfile?.full_name}</p>
                   </div>
                 </div>
               </div>
