@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
@@ -19,6 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallbackPath = "/auth" 
 }) => {
   const { user, userProfile, userRole, loading, error, hasPermission, hasRole, refreshUser, isAuthReady } = useAuth();
+  const location = useLocation();
 
   // Show loading while auth is initializing
   if (!isAuthReady || loading) {

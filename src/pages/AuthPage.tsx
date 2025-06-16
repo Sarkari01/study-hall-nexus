@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 const AuthPage = () => {
@@ -17,6 +17,7 @@ const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, userRole, loading: authLoading, isAuthReady } = useAuth();
 
   // Login form state
@@ -35,29 +36,40 @@ const AuthPage = () => {
       authLoading, 
       user: !!user, 
       userRole: userRole?.name,
-      isAuthReady
+      isAuthReady,
+      currentPath: location.pathname
     });
     
-    // Only redirect when auth is ready and we have both user and role
-    if (isAuthReady && !authLoading && user && userRole) {
-      const roleRoutes = {
-        admin: '/admin',
-        merchant: '/merchant',
-        student: '/student',
-        editor: '/editor',
-        telecaller: '/telecaller',
-        incharge: '/incharge'
-      };
+    // If we have a user and they're trying to access auth page, redirect them
+    if (user && isAuthReady) {
+      // If user has a role, redirect to appropriate dashboard
+      if (userRole) {
+        const roleRoutes = {
+          admin: '/admin',
+          merchant: '/merchant',
+          student: '/student',
+          editor: '/editor',
+          telecaller: '/telecaller',
+          incharge: '/incharge'
+        };
+        
+        const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/dashboard';
+        console.log('AuthPage: User already authenticated, redirecting to:', targetRoute);
+        
+        // Only redirect if we're currently on the auth page
+        if (location.pathname === '/auth') {
+          navigate(targetRoute, { replace: true });
+        }
+        return;
+      }
       
-      const route = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/dashboard';
-      console.log('AuthPage: Redirecting to:', route);
-      
-      // Use setTimeout to ensure the redirect happens after the current render cycle
-      setTimeout(() => {
-        navigate(route, { replace: true });
-      }, 100);
+      // If user exists but no role yet, redirect to dashboard (it will handle role routing)
+      if (location.pathname === '/auth') {
+        console.log('AuthPage: User exists but no role, redirecting to dashboard');
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [user, userRole, authLoading, isAuthReady, navigate]);
+  }, [user, userRole, isAuthReady, navigate, location.pathname]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,8 +165,9 @@ const AuthPage = () => {
     }
   };
 
-  // Show loading if auth is being checked and we don't know the auth state yet
-  if (!isAuthReady) {
+  // Only show loading if we're not ready and we don't have a user yet
+  // This prevents showing loading when user is already authenticated
+  if (!isAuthReady && !user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -162,11 +175,14 @@ const AuthPage = () => {
     );
   }
 
-  // If user is authenticated and has a role, don't show the auth page
-  if (user && userRole) {
+  // If user is authenticated and we're on auth page, show loading while redirecting
+  if (user && location.pathname === '/auth') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to your dashboard...</p>
+        </div>
       </div>
     );
   }
