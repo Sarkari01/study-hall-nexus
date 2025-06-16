@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,14 +19,18 @@ import MerchantProfile from "@/components/merchant/MerchantProfile";
 import MerchantSettings from "@/components/merchant/MerchantSettings";
 import SubscriptionStatus from "@/components/merchant/SubscriptionStatus";
 import TeamManagement from "@/components/merchant/TeamManagement";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MerchantDashboard = () => {
+  const { user, userRole, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
   const [editingStudyHall, setEditingStudyHall] = useState<any>(null);
   
+  console.log('MerchantDashboard - user:', !!user, 'userRole:', userRole, 'loading:', loading);
+
   const [studyHalls, setStudyHalls] = useState([
     {
       id: 1,
@@ -70,6 +74,23 @@ const MerchantDashboard = () => {
     phone: "+91 98765 43210",
     location: "New Delhi"
   };
+
+  // Show loading state if auth is still loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading merchant dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Log user info for debugging
+  useEffect(() => {
+    console.log('MerchantDashboard mounted with user:', user?.id, 'role:', userRole);
+  }, [user, userRole]);
 
   const stats = [
     {

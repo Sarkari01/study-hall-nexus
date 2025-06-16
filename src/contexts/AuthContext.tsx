@@ -29,44 +29,89 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      console.log('Fetching user role for:', userId);
+      
+      // First check user_profiles table
+      const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching user role:', error);
-        return null;
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
       }
 
-      return data?.role || null;
+      if (profileData?.role) {
+        console.log('Found user role in profiles:', profileData.role);
+        return profileData.role;
+      }
+
+      // If no profile found, check if user is in merchant_profiles
+      const { data: merchantData, error: merchantError } = await supabase
+        .from('merchant_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (merchantError) {
+        console.error('Error checking merchant profile:', merchantError);
+      }
+
+      if (merchantData) {
+        console.log('User found in merchant_profiles, creating user profile');
+        // Create user profile for merchant
+        const { error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: userId,
+            role: 'merchant',
+            full_name: 'Merchant User' // This can be updated later
+          });
+
+        if (createError) {
+          console.error('Error creating user profile:', createError);
+        } else {
+          return 'merchant';
+        }
+      }
+
+      // Default fallback
+      console.log('No role found, defaulting to student');
+      return 'student';
     } catch (error) {
-      console.error('Error fetching user role:', error);
+      console.error('Error in fetchUserRole:', error);
       return null;
     }
   };
 
   useEffect(() => {
+    console.log('Setting up auth state listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          const role = await fetchUserRole(session.user.id);
-          setUserRole(role);
+          // Use setTimeout to prevent potential auth callback deadlock
+          setTimeout(async () => {
+            const role = await fetchUserRole(session.user.id);
+            setUserRole(role);
+            setLoading(false);
+          }, 0);
         } else {
           setUserRole(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
     // Get initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Initial session:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -78,7 +123,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
