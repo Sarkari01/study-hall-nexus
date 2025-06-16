@@ -21,36 +21,50 @@ import TeamManagement from "@/components/merchant/TeamManagement";
 import DashboardOverview from "@/components/merchant/DashboardOverview";
 import StudyHallsManagement from "@/components/merchant/StudyHallsManagement";
 import { uuidToNumericId } from "@/utils/uuidUtils";
-import { useAuth } from "@/contexts/AuthContext";
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
-  const { user, userProfile, loading: authLoading } = useAuth();
   
-  // Use real data hooks
+  // Mock user data for development mode
+  const mockUser = {
+    id: 'demo-user-id',
+    email: 'demo@merchant.com'
+  };
+  
+  const mockUserProfile = {
+    id: 'demo-profile-id',
+    user_id: 'demo-user-id',
+    full_name: 'Demo Merchant',
+    role: 'merchant',
+    custom_role_id: null,
+    merchant_id: 'demo-merchant-id',
+    study_hall_id: null,
+    phone: '+91 98765 43210',
+    avatar_url: null,
+    bio: 'Demo merchant account for testing'
+  };
+  
+  // Use real data hooks (these should handle missing auth gracefully)
   const { merchantProfile, loading: profileLoading, error: profileError } = useMerchantProfile();
   const { studyHalls, loading: studyHallsLoading, createStudyHall, updateStudyHall } = useMerchantStudyHalls();
   const { bookings, loading: bookingsLoading } = useMerchantBookings();
 
-  console.log('MerchantDashboard: Render state', {
-    authLoading,
+  console.log('MerchantDashboard: Development mode - using mock auth data', {
     profileLoading,
     profileError,
-    user: !!user,
-    userProfile: userProfile?.role,
+    mockUser: !!mockUser,
+    userProfile: mockUserProfile.role,
     merchantProfile: !!merchantProfile
   });
 
-  // Loading state - wait for both auth and profile
-  if (authLoading || profileLoading) {
+  // Loading state - wait for profile to load
+  if (profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">
-            {authLoading ? 'Loading authentication...' : 'Loading merchant dashboard...'}
-          </p>
+          <p className="text-gray-600">Loading merchant dashboard...</p>
         </div>
       </div>
     );
@@ -72,34 +86,18 @@ const MerchantDashboard = () => {
     );
   }
 
-  // Check if user has merchant role
-  if (userProfile && userProfile.role !== 'merchant') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto p-6">
-          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-red-800 mb-2">Access Denied</h3>
-          <p className="text-red-700 mb-4">
-            This dashboard is only accessible to merchant accounts. Your current role is: {userProfile.role}
-          </p>
-          <Button onClick={() => window.location.href = '/'}>
-            Go Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // No merchant profile state
-  if (!merchantProfile && userProfile?.role === 'merchant') {
+  // For development mode, show merchant profile setup if no real profile exists
+  if (!merchantProfile && mockUserProfile.role === 'merchant') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
           <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Merchant Profile Required</h3>
-          <p className="text-gray-600 mb-4">Please complete your merchant profile to access the dashboard.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Development Mode</h3>
+          <p className="text-gray-600 mb-4">
+            Merchant dashboard loaded in development mode. Real merchant profile will be loaded when authentication is enabled.
+          </p>
           <Button onClick={() => setActiveTab("profile")}>
-            Complete Profile
+            Continue to Dashboard
           </Button>
         </div>
       </div>
@@ -207,14 +205,21 @@ const MerchantDashboard = () => {
     }
   };
 
+  // Use merchantProfile if available, otherwise use mock data for display
+  const displayProfile = merchantProfile || {
+    full_name: 'Demo Merchant',
+    business_name: 'Demo Business',
+    id: 'demo-merchant-id'
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <MerchantSidebar 
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          merchantName={merchantProfile?.full_name || ''}
-          businessName={merchantProfile?.business_name || ''}
+          merchantName={displayProfile.full_name || 'Demo Merchant'}
+          businessName={displayProfile.business_name || 'Demo Business'}
         />
         <SidebarInset>
           <div className="flex flex-col min-h-screen">
@@ -236,7 +241,7 @@ const MerchantDashboard = () => {
                       {activeTab === 'profile' && 'Business Profile'}
                       {activeTab === 'settings' && 'Account Settings'}
                     </h1>
-                    <p className="text-gray-600">Welcome back, {merchantProfile?.full_name}</p>
+                    <p className="text-gray-600">Welcome back, {displayProfile.full_name}</p>
                   </div>
                 </div>
               </div>
@@ -257,9 +262,9 @@ const MerchantDashboard = () => {
           editData={editingStudyHall}
           isAdmin={false}
           currentMerchant={{
-            id: uuidToNumericId(merchantProfile?.id || ''),
-            name: merchantProfile?.full_name || '',
-            businessName: merchantProfile?.business_name || ''
+            id: uuidToNumericId(displayProfile.id || 'demo-id'),
+            name: displayProfile.full_name || 'Demo Merchant',
+            businessName: displayProfile.business_name || 'Demo Business'
           }}
         />
 
