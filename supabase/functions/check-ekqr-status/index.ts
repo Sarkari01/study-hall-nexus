@@ -70,15 +70,45 @@ serve(async (req) => {
       throw new Error(ekqrResponse.msg || 'Failed to check payment status')
     }
 
-    // Find the payment transaction
-    const { data: paymentTransaction, error: fetchError } = await supabase
+    // Find the payment transaction using a different approach - search by gateway_transaction_id first
+    let paymentTransaction = null;
+    
+    // Try to find by gateway_transaction_id (which should be the clientTxnId)
+    const { data: transactionsByTxnId, error: txnIdError } = await supabase
       .from('payment_transactions')
       .select('*')
-      .eq('gateway_response->client_txn_id', clientTxnId)
-      .single()
+      .eq('gateway_transaction_id', clientTxnId)
+      .maybeSingle()
 
-    if (fetchError || !paymentTransaction) {
-      console.error('Error fetching payment transaction:', fetchError)
+    if (transactionsByTxnId && !txnIdError) {
+      paymentTransaction = transactionsByTxnId;
+      console.log('Found payment transaction by gateway_transaction_id');
+    } else {
+      // If not found by gateway_transaction_id, try to search by looking for the clientTxnId in the gateway_response JSON
+      const { data: allTransactions, error: allTxnError } = await supabase
+        .from('payment_transactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100) // Limit to recent transactions
+
+      if (!allTxnError && allTransactions) {
+        // Search through recent transactions to find the one with matching clientTxnId in gateway_response
+        paymentTransaction = allTransactions.find(txn => {
+          if (txn.gateway_response && typeof txn.gateway_response === 'object') {
+            return txn.gateway_response.client_txn_id === clientTxnId || 
+                   txn.gateway_response.clientTxnId === clientTxnId;
+          }
+          return false;
+        });
+        
+        if (paymentTransaction) {
+          console.log('Found payment transaction by searching gateway_response');
+        }
+      }
+    }
+
+    if (!paymentTransaction) {
+      console.error('Payment transaction not found for clientTxnId:', clientTxnId);
       throw new Error('Payment transaction not found')
     }
 
@@ -129,7 +159,7 @@ serve(async (req) => {
 
     // If payment is completed and we have a temp booking ID, mark for booking creation
     if (newStatus === 'completed') {
-      const tempBookingId = paymentTransaction.gateway_response?.temp_booking_id
+      const tempBookingId = paymentTransaction.gateway_response?.temp_booking_id || paymentTransaction.gateway_response?.udf2
       
       if (tempBookingId && tempBookingId.startsWith('temp_')) {
         console.log('Payment completed for temp booking:', tempBookingId)
