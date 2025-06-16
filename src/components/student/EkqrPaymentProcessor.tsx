@@ -38,13 +38,13 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
   onPaymentCancel
 }) => {
   const [paymentStage, setPaymentStage] = useState<'select' | 'processing' | 'pending' | 'completed' | 'failed'>('select');
-  const [selectedMethod, setSelectedMethod] = useState<'upi' | 'web' | 'qr'>('upi');
+  const [selectedMethod, setSelectedMethod] = useState<'upi' | 'web' | 'qr'>('qr');
   const [orderData, setOrderData] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
   const { toast } = useToast();
   
-  const { processing, createOrder, startStatusPolling, stopStatusPolling, openUpiApp } = useEkqrPayment();
+  const { processing, createOrder, startStatusPolling, stopStatusPolling } = useEkqrPayment();
 
   const taxes = Math.round(totalAmount * 0.18);
   const processingFee = Math.round(totalAmount * 0.05);
@@ -113,25 +113,24 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       setOrderData(order);
       setPaymentStage('pending');
 
-      // Generate QR code if QR method is selected
-      if (selectedMethod === 'qr' && order.upiIntent) {
+      // Always generate QR code for direct scanning
+      if (order.upiIntent) {
         // Get the first available UPI intent
         const upiLinks = [
-          order.upiIntent.gpay_link,
           order.upiIntent.phonepe_link,
+          order.upiIntent.gpay_link,
           order.upiIntent.paytm_link,
           order.upiIntent.bhim_link
         ].filter(Boolean);
         
         if (upiLinks.length > 0) {
-          // Extract UPI string from the intent link
           const upiLink = upiLinks[0];
           console.log('UPI link for QR:', upiLink);
           await generateQRCode(upiLink);
         }
       }
 
-      // Start polling for payment status with correct date format
+      // Start polling for payment status
       const now = new Date();
       const txnDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
       console.log('Starting status polling for transaction:', order.clientTxnId, 'on date:', txnDate);
@@ -165,22 +164,6 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
           }
         }
       );
-
-      // If UPI method is selected and UPI intents are available, open the app
-      if (selectedMethod === 'upi' && order.upiIntent) {
-        console.log('Opening UPI app with intent:', order.upiIntent);
-        // Try to open the first available UPI app
-        const upiLinks = [
-          order.upiIntent.gpay_link,
-          order.upiIntent.phonepe_link,
-          order.upiIntent.paytm_link,
-          order.upiIntent.bhim_link
-        ].filter(Boolean);
-        
-        if (upiLinks.length > 0) {
-          openUpiApp(upiLinks[0]);
-        }
-      }
 
     } catch (error) {
       console.error('Payment failed:', error);
@@ -220,14 +203,9 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
           <div className="text-center py-8 space-y-6">
             <Clock className="h-12 w-12 mx-auto mb-4 text-orange-500" />
             <div>
-              <h3 className="text-lg font-medium mb-2">Payment in Progress</h3>
+              <h3 className="text-lg font-medium mb-2">Scan QR Code to Pay</h3>
               <p className="text-gray-600 mb-4">
-                {selectedMethod === 'upi' 
-                  ? "Complete the payment in your UPI app"
-                  : selectedMethod === 'qr'
-                  ? "Scan the QR code with any UPI app to pay"
-                  : "Complete the payment in the opened browser tab"
-                }
+                Open PhonePe and scan the QR code below to complete your payment
               </p>
               
               {selectedMethod === 'web' && (
@@ -236,7 +214,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                 </Button>
               )}
 
-              {selectedMethod === 'qr' && qrCodeDataURL && (
+              {qrCodeDataURL && (
                 <div className="mb-4">
                   <div className="w-64 h-64 mx-auto bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center p-4">
                     <img 
@@ -245,51 +223,8 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">Scan with any UPI app to pay ₹{finalAmount}</p>
-                </div>
-              )}
-
-              {orderData?.upiIntent && selectedMethod === 'upi' && (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500 mb-3">Or choose your preferred UPI app:</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {orderData.upiIntent.gpay_link && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => openUpiApp(orderData.upiIntent.gpay_link)}
-                        className="h-12"
-                      >
-                        Google Pay
-                      </Button>
-                    )}
-                    {orderData.upiIntent.phonepe_link && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => openUpiApp(orderData.upiIntent.phonepe_link)}
-                        className="h-12"
-                      >
-                        PhonePe
-                      </Button>
-                    )}
-                    {orderData.upiIntent.paytm_link && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => openUpiApp(orderData.upiIntent.paytm_link)}
-                        className="h-12"
-                      >
-                        Paytm
-                      </Button>
-                    )}
-                    {orderData.upiIntent.bhim_link && (
-                      <Button 
-                        variant="outline" 
-                        onClick={() => openUpiApp(orderData.upiIntent.bhim_link)}
-                        className="h-12"
-                      >
-                        BHIM
-                      </Button>
-                    )}
-                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Scan with PhonePe to pay ₹{finalAmount}</p>
+                  <p className="text-xs text-gray-400 mt-1">Payment will be detected automatically after scanning</p>
                 </div>
               )}
             </div>
@@ -328,31 +263,18 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
               <CardContent className="space-y-4">
                 <div 
                   className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                    selectedMethod === 'upi' ? 'border-blue-500 bg-blue-50' : ''
-                  }`}
-                  onClick={() => setSelectedMethod('upi')}
-                >
-                  <Smartphone className="h-5 w-5 text-blue-600" />
-                  <div className="flex-1">
-                    <div className="font-medium">UPI Apps</div>
-                    <p className="text-sm text-gray-500">Google Pay, PhonePe, Paytm, BHIM</p>
-                  </div>
-                  <Badge variant="secondary">Recommended</Badge>
-                </div>
-
-                <div 
-                  className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
                     selectedMethod === 'qr' ? 'border-blue-500 bg-blue-50' : ''
                   }`}
                   onClick={() => setSelectedMethod('qr')}
                 >
                   <QrCode className="h-5 w-5 text-green-600" />
                   <div className="flex-1">
-                    <div className="font-medium">QR Code</div>
-                    <p className="text-sm text-gray-500">Scan with any UPI app</p>
+                    <div className="font-medium">QR Code Payment</div>
+                    <p className="text-sm text-gray-500">Scan with PhonePe or any UPI app</p>
                   </div>
+                  <Badge variant="secondary">Recommended</Badge>
                 </div>
-                
+
                 <div 
                   className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
                     selectedMethod === 'web' ? 'border-blue-500 bg-blue-50' : ''
@@ -361,7 +283,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                 >
                   <CreditCard className="h-5 w-5 text-green-600" />
                   <div className="flex-1">
-                    <div className="font-medium">All Payment Methods</div>
+                    <div className="font-medium">Web Payment</div>
                     <p className="text-sm text-gray-500">Cards, Net Banking, Wallets & UPI</p>
                   </div>
                 </div>
@@ -460,7 +382,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                 Processing...
               </>
             ) : (
-              `Pay ₹${finalAmount}`
+              `Generate QR Code - ₹${finalAmount}`
             )}
           </Button>
         )}
