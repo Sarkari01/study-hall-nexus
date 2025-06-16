@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
-import DashboardOverview from '@/components/DashboardOverview';
+import DashboardOverview from '@/components/admin/DashboardOverview';
 import StudentsTable from '@/components/admin/StudentsTable';
 import MerchantsTable from '@/components/admin/MerchantsTable';
 import StudyHallsTable from '@/components/admin/StudyHallsTable';
