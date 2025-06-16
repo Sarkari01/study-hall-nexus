@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { CreditCard, Smartphone, Shield, ArrowLeft, Loader2, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
+import { CreditCard, Smartphone, Shield, ArrowLeft, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useEkqrPayment } from "@/hooks/useEkqrPayment";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,8 +36,8 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
   onPaymentSuccess,
   onPaymentCancel
 }) => {
-  const [paymentStage, setPaymentStage] = useState<'select' | 'processing' | 'pending' | 'completed' | 'failed' | 'service_unavailable'>('select');
-  const [selectedMethod, setSelectedMethod] = useState<'upi' | 'web' | 'demo'>('demo');
+  const [paymentStage, setPaymentStage] = useState<'select' | 'processing' | 'pending' | 'completed' | 'failed'>('select');
+  const [selectedMethod, setSelectedMethod] = useState<'upi' | 'web'>('upi');
   const [orderData, setOrderData] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const { toast } = useToast();
@@ -53,21 +53,6 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       stopStatusPolling();
     };
   }, [stopStatusPolling]);
-
-  const handleDemoPayment = () => {
-    console.log('Demo payment initiated');
-    setPaymentStage('processing');
-    
-    // Simulate payment processing
-    setTimeout(() => {
-      setPaymentStage('completed');
-      toast({
-        title: "Demo Payment Successful",
-        description: `Demo payment of ₹${finalAmount} completed successfully`
-      });
-      onPaymentSuccess(`DEMO_${Date.now()}`);
-    }, 2000);
-  };
 
   const handlePayment = async () => {
     try {
@@ -93,8 +78,8 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       
       if (!order) {
         console.error('Failed to create EKQR order');
-        setPaymentStage('service_unavailable');
-        setErrorMessage('Payment service is temporarily unavailable. Please try the demo payment option.');
+        setPaymentStage('failed');
+        setErrorMessage('Failed to create payment order. Please try again.');
         return;
       }
 
@@ -154,17 +139,12 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       console.error('Payment failed:', error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
       
-      if (errorMsg.includes('Plan Expired') || errorMsg.includes('expired')) {
-        setPaymentStage('service_unavailable');
-        setErrorMessage('Payment gateway plan has expired. Please use the demo payment option for now.');
-      } else {
-        setPaymentStage('failed');
-        setErrorMessage(errorMsg);
-      }
+      setPaymentStage('failed');
+      setErrorMessage(errorMsg);
       
       toast({
         title: "Payment Failed",
-        description: "Please try the demo payment option or contact support",
+        description: "Please try again or contact support",
         variant: "destructive"
       });
     }
@@ -263,71 +243,27 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
           </div>
         );
 
-      case 'service_unavailable':
-        return (
-          <div className="text-center py-8">
-            <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-orange-500" />
-            <h3 className="text-lg font-medium mb-2 text-orange-700">Service Temporarily Unavailable</h3>
-            <p className="text-gray-600 mb-4">{errorMessage}</p>
-            <div className="space-y-2">
-              <Button onClick={() => setPaymentStage('select')} variant="outline">
-                Try Different Payment Method
-              </Button>
-              <Button onClick={handleDemoPayment} className="bg-blue-600 hover:bg-blue-700">
-                Use Demo Payment
-              </Button>
-            </div>
-          </div>
-        );
-
       case 'failed':
         return (
           <div className="text-center py-8">
             <XCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
             <h3 className="text-lg font-medium mb-2 text-red-700">Payment Failed</h3>
             <p className="text-gray-600 mb-4">{errorMessage || 'Your payment could not be processed'}</p>
-            <div className="space-y-2">
-              <Button onClick={() => setPaymentStage('select')} variant="outline">
-                Try Again
-              </Button>
-              <Button onClick={handleDemoPayment} className="bg-blue-600 hover:bg-blue-700">
-                Use Demo Payment
-              </Button>
-            </div>
+            <Button onClick={() => setPaymentStage('select')} variant="outline">
+              Try Again
+            </Button>
           </div>
         );
 
       default:
         return (
           <div className="space-y-6">
-            {/* Service Status Alert */}
-            <Alert className="border-orange-200 bg-orange-50">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-800">
-                Payment gateway is currently experiencing issues. Demo payment is available for testing.
-              </AlertDescription>
-            </Alert>
-
             {/* Payment Method Selection */}
             <Card>
               <CardHeader>
                 <CardTitle>Select Payment Method</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div 
-                  className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                    selectedMethod === 'demo' ? 'border-blue-500 bg-blue-50' : ''
-                  }`}
-                  onClick={() => setSelectedMethod('demo')}
-                >
-                  <CheckCircle className="h-5 w-5 text-blue-600" />
-                  <div className="flex-1">
-                    <div className="font-medium">Demo Payment</div>
-                    <p className="text-sm text-gray-500">Test payment for development</p>
-                  </div>
-                  <Badge variant="secondary">Recommended</Badge>
-                </div>
-
                 <div 
                   className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
                     selectedMethod === 'upi' ? 'border-blue-500 bg-blue-50' : ''
@@ -339,7 +275,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                     <div className="font-medium">UPI Apps</div>
                     <p className="text-sm text-gray-500">Google Pay, PhonePe, Paytm, BHIM</p>
                   </div>
-                  <Badge variant="outline">Live Gateway</Badge>
+                  <Badge variant="secondary">Recommended</Badge>
                 </div>
                 
                 <div 
@@ -353,7 +289,6 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                     <div className="font-medium">All Payment Methods</div>
                     <p className="text-sm text-gray-500">Cards, Net Banking, Wallets & UPI</p>
                   </div>
-                  <Badge variant="outline">Live Gateway</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -388,7 +323,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
     }
   };
 
-  const canGoBack = paymentStage === 'select' || paymentStage === 'failed' || paymentStage === 'service_unavailable';
+  const canGoBack = paymentStage === 'select' || paymentStage === 'failed';
   const showPayButton = paymentStage === 'select';
 
   return (
@@ -440,39 +375,20 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
           </Button>
         )}
         {showPayButton && (
-          <>
-            {selectedMethod === 'demo' ? (
-              <Button 
-                onClick={handleDemoPayment} 
-                disabled={processing}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
-                {processing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  `Demo Pay ₹${finalAmount}`
-                )}
-              </Button>
+          <Button 
+            onClick={handlePayment} 
+            disabled={processing}
+            className="flex-1 bg-green-600 hover:bg-green-700"
+          >
+            {processing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Processing...
+              </>
             ) : (
-              <Button 
-                onClick={handlePayment} 
-                disabled={processing}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {processing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  `Pay ₹${finalAmount}`
-                )}
-              </Button>
+              `Pay ₹${finalAmount}`
             )}
-          </>
+          </Button>
         )}
       </div>
     </div>
