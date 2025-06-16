@@ -3,7 +3,6 @@ import React from 'react';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarFooter } from "@/components/ui/sidebar";
 import { Building2, Calendar, MessageSquare, User, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface StudentSidebarProps {
   activeTab: string;
@@ -11,7 +10,15 @@ interface StudentSidebarProps {
 }
 
 const StudentSidebar: React.FC<StudentSidebarProps> = ({ activeTab, onTabChange }) => {
-  const { signOut, userProfile } = useAuth();
+  // Mock user data since auth is not implemented yet
+  const mockUserProfile = {
+    full_name: "Student User"
+  };
+
+  const handleSignOut = () => {
+    // Mock sign out functionality
+    console.log("Sign out clicked - auth not implemented yet");
+  };
 
   const menuItems = [
     {
@@ -47,7 +54,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ activeTab, onTabChange 
           <Building2 className="h-8 w-8 text-blue-600" />
           <div>
             <h2 className="font-bold text-lg">Student Portal</h2>
-            <p className="text-sm text-gray-600">Welcome, {userProfile?.full_name}</p>
+            <p className="text-sm text-gray-600">Welcome, {mockUserProfile?.full_name}</p>
           </div>
         </div>
       </SidebarHeader>
@@ -80,7 +87,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ activeTab, onTabChange 
           <SidebarMenuItem>
             <Button
               variant="ghost"
-              onClick={signOut}
+              onClick={handleSignOut}
               className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
             >
               <LogOut className="h-4 w-4 mr-2" />
