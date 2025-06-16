@@ -34,6 +34,7 @@ export const getRoleLevel = (role: string): number => {
 
 // Check if user role can manage target role
 export const canManageRole = (userRole: string, targetRole: string): boolean => {
+  if (!isValidRole(userRole) || !isValidRole(targetRole)) return false;
   const userLevel = getRoleLevel(userRole);
   const targetLevel = getRoleLevel(targetRole);
   return userLevel > targetLevel;
@@ -43,4 +44,30 @@ export const canManageRole = (userRole: string, targetRole: string): boolean => 
 export const getAssignableRoles = (userRole: string): ValidRole[] => {
   const userLevel = getRoleLevel(userRole);
   return VALID_ROLES.filter(role => getRoleLevel(role) < userLevel);
+};
+
+// Role-based route mappings
+export const getRoleRoute = (role: ValidRole): string => {
+  const roleRoutes: Record<ValidRole, string> = {
+    admin: '/admin',
+    merchant: '/merchant',
+    student: '/student',
+    editor: '/editor',
+    telecaller: '/telecaller',
+    incharge: '/incharge'
+  };
+  return roleRoutes[role];
+};
+
+// Get user-friendly role display names
+export const getRoleDisplayName = (role: ValidRole): string => {
+  const displayNames: Record<ValidRole, string> = {
+    admin: 'Administrator',
+    merchant: 'Merchant',
+    student: 'Student',
+    editor: 'Content Editor',
+    telecaller: 'Telecaller',
+    incharge: 'Study Hall Incharge'
+  };
+  return displayNames[role];
 };

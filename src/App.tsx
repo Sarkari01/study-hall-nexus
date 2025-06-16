@@ -8,6 +8,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import RoleBasedRoute from "@/components/RoleBasedRoute";
+import { isValidRole, getRoleRoute, ValidRole } from "@/utils/roleValidation";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -35,16 +36,11 @@ const RoleDashboardRedirect = () => {
     return <Navigate to="/auth" replace />;
   }
   
-  const roleRoutes = {
-    admin: '/admin',
-    merchant: '/merchant',
-    student: '/student',
-    editor: '/editor',
-    telecaller: '/telecaller',
-    incharge: '/incharge'
-  };
+  if (!isValidRole(userRole.name)) {
+    return <Navigate to="/auth" replace />;
+  }
   
-  const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/auth';
+  const targetRoute = getRoleRoute(userRole.name as ValidRole);
   return <Navigate to={targetRoute} replace />;
 };
 
