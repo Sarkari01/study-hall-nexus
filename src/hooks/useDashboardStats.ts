@@ -14,80 +14,104 @@ interface DashboardStats {
   completedBookings: number;
 }
 
+const defaultStats: DashboardStats = {
+  totalStudents: 0,
+  totalMerchants: 0,
+  totalBookings: 0,
+  totalRevenue: 0,
+  activeStudents: 0,
+  activeStudyHalls: 0,
+  pendingBookings: 0,
+  completedBookings: 0,
+};
+
 export const useDashboardStats = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalStudents: 0,
-    totalMerchants: 0,
-    totalBookings: 0,
-    totalRevenue: 0,
-    activeStudents: 0,
-    activeStudyHalls: 0,
-    pendingBookings: 0,
-    completedBookings: 0,
-  });
+  const [stats, setStats] = useState<DashboardStats>(defaultStats);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchStats = async () => {
     try {
       setLoading(true);
+      setError(null);
 
-      // Fetch students data
-      const { data: students, error: studentsError } = await supabase
-        .from('students')
-        .select('status, total_spent');
+      // Initialize stats with defaults
+      let calculatedStats = { ...defaultStats };
 
-      if (studentsError) throw studentsError;
+      try {
+        // Fetch students data with error handling
+        const { data: students, error: studentsError } = await supabase
+          .from('students')
+          .select('status, total_spent');
 
-      // Fetch study halls data
-      const { data: studyHalls, error: studyHallsError } = await supabase
-        .from('study_halls')
-        .select('status, total_revenue');
+        if (studentsError) {
+          console.warn('Students fetch error:', studentsError);
+        } else if (students) {
+          calculatedStats.totalStudents = students.length;
+          calculatedStats.activeStudents = students.filter(s => s.status === 'active').length;
+        }
+      } catch (error) {
+        console.warn('Error fetching students:', error);
+      }
 
-      if (studyHallsError) throw studyHallsError;
+      try {
+        // Fetch study halls data with error handling
+        const { data: studyHalls, error: studyHallsError } = await supabase
+          .from('study_halls')
+          .select('status, total_revenue');
 
-      // Fetch bookings data
-      const { data: bookings, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('status, final_amount');
+        if (studyHallsError) {
+          console.warn('Study halls fetch error:', studyHallsError);
+        } else if (studyHalls) {
+          calculatedStats.activeStudyHalls = studyHalls.filter(h => h.status === 'active').length;
+        }
+      } catch (error) {
+        console.warn('Error fetching study halls:', error);
+      }
 
-      if (bookingsError) throw bookingsError;
+      try {
+        // Fetch bookings data with error handling
+        const { data: bookings, error: bookingsError } = await supabase
+          .from('bookings')
+          .select('status, final_amount');
 
-      // Fetch merchant profiles data
-      const { data: merchants, error: merchantsError } = await supabase
-        .from('merchant_profiles')
-        .select('verification_status');
+        if (bookingsError) {
+          console.warn('Bookings fetch error:', bookingsError);
+        } else if (bookings) {
+          calculatedStats.totalBookings = bookings.length;
+          calculatedStats.pendingBookings = bookings.filter(b => b.status === 'pending').length;
+          calculatedStats.completedBookings = bookings.filter(b => b.status === 'completed').length;
+          calculatedStats.totalRevenue = bookings.reduce((sum, booking) => sum + (booking.final_amount || 0), 0);
+        }
+      } catch (error) {
+        console.warn('Error fetching bookings:', error);
+      }
 
-      if (merchantsError) throw merchantsError;
+      try {
+        // Fetch merchant profiles data with error handling
+        const { data: merchants, error: merchantsError } = await supabase
+          .from('merchant_profiles')
+          .select('approval_status');
 
-      // Calculate stats
-      const totalStudents = students?.length || 0;
-      const activeStudents = students?.filter(s => s.status === 'active').length || 0;
-      const totalMerchants = merchants?.length || 0;
-      const totalBookings = bookings?.length || 0;
-      const activeStudyHalls = studyHalls?.filter(h => h.status === 'active').length || 0;
-      const pendingBookings = bookings?.filter(b => b.status === 'pending').length || 0;
-      const completedBookings = bookings?.filter(b => b.status === 'completed').length || 0;
+        if (merchantsError) {
+          console.warn('Merchants fetch error:', merchantsError);
+        } else if (merchants) {
+          calculatedStats.totalMerchants = merchants.length;
+        }
+      } catch (error) {
+        console.warn('Error fetching merchants:', error);
+      }
 
-      // Calculate total revenue from bookings
-      const totalRevenue = bookings?.reduce((sum, booking) => sum + (booking.final_amount || 0), 0) || 0;
-
-      setStats({
-        totalStudents,
-        totalMerchants,
-        totalBookings,
-        totalRevenue,
-        activeStudents,
-        activeStudyHalls,
-        pendingBookings,
-        completedBookings,
-      });
+      setStats(calculatedStats);
+      console.log('Dashboard stats loaded successfully:', calculatedStats);
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
+      setError('Failed to fetch dashboard statistics');
       toast({
-        title: "Error",
-        description: "Failed to fetch dashboard statistics",
-        variant: "destructive",
+        title: "Warning",
+        description: "Some dashboard statistics could not be loaded. Using default values.",
+        variant: "default",
       });
     } finally {
       setLoading(false);
@@ -101,6 +125,7 @@ export const useDashboardStats = () => {
   return {
     stats,
     loading,
+    error,
     refetch: fetchStats,
   };
 };

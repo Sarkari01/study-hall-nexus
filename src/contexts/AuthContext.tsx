@@ -38,6 +38,7 @@ interface AuthContextType {
   userRole: UserRole | null;
   permissions: Permission[];
   loading: boolean;
+  error: string | null;
   signOut: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
   hasRole: (roleName: string) => boolean;
@@ -61,27 +62,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchUserProfile = async (userId: string) => {
+  const createDefaultProfile = async (userId: string, userEmail: string) => {
+    try {
+      console.log('Creating default profile for user:', userId);
+      
+      // Get the student role
+      const { data: studentRole } = await supabase
+        .from('custom_roles')
+        .select('id')
+        .eq('name', 'student')
+        .eq('is_system_role', true)
+        .single();
+
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: userId,
+          full_name: userEmail.split('@')[0],
+          role: 'student',
+          custom_role_id: studentRole?.id || null
+        })
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+      
+      console.log('Default profile created:', profile);
+      return profile;
+    } catch (error) {
+      console.error('Error creating default profile:', error);
+      return null;
+    }
+  };
+
+  const fetchUserProfile = async (userId: string, userEmail?: string) => {
     try {
       console.log('Fetching user profile for:', userId);
       
-      // Fetch user profile
-      const { data: profile, error: profileError } = await supabase
+      let { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
         .single();
 
-      if (profileError) {
-        console.error('Profile fetch error:', profileError);
-        return null;
+      if (profileError?.code === 'PGRST116') {
+        // No profile found, create default one
+        console.log('No profile found, creating default profile');
+        profile = await createDefaultProfile(userId, userEmail || '');
+      } else if (profileError) {
+        throw profileError;
       }
 
       console.log('User profile found:', profile);
       return profile;
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      setError('Failed to fetch user profile');
       return null;
     }
   };
@@ -114,6 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (!systemRoleError && systemRole) {
           roleData = systemRole;
+          
+          // Update profile with the role ID
+          await supabase
+            .from('user_profiles')
+            .update({ custom_role_id: systemRole.id })
+            .eq('id', profile.id);
         }
       }
 
@@ -121,6 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return roleData;
     } catch (error) {
       console.error('Error fetching user role:', error);
+      setError('Failed to fetch user role');
       return null;
     }
   };
@@ -152,17 +197,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return permissions;
     } catch (error) {
       console.error('Error fetching user permissions:', error);
+      setError('Failed to fetch user permissions');
       return [];
     }
   };
 
-  const loadUserData = async (userId: string) => {
+  const loadUserData = async (userId: string, userEmail?: string) => {
     try {
       setLoading(true);
+      setError(null);
       
-      const profile = await fetchUserProfile(userId);
+      const profile = await fetchUserProfile(userId, userEmail);
       if (!profile) {
-        console.log('No profile found, user needs to complete setup');
+        console.log('No profile found and unable to create one');
         setUserProfile(null);
         setUserRole(null);
         setPermissions([]);
@@ -177,12 +224,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userPermissions = await fetchUserPermissions(role.id);
         setPermissions(userPermissions);
       } else {
-        console.log('No role found for user');
+        console.log('No role found for user, defaulting to student');
         setUserRole(null);
         setPermissions([]);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      setError('Failed to load user data');
     } finally {
       setLoading(false);
     }
@@ -190,7 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshUser = async () => {
     if (user?.id) {
-      await loadUserData(user.id);
+      await loadUserData(user.id, user.email);
     }
   };
 
@@ -203,11 +251,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user?.id) {
-          await loadUserData(session.user.id);
+          await loadUserData(session.user.id, session.user.email);
         } else {
           setUserProfile(null);
           setUserRole(null);
           setPermissions([]);
+          setError(null);
           setLoading(false);
         }
       }
@@ -220,7 +269,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user?.id) {
-        await loadUserData(session.user.id);
+        await loadUserData(session.user.id, session.user.email);
       } else {
         setLoading(false);
       }
@@ -234,6 +283,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserProfile(null);
     setUserRole(null);
     setPermissions([]);
+    setError(null);
   };
 
   const hasPermission = (permission: string): boolean => {
@@ -251,6 +301,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userRole,
     permissions,
     loading,
+    error,
     signOut,
     hasPermission,
     hasRole,

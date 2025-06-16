@@ -2,6 +2,8 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,7 +18,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredPermission,
   fallbackPath = "/auth" 
 }) => {
-  const { user, userProfile, userRole, loading, hasPermission, hasRole } = useAuth();
+  const { user, userProfile, userRole, loading, error, hasPermission, hasRole, refreshUser } = useAuth();
 
   if (loading) {
     return (
@@ -33,20 +35,44 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/auth" replace />;
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center justify-center mb-2">
+              <AlertCircle className="h-8 w-8 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-red-800 mb-2">Authentication Error</h3>
+            <p className="text-red-700 mb-4">{error}</p>
+            <Button 
+              onClick={refreshUser} 
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!userProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
             <h3 className="text-lg font-medium text-yellow-800 mb-2">Account Setup Required</h3>
-            <p className="text-yellow-700">Your account needs to be set up by an administrator before you can access the platform.</p>
+            <p className="text-yellow-700 mb-4">Your account is being set up. Please try refreshing the page.</p>
+            <Button 
+              onClick={refreshUser} 
+              className="bg-yellow-600 text-white hover:bg-yellow-700"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
           </div>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Refresh
-          </button>
         </div>
       </div>
     );
