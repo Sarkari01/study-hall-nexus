@@ -1,9 +1,11 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ValidRole, getRoleDisplayName } from "@/utils/roleValidation";
+import { ValidRole } from "@/utils/roleValidation";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useRoleManagement } from "@/hooks/useRoleManagement";
+import { useRoleAudit } from "@/hooks/useRoleAudit";
+import { useAuth } from "@/contexts/AuthContext";
 import RoleManagementHeader from "./role-management/RoleManagementHeader";
 import RoleFilters from "./role-management/RoleFilters";
 import UsersTable from "./role-management/UsersTable";
@@ -24,6 +26,8 @@ const RoleManagement = () => {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   
   const { roleManagement } = usePermissions();
+  const { user } = useAuth();
+  const { logRoleChange } = useRoleAudit();
   const {
     users,
     searchTerm,
@@ -42,14 +46,24 @@ const RoleManagement = () => {
   };
 
   const handleAssignRole = async () => {
-    if (!selectedUser || !newRole) return;
+    if (!selectedUser || !newRole || !user?.id) return;
 
     if (!roleManagement.canManageRole(newRole)) {
       return;
     }
 
+    const oldRole = selectedUser.role;
     const success = await assignRole(selectedUser.id, newRole);
+    
     if (success) {
+      // Log the role change for audit purposes
+      await logRoleChange({
+        user_id: selectedUser.id,
+        changed_by: user.id,
+        old_role: oldRole,
+        new_role: newRole
+      });
+
       setIsAssignDialogOpen(false);
       setSelectedUser(null);
       setNewRole('');
