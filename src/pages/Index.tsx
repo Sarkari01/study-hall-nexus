@@ -1,55 +1,40 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Users, Calendar, Shield, ArrowRight, CheckCircle, Star, Menu, X, ChevronDown, Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-
 const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const testimonials = [
-    {
-      name: "Dr. Rajesh Kumar",
-      role: "Study Center Director",
-      content: "Sarkari Ninja has transformed how we manage our study hall operations. The booking system is seamless and our students love the convenience.",
-      rating: 5
-    },
-    {
-      name: "Priya Sharma",
-      role: "UPSC Aspirant",
-      content: "Finding quality study spaces was always a challenge. This platform made it so easy to book and manage my study sessions.",
-      rating: 5
-    },
-    {
-      name: "Amit Patel",
-      role: "Study Hall Owner",
-      content: "The merchant dashboard provides excellent insights and has helped us increase our bookings by 40% in just 3 months.",
-      rating: 5
-    }
-  ];
-
-  const faqs = [
-    {
-      question: "How does the booking system work?",
-      answer: "Students can browse available study halls, check real-time availability, and book their preferred slots instantly through our platform."
-    },
-    {
-      question: "What payment methods are supported?",
-      answer: "We support all major payment methods including UPI, credit/debit cards, and digital wallets for seamless transactions."
-    },
-    {
-      question: "How do merchants get verified?",
-      answer: "Our verification process includes document verification, site inspection, and quality assessment to ensure the best experience for students."
-    },
-    {
-      question: "Is there customer support available?",
-      answer: "Yes, we provide 24/7 customer support through chat, email, and phone to assist both students and merchants."
-    }
-  ];
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
+  const testimonials = [{
+    name: "Dr. Rajesh Kumar",
+    role: "Study Center Director",
+    content: "Sarkari Ninja has transformed how we manage our study hall operations. The booking system is seamless and our students love the convenience.",
+    rating: 5
+  }, {
+    name: "Priya Sharma",
+    role: "UPSC Aspirant",
+    content: "Finding quality study spaces was always a challenge. This platform made it so easy to book and manage my study sessions.",
+    rating: 5
+  }, {
+    name: "Amit Patel",
+    role: "Study Hall Owner",
+    content: "The merchant dashboard provides excellent insights and has helped us increase our bookings by 40% in just 3 months.",
+    rating: 5
+  }];
+  const faqs = [{
+    question: "How does the booking system work?",
+    answer: "Students can browse available study halls, check real-time availability, and book their preferred slots instantly through our platform."
+  }, {
+    question: "What payment methods are supported?",
+    answer: "We support all major payment methods including UPI, credit/debit cards, and digital wallets for seamless transactions."
+  }, {
+    question: "How do merchants get verified?",
+    answer: "Our verification process includes document verification, site inspection, and quality assessment to ensure the best experience for students."
+  }, {
+    question: "Is there customer support available?",
+    answer: "Yes, we provide 24/7 customer support through chat, email, and phone to assist both students and merchants."
+  }];
+  return <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
       {/* Notification Bar */}
       <div className="bg-emerald-600 text-white text-center py-2 text-sm">
         <span>🎉 New Feature: AI-powered study hall recommendations now available!</span>
@@ -91,17 +76,13 @@ const Index = () => {
             </div>
 
             {/* Mobile menu button */}
-            <button 
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
+            <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
 
           {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
+          {mobileMenuOpen && <div className="md:hidden border-t border-gray-200 py-4">
               <div className="flex flex-col space-y-4">
                 <a href="#features" className="text-gray-700 hover:text-emerald-600">Features</a>
                 <a href="#pricing" className="text-gray-700 hover:text-emerald-600">Pricing</a>
@@ -114,8 +95,7 @@ const Index = () => {
                   </Link>
                 </div>
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </header>
 
@@ -287,13 +267,10 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+            {testimonials.map((testimonial, index) => <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                    ))}
+                    {[...Array(testimonial.rating)].map((_, i) => <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />)}
                   </div>
                   <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
                   <div>
@@ -301,8 +278,7 @@ const Index = () => {
                     <p className="text-sm text-gray-500">{testimonial.role}</p>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -394,14 +370,12 @@ const Index = () => {
           </div>
 
           <div className="space-y-6">
-            {faqs.map((faq, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
+            {faqs.map((faq, index) => <Card key={index} className="hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
                   <h3 className="font-semibold text-gray-900 mb-2">{faq.question}</h3>
                   <p className="text-gray-600">{faq.answer}</p>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </section>
@@ -422,7 +396,7 @@ const Index = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-white hover:text-emerald-600">
+            <Button size="lg" variant="outline" className="w-full sm:w-auto border-white hover:bg-white text-slate-950 font-normal">
               Schedule Demo
             </Button>
           </div>
@@ -497,8 +471,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
