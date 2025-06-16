@@ -6,12 +6,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentPortal from "./pages/StudentPortal";
 import MerchantDashboard from "./pages/MerchantDashboard";
 import EditorDashboard from "./pages/EditorDashboard";
 import TelecallerDashboard from "./pages/TelecallerDashboard";
 import InchargeDashboard from "./pages/InchargeDashboard";
+import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -32,61 +34,76 @@ const App = () => (
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              {/* Redirect root to admin */}
-              <Route path="/" element={<Navigate to="/admin" replace />} />
+              {/* Authentication route */}
+              <Route path="/auth" element={<AuthPage />} />
               
-              {/* Admin dashboard route */}
+              {/* Redirect root to auth */}
+              <Route path="/" element={<Navigate to="/auth" replace />} />
+              
+              {/* Protected role-based routes */}
               <Route 
                 path="/admin" 
                 element={
-                  <ErrorBoundary>
-                    <AdminDashboard />
-                  </ErrorBoundary>
+                  <ProtectedRoute requiredRole="admin">
+                    <ErrorBoundary>
+                      <AdminDashboard />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
                 } 
               />
               
               <Route 
                 path="/student" 
                 element={
-                  <ErrorBoundary>
-                    <StudentPortal />
-                  </ErrorBoundary>
+                  <ProtectedRoute requiredRole="student">
+                    <ErrorBoundary>
+                      <StudentPortal />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
                 } 
               />
               
               <Route 
                 path="/merchant" 
                 element={
-                  <ErrorBoundary>
-                    <MerchantDashboard />
-                  </ErrorBoundary>
+                  <ProtectedRoute requiredRole="merchant">
+                    <ErrorBoundary>
+                      <MerchantDashboard />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
                 } 
               />
               
               <Route 
                 path="/editor" 
                 element={
-                  <ErrorBoundary>
-                    <EditorDashboard />
-                  </ErrorBoundary>
+                  <ProtectedRoute requiredRole="editor">
+                    <ErrorBoundary>
+                      <EditorDashboard />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
                 } 
               />
               
               <Route 
                 path="/telecaller" 
                 element={
-                  <ErrorBoundary>
-                    <TelecallerDashboard />
-                  </ErrorBoundary>
+                  <ProtectedRoute requiredRole="telecaller">
+                    <ErrorBoundary>
+                      <TelecallerDashboard />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
                 } 
               />
               
               <Route 
                 path="/incharge" 
                 element={
-                  <ErrorBoundary>
-                    <InchargeDashboard />
-                  </ErrorBoundary>
+                  <ProtectedRoute requiredRole="incharge">
+                    <ErrorBoundary>
+                      <InchargeDashboard />
+                    </ErrorBoundary>
+                  </ProtectedRoute>
                 } 
               />
               

@@ -3,270 +3,143 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { 
-  Users, 
-  UserCheck, 
-  UserX, 
-  Search, 
-  QrCode, 
-  Clock,
-  MapPin,
-  Calendar,
-  CheckCircle
-} from "lucide-react";
-import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Users, Clock, CheckCircle, AlertCircle, Calendar } from 'lucide-react';
 
-interface BookingStatus {
-  id: string;
-  bookingReference: string;
-  studentName: string;
-  seatId: string;
-  checkInTime: string | null;
-  checkOutTime: string | null;
-  status: 'pending' | 'checked_in' | 'checked_out' | 'no_show';
-  bookingTime: string;
-}
-
-const HallOperations: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const { toast } = useToast();
-
-  // Mock data for demonstration
-  const [bookings] = useState<BookingStatus[]>([
-    {
-      id: '1',
-      bookingReference: 'BK-2024-00001',
-      studentName: 'Rahul Sharma',
-      seatId: 'A01',
-      checkInTime: '09:30:00',
-      checkOutTime: null,
-      status: 'checked_in',
-      bookingTime: '09:00-17:00'
-    },
-    {
-      id: '2',
-      bookingReference: 'BK-2024-00002',
-      studentName: 'Priya Patel',
-      seatId: 'A02',
-      checkInTime: null,
-      checkOutTime: null,
-      status: 'pending',
-      bookingTime: '10:00-18:00'
-    },
-    {
-      id: '3',
-      bookingReference: 'BK-2024-00003',
-      studentName: 'Amit Kumar',
-      seatId: 'B01',
-      checkInTime: '08:45:00',
-      checkOutTime: '16:30:00',
-      status: 'checked_out',
-      bookingTime: '09:00-17:00'
-    }
-  ]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'checked_in': return 'bg-green-100 text-green-800';
-      case 'checked_out': return 'bg-blue-100 text-blue-800';
-      case 'no_show': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const handleCheckIn = (bookingId: string, studentName: string) => {
-    toast({
-      title: "Check-in Successful",
-      description: `${studentName} has been checked in successfully`,
-    });
-  };
-
-  const handleCheckOut = (bookingId: string, studentName: string) => {
-    toast({
-      title: "Check-out Successful",
-      description: `${studentName} has been checked out successfully`,
-    });
-  };
-
-  const handleMarkNoShow = (bookingId: string, studentName: string) => {
-    toast({
-      title: "Marked as No Show",
-      description: `${studentName}'s booking has been marked as no show`,
-      variant: "destructive"
-    });
-  };
-
-  const filteredBookings = bookings.filter(booking => 
-    booking.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    booking.bookingReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    booking.seatId.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const stats = {
-    total: bookings.length,
-    checkedIn: bookings.filter(b => b.status === 'checked_in').length,
-    checkedOut: bookings.filter(b => b.status === 'checked_out').length,
-    pending: bookings.filter(b => b.status === 'pending').length
-  };
+const HallOperations = () => {
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold">{stats.total}</div>
-                <p className="text-sm text-gray-600">Total Bookings</p>
-              </div>
-              <Users className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-green-600">{stats.checkedIn}</div>
-                <p className="text-sm text-gray-600">Checked In</p>
-              </div>
-              <UserCheck className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-blue-600">{stats.checkedOut}</div>
-                <p className="text-sm text-gray-600">Checked Out</p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
-                <p className="text-sm text-gray-600">Pending</p>
-              </div>
-              <Clock className="h-8 w-8 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="seats">Seat Management</TabsTrigger>
+          <TabsTrigger value="checkin">Check-in/out</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule</TabsTrigger>
+        </TabsList>
 
-      {/* Operations Panel */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Hall Operations - Today
-            </CardTitle>
-            <div className="flex gap-2">
-              <Button variant="outline">
-                <QrCode className="h-4 w-4 mr-2" />
-                Scan QR
-              </Button>
-              <Button>
-                <Calendar className="h-4 w-4 mr-2" />
-                View Schedule
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search by student name, booking reference, or seat..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-40"
-            />
+        <TabsContent value="overview" className="space-y-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Seats</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">50</div>
+                <p className="text-xs text-muted-foreground">Capacity</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Occupied</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">32</div>
+                <p className="text-xs text-muted-foreground">64% occupancy</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Available</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">18</div>
+                <p className="text-xs text-muted-foreground">36% available</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Today's Check-ins</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">28</div>
+                <p className="text-xs text-muted-foreground">+5 from yesterday</p>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Bookings List */}
-          <div className="space-y-4">
-            {filteredBookings.map((booking) => (
-              <div key={booking.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-medium text-gray-900">{booking.studentName}</h3>
-                      <Badge className={getStatusColor(booking.status)}>
-                        {booking.status.replace('_', ' ')}
-                      </Badge>
-                      <span className="text-sm text-gray-500">Seat: {booking.seatId}</span>
+          {/* Recent Activities */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activities</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[
+                  { student: "John Doe", action: "Checked in", seat: "A1", time: "2 minutes ago", type: "checkin" },
+                  { student: "Jane Smith", action: "Checked out", seat: "B5", time: "15 minutes ago", type: "checkout" },
+                  { student: "Mike Johnson", action: "Checked in", seat: "C3", time: "32 minutes ago", type: "checkin" },
+                ].map((activity, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded-full ${activity.type === 'checkin' ? 'bg-green-500' : 'bg-blue-500'}`}></div>
+                      <div>
+                        <p className="font-medium">{activity.student}</p>
+                        <p className="text-sm text-gray-500">{activity.action} - Seat {activity.seat}</p>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
-                      <span>Booking: {booking.bookingReference}</span>
-                      <span>Time: {booking.bookingTime}</span>
-                      <span>
-                        {booking.checkInTime && `Checked in: ${booking.checkInTime}`}
-                        {booking.checkOutTime && ` | Checked out: ${booking.checkOutTime}`}
-                      </span>
-                    </div>
+                    <p className="text-sm text-gray-500">{activity.time}</p>
                   </div>
-                  <div className="flex gap-2">
-                    {booking.status === 'pending' && (
-                      <>
-                        <Button
-                          size="sm"
-                          onClick={() => handleCheckIn(booking.id, booking.studentName)}
-                        >
-                          <UserCheck className="h-4 w-4 mr-1" />
-                          Check In
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleMarkNoShow(booking.id, booking.studentName)}
-                        >
-                          <UserX className="h-4 w-4 mr-1" />
-                          No Show
-                        </Button>
-                      </>
-                    )}
-                    {booking.status === 'checked_in' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleCheckOut(booking.id, booking.studentName)}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Check Out
-                      </Button>
-                    )}
-                    {booking.status === 'checked_out' && (
-                      <Badge variant="secondary">
-                        Completed
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="seats">
+          <Card>
+            <CardHeader>
+              <CardTitle>Seat Layout Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Seat Management</h3>
+                <p className="text-gray-500">Interactive seat layout and allocation management</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="checkin">
+          <Card>
+            <CardHeader>
+              <CardTitle>Check-in/Check-out Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Student Check-in/out</h3>
+                <p className="text-gray-500">Manage student attendance and seat assignments</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="schedule">
+          <Card>
+            <CardHeader>
+              <CardTitle>Schedule Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Hall Schedule</h3>
+                <p className="text-gray-500">View and manage hall operation schedules</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
