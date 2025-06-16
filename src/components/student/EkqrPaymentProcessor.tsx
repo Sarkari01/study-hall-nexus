@@ -130,6 +130,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
         }
       }
 
+      // Fix date format for EKQR API - use DD/MM/YYYY format
       const now = new Date();
       const txnDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
       console.log('Starting status polling for transaction:', order.clientTxnId, 'on date:', txnDate);
@@ -145,7 +146,10 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
               title: "Payment Successful",
               description: `Payment of ₹${finalAmount} completed successfully`
             });
-            onPaymentSuccess(transactionId || order.orderId);
+            // Call the parent component's success handler
+            setTimeout(() => {
+              onPaymentSuccess(transactionId || order.orderId);
+            }, 2000); // Short delay to show success message
           } else if (status === 'failed') {
             setPaymentStage('failed');
             setErrorMessage('Payment was not completed. Please try again.');

@@ -28,6 +28,24 @@ serve(async (req) => {
 
     console.log('Checking EKQR payment status:', { clientTxnId, txnDate })
 
+    // Ensure date format is DD/MM/YYYY for EKQR API
+    let formattedDate = txnDate;
+    if (txnDate && txnDate.includes('/')) {
+      const parts = txnDate.split('/');
+      if (parts.length === 3) {
+        // If it's already DD/MM/YYYY format, use as is
+        formattedDate = txnDate;
+      }
+    } else {
+      // If date is in different format, try to parse and reformat
+      const date = new Date(txnDate);
+      if (!isNaN(date.getTime())) {
+        formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+      }
+    }
+
+    console.log('Using formatted date for EKQR API:', formattedDate);
+
     // Call EKQR API to check status
     const response = await fetch('https://api.ekqr.in/api/check_order_status', {
       method: 'POST',
@@ -37,7 +55,7 @@ serve(async (req) => {
       body: JSON.stringify({
         key: ekqrApiKey,
         client_txn_id: clientTxnId,
-        txn_date: txnDate
+        txn_date: formattedDate
       })
     })
 
@@ -45,6 +63,10 @@ serve(async (req) => {
     console.log('EKQR status response:', ekqrResponse)
 
     if (!ekqrResponse.status) {
+      // If EKQR API returns false status, check if it's a date format issue
+      if (ekqrResponse.msg?.includes('invalid')) {
+        console.error('EKQR API date format issue:', ekqrResponse.msg);
+      }
       throw new Error(ekqrResponse.msg || 'Failed to check payment status')
     }
 
@@ -61,9 +83,11 @@ serve(async (req) => {
     }
 
     // Determine payment status from EKQR response
-    const paymentStatus = ekqrResponse.data.status
+    const paymentStatus = ekqrResponse.data?.status
     let newStatus = 'pending'
     let bookingStatus = 'pending'
+    
+    console.log('EKQR payment status from API:', paymentStatus);
     
     switch (paymentStatus?.toLowerCase()) {
       case 'success':
@@ -80,6 +104,8 @@ serve(async (req) => {
         newStatus = 'pending'
         bookingStatus = 'pending'
     }
+
+    console.log('Updating payment status to:', newStatus);
 
     // Update payment transaction status
     const { error: updateError } = await supabase
@@ -101,15 +127,13 @@ serve(async (req) => {
       throw new Error('Failed to update payment status')
     }
 
-    // If payment is completed and we have a temp booking ID, create the actual booking
+    // If payment is completed and we have a temp booking ID, mark for booking creation
     if (newStatus === 'completed') {
       const tempBookingId = paymentTransaction.gateway_response?.temp_booking_id
       
       if (tempBookingId && tempBookingId.startsWith('temp_')) {
-        console.log('Creating booking for successful payment:', paymentTransaction.id)
-        
-        // The booking creation should be handled by the frontend after successful payment
-        // We'll just return the success status so the frontend can proceed
+        console.log('Payment completed for temp booking:', tempBookingId)
+        // The actual booking creation will be handled by the frontend
       } else if (paymentTransaction.booking_id) {
         // Update existing booking status
         await supabase
@@ -128,7 +152,7 @@ serve(async (req) => {
         data: {
           paymentStatus: newStatus,
           bookingStatus: bookingStatus,
-          transactionId: paymentTransaction.gateway_transaction_id
+          transactionId: paymentTransaction.gateway_transaction_id || ekqrResponse.data?.txn_id
         }
       }),
       { 

@@ -75,6 +75,8 @@ export const useEkqrPayment = () => {
 
   const checkPaymentStatus = async (clientTxnId: string, txnDate: string) => {
     try {
+      console.log('Checking payment status with:', { clientTxnId, txnDate });
+      
       const { data, error } = await supabase.functions.invoke('check-ekqr-status', {
         body: {
           clientTxnId,
@@ -83,9 +85,11 @@ export const useEkqrPayment = () => {
       });
 
       if (error) {
+        console.error('Error from check-ekqr-status function:', error);
         throw new Error(error.message);
       }
 
+      console.log('Payment status check response:', data);
       return data;
     } catch (error) {
       console.error('Error checking payment status:', error);
@@ -102,7 +106,10 @@ export const useEkqrPayment = () => {
     let pollCount = 0;
 
     const poll = async () => {
+      console.log(`Polling attempt ${pollCount + 1}/${maxPolls} for transaction:`, clientTxnId);
+      
       if (pollCount >= maxPolls) {
+        console.log('Maximum polling attempts reached, timing out');
         if (pollInterval) {
           clearInterval(pollInterval);
           setPollInterval(null);
@@ -117,6 +124,8 @@ export const useEkqrPayment = () => {
         const status = result.data.paymentStatus;
         const transactionId = result.data.transactionId;
         
+        console.log('Payment status received:', status, 'Transaction ID:', transactionId);
+        
         if (status === 'completed' || status === 'failed') {
           if (pollInterval) {
             clearInterval(pollInterval);
@@ -125,6 +134,8 @@ export const useEkqrPayment = () => {
           onStatusUpdate(status, transactionId);
           return;
         }
+      } else {
+        console.log('No valid status received, continuing to poll...');
       }
 
       pollCount++;
@@ -138,6 +149,7 @@ export const useEkqrPayment = () => {
 
   const stopStatusPolling = () => {
     if (pollInterval) {
+      console.log('Stopping payment status polling');
       clearInterval(pollInterval);
       setPollInterval(null);
     }
