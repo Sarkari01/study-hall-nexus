@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,13 @@ interface UserProfile {
   user_id: string;
   full_name: string;
   role: string | null;
+}
+
+interface AuthUser {
+  id: string;
+  email?: string;
+  created_at?: string;
+  last_sign_in_at?: string;
 }
 
 interface UserWithRole {
@@ -64,13 +70,15 @@ const RoleManagement = () => {
       if (error) throw error;
 
       // Get auth users for email and timestamps
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      const { data: authResponse, error: authError } = await supabase.auth.admin.listUsers();
       
       if (authError) throw authError;
 
+      const authUsers = authResponse?.users || [];
+
       // Combine the data safely
       const combinedUsers: UserWithRole[] = (profiles || []).map(profile => {
-        const authUser = authUsers.users.find(u => u.id === profile.user_id);
+        const authUser = authUsers.find((u: AuthUser) => u.id === profile.user_id);
         return {
           id: profile.user_id || '',
           email: authUser?.email || 'Unknown',
