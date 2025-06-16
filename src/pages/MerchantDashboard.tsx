@@ -23,8 +23,14 @@ import StudyHallsManagement from "@/components/merchant/StudyHallsManagement";
 import { uuidToNumericId } from "@/utils/uuidUtils";
 
 const MerchantDashboard = () => {
+  // All useState hooks must be declared at the top, before any conditional logic
   const [activeTab, setActiveTab] = useState("overview");
   const [showDevelopmentMode, setShowDevelopmentMode] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
+  const [editingStudyHall, setEditingStudyHall] = useState<any>(null);
+  
   const { toast } = useToast();
   
   // Mock user data for development mode
@@ -104,11 +110,6 @@ const MerchantDashboard = () => {
       </div>
     );
   }
-
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
-  const [editingStudyHall, setEditingStudyHall] = useState<any>(null);
   
   const handleAddStudyHall = (data: any) => {
     createStudyHall(data);
