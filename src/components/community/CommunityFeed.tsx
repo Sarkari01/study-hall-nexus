@@ -1,177 +1,157 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Heart, MessageCircle, Share2, Pin, Plus, Image as ImageIcon, Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { formatDistanceToNow } from 'date-fns';
-import ImageUploader from '@/components/shared/ImageUploader';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarContent, AvatarFallback } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Heart, MessageCircle, Share2, Plus, Clock, TrendingUp, Users, BookOpen, Coffee, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface Post {
+interface CommunityPost {
   id: string;
   title: string;
   content: string;
-  images: string[];
   post_type: string;
-  is_pinned: boolean;
   likes_count: number;
   comments_count: number;
   created_at: string;
-  user_profiles?: {
-    full_name: string;
-    avatar_url?: string;
-    role: string;
-  } | null;
+  user_id: string;
+  study_hall_id?: string;
+  images: string[];
+  is_pinned: boolean;
 }
 
-interface Comment {
+interface CommunityComment {
   id: string;
   content: string;
-  images: string[];
   likes_count: number;
   created_at: string;
-  user_profiles?: {
-    full_name: string;
-    avatar_url?: string;
-    role: string;
-  } | null;
+  user_id: string;
+  post_id: string;
+  images: string[];
 }
 
-const CommunityFeed: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isPostFormOpen, setIsPostFormOpen] = useState(false);
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
+const CommunityFeed = () => {
+  const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [comments, setComments] = useState<{ [key: string]: CommunityComment[] }>({});
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
   const [newComment, setNewComment] = useState('');
-  const [commentImages, setCommentImages] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { userProfile } = useAuth();
 
-  // Post form state
-  const [postForm, setPostForm] = useState({
+  const [newPost, setNewPost] = useState({
     title: '',
     content: '',
-    post_type: 'general',
-    images: [] as string[]
+    post_type: 'general'
   });
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  const postTypes = [
+    { value: 'general', label: 'General Discussion', icon: MessageCircle },
+    { value: 'study_tips', label: 'Study Tips', icon: BookOpen },
+    { value: 'events', label: 'Events & Meetups', icon: Users },
+    { value: 'break_time', label: 'Break Time Chat', icon: Coffee },
+    { value: 'help', label: 'Need Help', icon: AlertTriangle }
+  ];
+
+  const anonymousNames = [
+    'StudyBuddy', 'BookWorm', 'NightOwl', 'CoffeeAddict', 'QuietLearner',
+    'FocusedMind', 'StudyHero', 'BrainPower', 'LearningNinja', 'StudyStar'
+  ];
+
+  const getAnonymousName = (userId: string) => {
+    const hash = userId.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return anonymousNames[Math.abs(hash) % anonymousNames.length];
+  };
+
+  const getAnonymousAvatar = (userId: string) => {
+    const colors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-yellow-500', 'bg-red-500'];
+    const hash = userId.split('').reduce((a, b) => {
+      a = ((a << 5) - a) + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   const fetchPosts = async () => {
     try {
-      // First get posts
-      const { data: postsData, error: postsError } = await supabase
+      const { data, error } = await supabase
         .from('community_posts')
         .select('*')
         .eq('is_approved', true)
-        .order('is_pinned', { ascending: false })
         .order('created_at', { ascending: false });
 
-      if (postsError) throw postsError;
-
-      // Then get user profiles for each post
-      const postsWithProfiles = await Promise.all(
-        (postsData || []).map(async (post) => {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('full_name, avatar_url, role')
-            .eq('user_id', post.user_id)
-            .single();
-
-          return {
-            ...post,
-            user_profiles: profile
-          };
-        })
-      );
-
-      setPosts(postsWithProfiles);
+      if (error) throw error;
+      setPosts(data || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch community posts",
+        description: "Failed to load community posts",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const fetchComments = async (postId: string) => {
     try {
-      // First get comments
-      const { data: commentsData, error: commentsError } = await supabase
+      const { data, error } = await supabase
         .from('community_comments')
         .select('*')
         .eq('post_id', postId)
         .eq('is_approved', true)
         .order('created_at', { ascending: true });
 
-      if (commentsError) throw commentsError;
-
-      // Then get user profiles for each comment
-      const commentsWithProfiles = await Promise.all(
-        (commentsData || []).map(async (comment) => {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('full_name, avatar_url, role')
-            .eq('user_id', comment.user_id)
-            .single();
-
-          return {
-            ...comment,
-            user_profiles: profile
-          };
-        })
-      );
-
-      setComments(commentsWithProfiles);
+      if (error) throw error;
+      setComments(prev => ({ ...prev, [postId]: data || [] }));
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
   };
 
-  const handleCreatePost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to create posts",
-          variant: "destructive"
-        });
-        return;
-      }
+  const createPost = async () => {
+    if (!userProfile?.id || !newPost.title.trim() || !newPost.content.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
 
+    try {
       const { error } = await supabase
         .from('community_posts')
         .insert([{
-          ...postForm,
-          user_id: user.id
+          title: newPost.title,
+          content: newPost.content,
+          post_type: newPost.post_type,
+          user_id: userProfile.user_id
         }]);
 
       if (error) throw error;
-      
+
       toast({
         title: "Success",
-        description: "Post created successfully"
+        description: "Your post has been submitted for approval"
       });
-      
-      setIsPostFormOpen(false);
-      resetPostForm();
+
+      setNewPost({ title: '', content: '', post_type: 'general' });
+      setIsCreatePostOpen(false);
       fetchPosts();
     } catch (error) {
       console.error('Error creating post:', error);
@@ -183,392 +163,321 @@ const CommunityFeed: React.FC = () => {
     }
   };
 
-  const handleAddComment = async () => {
-    if (!selectedPost || (!newComment.trim() && commentImages.length === 0)) return;
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to comment",
-          variant: "destructive"
-        });
-        return;
-      }
+  const addComment = async (postId: string) => {
+    if (!userProfile?.id || !newComment.trim()) return;
 
+    try {
       const { error } = await supabase
         .from('community_comments')
         .insert([{
-          post_id: selectedPost.id,
-          user_id: user.id,
           content: newComment,
-          images: commentImages
+          post_id: postId,
+          user_id: userProfile.user_id
         }]);
 
       if (error) throw error;
-      
+
       setNewComment('');
-      setCommentImages([]);
-      fetchComments(selectedPost.id);
+      fetchComments(postId);
       
       // Update comments count
-      await supabase
-        .from('community_posts')
-        .update({ 
-          comments_count: selectedPost.comments_count + 1 
-        })
-        .eq('id', selectedPost.id);
-        
-      fetchPosts();
+      setPosts(prev => prev.map(post => 
+        post.id === postId 
+          ? { ...post, comments_count: post.comments_count + 1 }
+          : post
+      ));
     } catch (error) {
       console.error('Error adding comment:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add comment",
-        variant: "destructive"
-      });
     }
   };
 
-  const handleLikePost = async (postId: string, currentLikes: number) => {
-    try {
-      const { error } = await supabase
-        .from('community_posts')
-        .update({ likes_count: currentLikes + 1 })
-        .eq('id', postId);
-
-      if (error) throw error;
-      fetchPosts();
-    } catch (error) {
-      console.error('Error liking post:', error);
-    }
+  const likePost = async (postId: string) => {
+    // Simulate like functionality - in real app, you'd track user likes
+    setPosts(prev => prev.map(post => 
+      post.id === postId 
+        ? { ...post, likes_count: post.likes_count + 1 }
+        : post
+    ));
   };
 
-  const resetPostForm = () => {
-    setPostForm({
-      title: '',
-      content: '',
-      post_type: 'general',
-      images: []
-    });
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const filteredPosts = posts.filter(post => 
+    activeTab === 'all' || post.post_type === activeTab
+  );
+
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
   };
 
-  const openPostDetails = (post: Post) => {
-    setSelectedPost(post);
-    fetchComments(post.id);
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'merchant': return 'bg-blue-100 text-blue-800';
-      case 'incharge': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (isLoading) {
-    return <div className="flex justify-center p-8">Loading community posts...</div>;
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Community Feed</h2>
-        <Button onClick={() => setIsPostFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Post
-        </Button>
-      </div>
-
-      {/* Posts Feed */}
-      <div className="space-y-4">
-        {posts.map((post) => (
-          <Card key={post.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="space-y-4">
                 <div className="flex items-center space-x-3">
-                  <Avatar>
-                    <AvatarImage src={post.user_profiles?.avatar_url} />
-                    <AvatarFallback>
-                      {post.user_profiles?.full_name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">{post.user_profiles?.full_name || 'Anonymous'}</h4>
-                      {post.user_profiles?.role && (
-                        <Badge className={getRoleColor(post.user_profiles.role)} variant="secondary">
-                          {post.user_profiles.role}
-                        </Badge>
-                      )}
-                      {post.is_pinned && (
-                        <Pin className="h-4 w-4 text-blue-600" />
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-                    </p>
+                  <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
                   </div>
                 </div>
-                <Badge variant="outline" className="capitalize">
-                  {post.post_type}
-                </Badge>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-bold text-lg mb-2">{post.title}</h3>
-                <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
-              </div>
-
-              {/* Post Images */}
-              {post.images && post.images.length > 0 && (
-                <div className="grid grid-cols-2 gap-2">
-                  {post.images.slice(0, 4).map((image, index) => (
-                    <div key={index} className="relative">
-                      <img
-                        src={image}
-                        alt={`Post image ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => {/* Open image modal */}}
-                      />
-                      {index === 3 && post.images.length > 4 && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
-                          <span className="text-white font-semibold">
-                            +{post.images.length - 4} more
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Post Actions */}
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div className="flex items-center space-x-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleLikePost(post.id, post.likes_count)}
-                  >
-                    <Heart className="h-4 w-4 mr-1" />
-                    {post.likes_count}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openPostDetails(post)}
-                  >
-                    <MessageCircle className="h-4 w-4 mr-1" />
-                    {post.comments_count}
-                  </Button>
-                </div>
-                <Button variant="ghost" size="sm">
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-20 bg-gray-200 rounded"></div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+    );
+  }
 
-      {/* Create Post Dialog */}
-      <Dialog open={isPostFormOpen} onOpenChange={setIsPostFormOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Post</DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleCreatePost} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={postForm.title}
-                onChange={(e) => setPostForm(prev => ({ ...prev, title: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="post_type">Post Type</Label>
-              <Select
-                value={postForm.post_type}
-                onValueChange={(value) => setPostForm(prev => ({ ...prev, post_type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="general">General Discussion</SelectItem>
-                  <SelectItem value="announcement">Announcement</SelectItem>
-                  <SelectItem value="discussion">Topic Discussion</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                value={postForm.content}
-                onChange={(e) => setPostForm(prev => ({ ...prev, content: e.target.value }))}
-                rows={4}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Images (max 5)</Label>
-              <ImageUploader
-                onImagesUploaded={(urls) => setPostForm(prev => ({ ...prev, images: urls }))}
-                currentImages={postForm.images}
-                maxImages={5}
-                folder="community"
-              />
-            </div>
-
-            <div className="flex gap-4">
-              <Button type="submit" className="flex-1">Create Post</Button>
-              <Button type="button" variant="outline" onClick={() => setIsPostFormOpen(false)}>
-                Cancel
+  return (
+    <div className="space-y-6">
+      {/* Create Post Button */}
+      <Card>
+        <CardContent className="p-4">
+          <Dialog open={isCreatePostOpen} onOpenChange={setIsCreatePostOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Share something with the community (Anonymous)
               </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Post Details Dialog */}
-      {selectedPost && (
-        <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedPost.title}</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              {/* Post Content */}
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Create New Post</DialogTitle>
+              </DialogHeader>
               <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Avatar>
-                    <AvatarImage src={selectedPost.user_profiles?.avatar_url} />
-                    <AvatarFallback>
-                      {selectedPost.user_profiles?.full_name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">{selectedPost.user_profiles?.full_name || 'Anonymous'}</h4>
-                      {selectedPost.user_profiles?.role && (
-                        <Badge className={getRoleColor(selectedPost.user_profiles.role)} variant="secondary">
-                          {selectedPost.user_profiles.role}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      {formatDistanceToNow(new Date(selectedPost.created_at), { addSuffix: true })}
-                    </p>
-                  </div>
+                <div>
+                  <Label htmlFor="post-type">Post Type</Label>
+                  <Select value={newPost.post_type} onValueChange={(value) => setNewPost(prev => ({ ...prev, post_type: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {postTypes.map(type => (
+                        <SelectItem key={type.value} value={type.value}>
+                          <div className="flex items-center gap-2">
+                            <type.icon className="h-4 w-4" />
+                            {type.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <p className="text-gray-700 whitespace-pre-wrap">{selectedPost.content}</p>
-
-                {/* Post Images */}
-                {selectedPost.images && selectedPost.images.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {selectedPost.images.map((image, index) => (
-                      <img
-                        key={index}
-                        src={image}
-                        alt={`Post image ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Comments Section */}
-              <div className="border-t pt-4 space-y-4">
-                <h4 className="font-semibold">Comments ({comments.length})</h4>
-
-                {/* Add Comment */}
-                <div className="space-y-3">
+                <div>
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="Give your post a catchy title..."
+                    value={newPost.title}
+                    onChange={(e) => setNewPost(prev => ({ ...prev, title: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="content">Content</Label>
                   <Textarea
-                    placeholder="Write a comment..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    rows={3}
+                    id="content"
+                    placeholder="Share your thoughts, ask questions, or start a discussion..."
+                    value={newPost.content}
+                    onChange={(e) => setNewPost(prev => ({ ...prev, content: e.target.value }))}
+                    rows={6}
                   />
-                  
-                  <ImageUploader
-                    onImagesUploaded={setCommentImages}
-                    currentImages={commentImages}
-                    maxImages={3}
-                    folder="comments"
-                  />
-
-                  <Button onClick={handleAddComment} size="sm">
-                    <Send className="h-4 w-4 mr-2" />
-                    Post Comment
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setIsCreatePostOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={createPost}>
+                    Post Anonymously
                   </Button>
                 </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
 
-                {/* Comments List */}
+      {/* Filter Tabs */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={activeTab === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setActiveTab('all')}
+            >
+              All Posts
+            </Button>
+            {postTypes.map(type => (
+              <Button
+                key={type.value}
+                variant={activeTab === type.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setActiveTab(type.value)}
+                className="flex items-center gap-1"
+              >
+                <type.icon className="h-3 w-3" />
+                {type.label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Posts Feed */}
+      <div className="space-y-4">
+        {filteredPosts.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Posts Yet</h3>
+              <p className="text-gray-600">Be the first to start a conversation in the community!</p>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredPosts.map((post) => (
+            <Card key={post.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
                 <div className="space-y-4">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="flex space-x-3 p-3 bg-gray-50 rounded-lg">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={comment.user_profiles?.avatar_url} />
-                        <AvatarFallback>
-                          {comment.user_profiles?.full_name?.charAt(0) || 'U'}
+                  {/* Post Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className={`w-10 h-10 ${getAnonymousAvatar(post.user_id)}`}>
+                        <AvatarFallback className="text-white font-semibold">
+                          {getAnonymousName(post.user_id).slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 space-y-2">
+                      <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{comment.user_profiles?.full_name || 'Anonymous'}</span>
-                          {comment.user_profiles?.role && (
-                            <Badge className={getRoleColor(comment.user_profiles.role)} variant="secondary">
-                              {comment.user_profiles.role}
-                            </Badge>
+                          <span className="font-medium">{getAnonymousName(post.user_id)}</span>
+                          {post.is_pinned && (
+                            <Badge variant="secondary" className="text-xs">Pinned</Badge>
                           )}
-                          <span className="text-xs text-gray-500">
-                            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                          </span>
                         </div>
-                        <p className="text-sm text-gray-700">{comment.content}</p>
-                        
-                        {/* Comment Images */}
-                        {comment.images && comment.images.length > 0 && (
-                          <div className="flex gap-2">
-                            {comment.images.map((image, index) => (
-                              <img
-                                key={index}
-                                src={image}
-                                alt={`Comment image ${index + 1}`}
-                                className="w-16 h-16 object-cover rounded"
-                              />
-                            ))}
-                          </div>
-                        )}
-
-                        <Button variant="ghost" size="sm" className="h-6 text-xs">
-                          <Heart className="h-3 w-3 mr-1" />
-                          {comment.likes_count}
-                        </Button>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTimeAgo(post.created_at)}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {postTypes.find(t => t.value === post.post_type)?.label || 'General'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Post Content */}
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">{post.title}</h3>
+                    <p className="text-gray-700 whitespace-pre-wrap">{post.content}</p>
+                  </div>
+
+                  {/* Post Actions */}
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="flex items-center space-x-4">
+                      <button
+                        onClick={() => likePost(post.id)}
+                        className="flex items-center space-x-1 text-gray-500 hover:text-red-500 transition-colors"
+                      >
+                        <Heart className="h-4 w-4" />
+                        <span className="text-sm">{post.likes_count}</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedPost(post);
+                          fetchComments(post.id);
+                        }}
+                        className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        <span className="text-sm">{post.comments_count}</span>
+                      </button>
+                      <button className="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors">
+                        <Share2 className="h-4 w-4" />
+                        <span className="text-sm">Share</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Comments Section */}
+                  {selectedPost?.id === post.id && (
+                    <div className="mt-4 pt-4 border-t space-y-4">
+                      <h4 className="font-medium">Comments</h4>
+                      
+                      {/* Add Comment */}
+                      <div className="flex space-x-3">
+                        <Avatar className={`w-8 h-8 ${getAnonymousAvatar(userProfile?.user_id || '')}`}>
+                          <AvatarFallback className="text-white text-sm">
+                            {getAnonymousName(userProfile?.user_id || '').slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 space-y-2">
+                          <Textarea
+                            placeholder="Add a comment..."
+                            value={newComment}
+                            onChange={(e) => setNewComment(e.target.value)}
+                            rows={2}
+                          />
+                          <div className="flex justify-end">
+                            <Button 
+                              size="sm" 
+                              onClick={() => addComment(post.id)}
+                              disabled={!newComment.trim()}
+                            >
+                              Comment
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Comments List */}
+                      <div className="space-y-3">
+                        {comments[post.id]?.map((comment) => (
+                          <div key={comment.id} className="flex space-x-3">
+                            <Avatar className={`w-8 h-8 ${getAnonymousAvatar(comment.user_id)}`}>
+                              <AvatarFallback className="text-white text-sm">
+                                {getAnonymousName(comment.user_id).slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="bg-gray-50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-medium text-sm">{getAnonymousName(comment.user_id)}</span>
+                                  <span className="text-xs text-gray-500">{formatTimeAgo(comment.created_at)}</span>
+                                </div>
+                                <p className="text-gray-700 text-sm">{comment.content}</p>
+                              </div>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <button className="flex items-center space-x-1 text-xs text-gray-500 hover:text-red-500">
+                                  <Heart className="h-3 w-3" />
+                                  <span>{comment.likes_count}</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };
