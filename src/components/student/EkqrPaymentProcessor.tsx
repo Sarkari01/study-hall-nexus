@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { CreditCard, Smartphone, Building2, Wallet, Shield, ArrowLeft, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { CreditCard, Smartphone, Shield, ArrowLeft, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useEkqrPayment } from "@/hooks/useEkqrPayment";
 import { useToast } from "@/hooks/use-toast";
 
@@ -55,6 +55,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
 
   const handlePayment = async () => {
     try {
+      console.log('Starting payment process with final amount:', finalAmount);
       setPaymentStage('processing');
 
       const paymentData = {
@@ -70,23 +71,28 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
         studyHallName: bookingDetails.studyHallName
       };
 
+      console.log('Creating EKQR order with data:', { paymentData, bookingData });
       const order = await createOrder(paymentData, bookingData, false);
       
       if (!order) {
+        console.error('Failed to create EKQR order');
         setPaymentStage('failed');
         return;
       }
 
+      console.log('EKQR order created successfully:', order);
       setOrderData(order);
       setPaymentStage('pending');
 
       // Start polling for payment status
       const txnDate = new Date().toLocaleDateString('en-GB'); // DD-MM-YYYY format
+      console.log('Starting status polling for transaction:', order.clientTxnId, 'on date:', txnDate);
       
       startStatusPolling(
         order.clientTxnId,
         txnDate,
         (status) => {
+          console.log('Payment status update received:', status);
           if (status === 'completed') {
             setPaymentStage('completed');
             toast({
@@ -114,6 +120,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
 
       // If UPI method is selected and UPI intents are available, open the app
       if (selectedMethod === 'upi' && order.upiIntent) {
+        console.log('Opening UPI app with intent:', order.upiIntent);
         // Try to open Google Pay first, then PhonePe, then others
         if (order.upiIntent.gpay_link) {
           openUpiApp(order.upiIntent.gpay_link);
@@ -139,6 +146,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
 
   const handleWebPayment = () => {
     if (orderData?.paymentUrl) {
+      console.log('Opening web payment URL:', orderData.paymentUrl);
       window.open(orderData.paymentUrl, '_blank');
     }
   };

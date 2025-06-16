@@ -30,7 +30,6 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
   });
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
   const [processing, setProcessing] = useState(false);
-  const [tempBookingId, setTempBookingId] = useState<string>('');
   const { toast } = useToast();
 
   // Mock customer details - in real app, get from auth/profile
@@ -58,11 +57,13 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
     setBookingForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const createBooking = async (transactionId: string) => {
+  const createBooking = async (paymentTransactionId: string) => {
     setProcessing(true);
     
     try {
-      // First create the booking record
+      console.log('Creating booking with payment transaction:', paymentTransactionId);
+      
+      // Create the booking record
       const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .insert({
@@ -72,14 +73,19 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
           start_time: bookingForm.startTime,
           end_time: bookingForm.endTime,
           total_amount: calculateTotal(),
-          final_amount: calculateTotal() * 1.23,
+          final_amount: Math.round(calculateTotal() * 1.23), // Including taxes
           status: 'confirmed',
           payment_status: 'completed'
         })
         .select()
         .single();
 
-      if (bookingError) throw bookingError;
+      if (bookingError) {
+        console.error('Booking creation error:', bookingError);
+        throw bookingError;
+      }
+
+      console.log('Booking created successfully:', booking);
 
       // Create seat bookings
       const seatPromises = selectedSeats.map(seatId => 
@@ -92,6 +98,7 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
       );
 
       await Promise.all(seatPromises);
+      console.log('Seat bookings created successfully');
 
       setConfirmedBooking({
         bookingReference: booking.booking_reference,
@@ -102,7 +109,7 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
         startTime: bookingForm.startTime,
         endTime: bookingForm.endTime,
         totalAmount: Math.round(calculateTotal() * 1.23),
-        transactionId,
+        transactionId: paymentTransactionId,
         status: 'confirmed'
       });
 
@@ -126,10 +133,12 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
   };
 
   const handlePaymentSuccess = (transactionId: string) => {
+    console.log('Payment successful, creating booking with transaction ID:', transactionId);
     createBooking(transactionId);
   };
 
   const handlePaymentCancel = () => {
+    console.log('Payment cancelled, returning to seat selection');
     setActiveTab('seats');
   };
 
@@ -137,7 +146,6 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
     setSelectedSeats([]);
     setBookingForm({ startDate: '', startTime: '09:00', endTime: '17:00' });
     setConfirmedBooking(null);
-    setTempBookingId('');
     setActiveTab('details');
     onClose();
   };
@@ -228,7 +236,7 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
                   bookingDate: bookingForm.startDate,
                   startTime: bookingForm.startTime,
                   endTime: bookingForm.endTime,
-                  bookingId: tempBookingId
+                  bookingId: `temp_${Date.now()}`
                 }}
                 customerDetails={customerDetails}
                 onPaymentSuccess={handlePaymentSuccess}
