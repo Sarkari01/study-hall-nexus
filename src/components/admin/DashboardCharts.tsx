@@ -20,7 +20,7 @@ const ChartFallback = ({ title }: { title: string }) => (
 );
 
 const DashboardCharts = () => {
-  const { chartsData, loading } = useDashboardCharts();
+  const { chartData, loading } = useDashboardCharts();
 
   const chartConfig = {
     revenue: {
@@ -57,16 +57,16 @@ const DashboardCharts = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Revenue Trend Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="Weekly Revenue Trend" />}>
+      <ErrorBoundary fallback={<ChartFallback title="Revenue Trend" />}>
         <Card>
           <CardHeader>
-            <CardTitle>Weekly Revenue Trend</CardTitle>
+            <CardTitle>Revenue Trend</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px]">
-              <LineChart data={chartsData.revenueData}>
+              <LineChart data={chartData.revenueChart}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="month" />
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Line type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={2} />
@@ -76,70 +76,62 @@ const DashboardCharts = () => {
         </Card>
       </ErrorBoundary>
 
-      {/* Booking Distribution Pie Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="Booking Distribution by Time" />}>
+      {/* Bookings Chart */}
+      <ErrorBoundary fallback={<ChartFallback title="Bookings Overview" />}>
         <Card>
           <CardHeader>
-            <CardTitle>Booking Distribution by Time</CardTitle>
+            <CardTitle>Bookings Overview</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px]">
-              <PieChart>
-                <Pie
-                  data={chartsData.bookingDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value }) => `${name} ${value}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {chartsData.bookingDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </PieChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-      </ErrorBoundary>
-
-      {/* Top Merchants Performance */}
-      <ErrorBoundary fallback={<ChartFallback title="Top Merchants Performance" />}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Merchants Performance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
-              <BarChart data={chartsData.merchantData}>
+              <BarChart data={chartData.bookingsChart}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
+                <XAxis dataKey="name" />
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="revenue" fill="#82ca9d" />
+                <Bar dataKey="bookings" fill="#82ca9d" />
               </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
       </ErrorBoundary>
 
-      {/* Student Activity Area Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="Daily Student Activity" />}>
+      {/* Study Halls Performance */}
+      <ErrorBoundary fallback={<ChartFallback title="Study Halls Performance" />}>
         <Card>
           <CardHeader>
-            <CardTitle>Daily Student Activity</CardTitle>
+            <CardTitle>Study Halls Performance</CardTitle>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px]">
-              <AreaChart data={chartsData.studentActivityData}>
+              <BarChart data={chartData.studyHallsChart}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="hour" />
+                <XAxis dataKey="name" />
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Area type="monotone" dataKey="active" stroke="#ffc658" fill="#ffc658" fillOpacity={0.6} />
+                <Bar dataKey="halls" fill="#3B82F6" />
+                <Bar dataKey="revenue" fill="#10B981" />
+              </BarChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+      </ErrorBoundary>
+
+      {/* User Growth Chart */}
+      <ErrorBoundary fallback={<ChartFallback title="User Growth" />}>
+        <Card>
+          <CardHeader>
+            <CardTitle>User Growth</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={chartConfig} className="h-[300px]">
+              <AreaChart data={chartData.userGrowthChart}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area type="monotone" dataKey="students" stackId="1" stroke="#ffc658" fill="#ffc658" fillOpacity={0.6} />
+                <Area type="monotone" dataKey="merchants" stackId="1" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
               </AreaChart>
             </ChartContainer>
           </CardContent>
