@@ -1,340 +1,277 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, EyeOff, Building2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle, BookOpen } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AuthPage = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("login");
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, userRole, loading: authLoading, isAuthReady } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
+  // If user is already logged in, this will be handled by useAuthRedirect
+  if (user) {
+    return null;
+  }
 
-  // Signup form state
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-
-  // Check if user is already authenticated and redirect to appropriate dashboard
-  useEffect(() => {
-    console.log('AuthPage: Checking auth state', { 
-      authLoading, 
-      user: !!user, 
-      userRole: userRole?.name,
-      isAuthReady,
-      currentPath: location.pathname
-    });
-    
-    // If we have a user and they're trying to access auth page, redirect them
-    if (user && isAuthReady) {
-      // If user has a role, redirect to appropriate dashboard
-      if (userRole) {
-        const roleRoutes = {
-          admin: '/admin',
-          merchant: '/merchant',
-          student: '/student',
-          editor: '/editor',
-          telecaller: '/telecaller',
-          incharge: '/incharge'
-        };
-        
-        const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/dashboard';
-        console.log('AuthPage: User already authenticated, redirecting to:', targetRoute);
-        
-        // Only redirect if we're currently on the auth page
-        if (location.pathname === '/auth') {
-          navigate(targetRoute, { replace: true });
-        }
-        return;
-      }
-      
-      // If user exists but no role yet, redirect to dashboard (it will handle role routing)
-      if (location.pathname === '/auth') {
-        console.log('AuthPage: User exists but no role, redirecting to dashboard');
-        navigate('/dashboard', { replace: true });
-      }
-    }
-  }, [user, userRole, isAuthReady, navigate, location.pathname]);
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    
+    setError(null);
+    setSuccess(null);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
-        password: loginPassword
+        email,
+        password,
       });
 
-      if (error) {
-        toast({
-          title: "Login Failed",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
-      }
+      if (error) throw error;
 
-      if (data.user) {
-        toast({
-          title: "Success",
-          description: "Successfully logged in!"
-        });
-        
-        // The redirect will happen automatically via useEffect when auth state updates
-        console.log('Login successful, waiting for auth state update...');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+      setSuccess('Successfully signed in! Redirecting...');
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      setError(error.message || 'Failed to sign in');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
-    if (signupPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive"
-      });
-      return;
-    }
-
     setLoading(true);
-    
+    setError(null);
+    setSuccess(null);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const fullName = formData.get('fullName') as string;
+
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
-      
       const { data, error } = await supabase.auth.signUp({
-        email: signupEmail,
-        password: signupPassword,
+        email,
+        password,
         options: {
-          emailRedirectTo: redirectUrl,
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: fullName
           }
         }
       });
 
-      if (error) {
-        toast({
-          title: "Signup Failed",
-          description: error.message,
-          variant: "destructive"
-        });
-        return;
-      }
+      if (error) throw error;
 
-      if (data.user) {
-        toast({
-          title: "Success",
-          description: "Account created successfully! Please check your email for verification."
-        });
-        setActiveTab("login");
+      if (data.user && !data.session) {
+        setSuccess('Please check your email to confirm your account before signing in.');
+      } else {
+        setSuccess('Account created successfully! Redirecting...');
       }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      setError(error.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
   };
 
-  // Only show loading if we're not ready and we don't have a user yet
-  // This prevents showing loading when user is already authenticated
-  if (!isAuthReady && !user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const handleDemoLogin = async (role: string) => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
 
-  // If user is authenticated and we're on auth page, show loading while redirecting
-  if (user && location.pathname === '/auth') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting to your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+    const demoCredentials: { [key: string]: { email: string; password: string } } = {
+      admin: { email: 'admin@demo.com', password: 'Admin123!' },
+      merchant: { email: 'merchant@demo.com', password: 'Merchant123!' },
+      student: { email: 'student@demo.com', password: 'Student123!' },
+      telecaller: { email: 'telecaller@demo.com', password: 'Telecaller123!' },
+      incharge: { email: 'incharge@demo.com', password: 'Incharge123!' },
+      editor: { email: 'editor@demo.com', password: 'Editor123!' }
+    };
+
+    const credentials = demoCredentials[role];
+    if (!credentials) {
+      setError('Demo account not available for this role');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (error) throw error;
+
+      setSuccess(`Signed in as ${role}! Redirecting...`);
+    } catch (error: any) {
+      console.error('Demo login error:', error);
+      setError(`Demo ${role} account not available. Please create an account or contact support.`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
+        {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
-            <Building2 className="h-12 w-12 text-blue-600" />
+            <BookOpen className="h-10 w-10 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Sarkari Ninja</h1>
-          <p className="text-gray-600 mt-2">Access your dashboard</p>
+          <h1 className="text-3xl font-bold text-gray-900">StudySpace</h1>
+          <p className="text-gray-600 mt-2">Your gateway to focused learning</p>
         </div>
 
-        <Card className="shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">
-              {activeTab === 'login' ? 'Sign In' : 'Create Account'}
-            </CardTitle>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center">Welcome</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {error && (
+              <Alert className="mb-4" variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {success && (
+              <Alert className="mb-4">
+                <AlertDescription>{success}</AlertDescription>
+              </Alert>
+            )}
+
+            <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4">
+              <TabsContent value="signin">
+                <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="your@email.com" 
-                      value={loginEmail} 
-                      onChange={(e) => setLoginEmail(e.target.value)} 
-                      required 
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      name="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input 
-                        id="password" 
-                        type={showPassword ? "text" : "password"} 
-                        placeholder="Enter your password" 
-                        value={loginPassword} 
-                        onChange={(e) => setLoginPassword(e.target.value)} 
-                        required 
-                      />
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" 
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
+                    <Label htmlFor="signin-password">Password</Label>
+                    <Input
+                      id="signin-password"
+                      name="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      required
+                      disabled={loading}
+                    />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Signing in..." : "Sign In"}
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing In...
+                      </>
+                    ) : (
+                      'Sign In'
+                    )}
                   </Button>
                 </form>
               </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input 
-                      id="fullName" 
-                      type="text" 
-                      placeholder="Enter your full name" 
-                      value={fullName} 
-                      onChange={(e) => setFullName(e.target.value)} 
-                      required 
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input
+                      id="signup-name"
+                      name="fullName"
+                      type="text"
+                      placeholder="Enter your full name"
+                      required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signupEmail">Email</Label>
-                    <Input 
-                      id="signupEmail" 
-                      type="email" 
-                      placeholder="your@email.com" 
-                      value={signupEmail} 
-                      onChange={(e) => setSignupEmail(e.target.value)} 
-                      required 
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      name="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signupPassword">Password</Label>
-                    <div className="relative">
-                      <Input 
-                        id="signupPassword" 
-                        type={showPassword ? "text" : "password"} 
-                        placeholder="Create a password" 
-                        value={signupPassword} 
-                        onChange={(e) => setSignupPassword(e.target.value)} 
-                        required 
-                      />
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
-                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" 
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input 
-                      id="confirmPassword" 
-                      type={showPassword ? "text" : "password"} 
-                      placeholder="Confirm your password" 
-                      value={confirmPassword} 
-                      onChange={(e) => setConfirmPassword(e.target.value)} 
-                      required 
+                    <Label htmlFor="signup-password">Password</Label>
+                    <Input
+                      id="signup-password"
+                      name="password"
+                      type="password"
+                      placeholder="Create a password"
+                      required
+                      disabled={loading}
+                      minLength={6}
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Creating account..." : "Create Account"}
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      'Create Account'
+                    )}
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
+
+            {/* Demo Login Section */}
+            <div className="mt-6 pt-6 border-t">
+              <h3 className="text-sm font-medium text-gray-700 mb-3 text-center">
+                Try Demo Accounts
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {['admin', 'merchant', 'student', 'telecaller', 'incharge', 'editor'].map((role) => (
+                  <Button
+                    key={role}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDemoLogin(role)}
+                    disabled={loading}
+                    className="capitalize"
+                  >
+                    {role}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Quick access to explore different user roles
+              </p>
+            </div>
           </CardContent>
         </Card>
-
-        {/* Demo Accounts Info */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-sm font-semibold text-blue-800 mb-2">Demo Login Credentials</h3>
-          <div className="text-xs text-blue-700 space-y-1">
-            <div><strong>Super Admin:</strong> superadmin@demo.com / SuperAdmin123!</div>
-            <div><strong>Admin:</strong> admin@demo.com / Admin123!</div>
-          </div>
-        </div>
-
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
-            Need help? Contact support at{" "}
-            <a href="mailto:support@sarkarininja.com" className="text-blue-600 hover:underline">
-              support@sarkarininja.com
-            </a>
-          </p>
-        </div>
       </div>
     </div>
   );
