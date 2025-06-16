@@ -6,45 +6,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertCircle, BookOpen } from "lucide-react";
+import { AlertCircle, BookOpen } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import LoadingSpinner from '@/components/shared/LoadingSpinner';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 
 const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { user, userRole, isAuthReady } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthReady } = useAuth();
+  
+  // Use the auth redirect hook to handle redirects
+  useAuthRedirect();
 
-  // If auth is not ready yet, show loading
+  // Show loading while auth is initializing
   if (!isAuthReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading...</p>
-        </div>
+        <LoadingSpinner size="lg" text="Initializing..." />
       </div>
     );
-  }
-
-  // If user is already logged in, redirect to their dashboard
-  if (user && userRole) {
-    const roleRoutes = {
-      admin: '/admin',
-      merchant: '/merchant',
-      student: '/student',
-      editor: '/editor',
-      telecaller: '/telecaller',
-      incharge: '/incharge'
-    };
-    const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes];
-    if (targetRoute) {
-      navigate(targetRoute, { replace: true });
-      return null;
-    }
   }
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -212,10 +195,7 @@ const AuthPage = () => {
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing In...
-                      </>
+                      <LoadingSpinner size="sm" text="Signing In..." />
                     ) : (
                       'Sign In'
                     )}
@@ -261,10 +241,7 @@ const AuthPage = () => {
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Creating Account...
-                      </>
+                      <LoadingSpinner size="sm" text="Creating Account..." />
                     ) : (
                       'Create Account'
                     )}
