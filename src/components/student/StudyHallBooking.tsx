@@ -31,9 +31,9 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
   };
 
   const calculateTotal = () => {
-    const basePrice = bookingType === 'day' ? studyHall.pricePerDay :
-                     bookingType === 'week' ? studyHall.pricePerWeek :
-                     studyHall.pricePerMonth;
+    const basePrice = bookingType === 'day' ? studyHall.price_per_day :
+                     bookingType === 'week' ? studyHall.price_per_week || studyHall.price_per_day * 7 :
+                     studyHall.price_per_month || studyHall.price_per_day * 30;
     return basePrice * selectedSeats.length;
   };
 
@@ -64,7 +64,7 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
             <MapPin className="h-4 w-4" />
             <span>{studyHall.location}</span>
             <Star className="h-4 w-4 text-yellow-400 fill-current ml-2" />
-            <span>{studyHall.rating} ({studyHall.totalReviews} reviews)</span>
+            <span>{studyHall.rating || 0} ({studyHall.total_bookings || 0} reviews)</span>
           </div>
         </DialogHeader>
 
@@ -87,24 +87,27 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-400" />
-                      <span>Hours: {studyHall.operatingHours}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                      <span>{studyHall.distance}</span>
+                      <span>Hours: 24/7</span>
                     </div>
                   </div>
                   
                   <div className="mt-4">
                     <h4 className="font-medium mb-2">Amenities</h4>
                     <div className="flex flex-wrap gap-2">
-                      {studyHall.amenities.map((amenity: string) => (
+                      {studyHall.amenities?.map((amenity: string) => (
                         <Badge key={amenity} variant="outline">
                           {amenity}
                         </Badge>
                       ))}
                     </div>
                   </div>
+                  
+                  {studyHall.description && (
+                    <div className="mt-4">
+                      <h4 className="font-medium mb-2">Description</h4>
+                      <p className="text-sm text-gray-600">{studyHall.description}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -114,16 +117,20 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span>Daily Rate</span>
-                      <span className="font-semibold">₹{studyHall.pricePerDay}</span>
+                      <span className="font-semibold">₹{studyHall.price_per_day}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span>Weekly Rate</span>
-                      <span className="font-semibold">₹{studyHall.pricePerWeek}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span>Monthly Rate</span>
-                      <span className="font-semibold">₹{studyHall.pricePerMonth}</span>
-                    </div>
+                    {studyHall.price_per_week && (
+                      <div className="flex justify-between items-center">
+                        <span>Weekly Rate</span>
+                        <span className="font-semibold">₹{studyHall.price_per_week}</span>
+                      </div>
+                    )}
+                    {studyHall.price_per_month && (
+                      <div className="flex justify-between items-center">
+                        <span>Monthly Rate</span>
+                        <span className="font-semibold">₹{studyHall.price_per_month}</span>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="mt-4 p-3 bg-green-50 rounded-lg">
@@ -180,9 +187,9 @@ const StudyHallBooking: React.FC<StudyHallBookingProps> = ({ studyHall, isOpen, 
                       </div>
                       <div className="flex justify-between text-sm mt-1">
                         <span>Rate per seat:</span>
-                        <span>₹{bookingType === 'day' ? studyHall.pricePerDay : 
-                                bookingType === 'week' ? studyHall.pricePerWeek : 
-                                studyHall.pricePerMonth}</span>
+                        <span>₹{bookingType === 'day' ? studyHall.price_per_day : 
+                                bookingType === 'week' ? (studyHall.price_per_week || studyHall.price_per_day * 7) : 
+                                (studyHall.price_per_month || studyHall.price_per_day * 30)}</span>
                       </div>
                       <div className="flex justify-between font-semibold text-lg mt-2 pt-2 border-t">
                         <span>Total:</span>

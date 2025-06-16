@@ -12,48 +12,14 @@ import StudentBookings from "@/components/student/StudentBookings";
 import StudentProfile from "@/components/student/StudentProfile";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import { Input } from "@/components/ui/input";
+import { useStudyHalls } from "@/hooks/useStudyHalls";
 
 const StudentPortal = () => {
   const [activeTab, setActiveTab] = useState("browse");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHall, setSelectedHall] = useState<any>(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-
-  // Mock data for study halls
-  const studyHalls = [
-    {
-      id: 1,
-      name: "Premium Study Room A",
-      location: "Connaught Place, New Delhi",
-      rating: 4.5,
-      totalReviews: 156,
-      pricePerDay: 50,
-      pricePerWeek: 300,
-      pricePerMonth: 1000,
-      amenities: ["AC", "Wi-Fi", "Parking", "Coffee"],
-      capacity: 48,
-      availableSeats: 12,
-      images: ["/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png"],
-      operatingHours: "6:00 AM - 11:00 PM",
-      distance: "1.2 km away"
-    },
-    {
-      id: 2,
-      name: "Quiet Study Zone",
-      location: "Karol Bagh, New Delhi",
-      rating: 4.2,
-      totalReviews: 89,
-      pricePerDay: 35,
-      pricePerWeek: 200,
-      pricePerMonth: 750,
-      amenities: ["AC", "Wi-Fi", "Silent Zone"],
-      capacity: 32,
-      availableSeats: 8,
-      images: ["/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png"],
-      operatingHours: "5:00 AM - 12:00 AM",
-      distance: "2.1 km away"
-    }
-  ];
+  const { studyHalls, loading } = useStudyHalls();
 
   const amenityIcons = {
     "AC": "❄️",
@@ -67,6 +33,11 @@ const StudentPortal = () => {
     setSelectedHall(hall);
     setIsBookingOpen(true);
   };
+
+  const filteredStudyHalls = studyHalls.filter(hall => 
+    hall.status === 'active' && 
+    hall.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const renderBrowseStudyHalls = () => (
     <div className="space-y-6">
@@ -92,67 +63,95 @@ const StudentPortal = () => {
       </Card>
 
       {/* Study Halls Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {studyHalls.map((hall) => (
-          <Card key={hall.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-0">
-              <div className="aspect-video bg-gray-100 overflow-hidden rounded-t-lg">
-                <img
-                  src={hall.images[0]}
-                  alt={hall.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <h3 className="font-bold text-lg">{hall.name}</h3>
-                  <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>{hall.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <span className="text-sm font-medium">{hall.rating}</span>
-                      <span className="text-sm text-gray-500">({hall.totalReviews})</span>
-                    </div>
-                    <span className="text-sm text-gray-500">• {hall.distance}</span>
-                  </div>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-0">
+                <div className="aspect-video bg-gray-200 rounded-t-lg"></div>
+                <div className="p-6 space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-8 bg-gray-200 rounded"></div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-gray-400" />
-                    <span>{hall.availableSeats}/{hall.capacity} available</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-400" />
-                    <span>24/7</span>
-                  </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredStudyHalls.map((hall) => (
+            <Card key={hall.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <CardContent className="p-0">
+                <div className="aspect-video bg-gray-100 overflow-hidden rounded-t-lg">
+                  <img
+                    src="/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png"
+                    alt={hall.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-
-                <div className="flex flex-wrap gap-1">
-                  {hall.amenities.slice(0, 4).map(amenity => (
-                    <Badge key={amenity} variant="outline" className="text-xs">
-                      {amenityIcons[amenity as keyof typeof amenityIcons]} {amenity}
-                    </Badge>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t">
+                <div className="p-6 space-y-4">
                   <div>
-                    <span className="text-lg font-bold text-green-600">₹{hall.pricePerDay}</span>
-                    <span className="text-sm text-gray-500">/day</span>
+                    <h3 className="font-bold text-lg">{hall.name}</h3>
+                    <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                      <MapPin className="h-4 w-4" />
+                      <span>{hall.location}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-sm font-medium">{hall.rating || 0}</span>
+                        <span className="text-sm text-gray-500">({hall.total_bookings || 0})</span>
+                      </div>
+                    </div>
                   </div>
-                  <Button onClick={() => handleBookNow(hall)} className="bg-blue-600 hover:bg-blue-700">
-                    Book Now
-                  </Button>
+
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-gray-400" />
+                      <span>{hall.capacity} seats</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <span>24/7</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1">
+                    {hall.amenities.slice(0, 4).map(amenity => (
+                      <Badge key={amenity} variant="outline" className="text-xs">
+                        {amenityIcons[amenity as keyof typeof amenityIcons]} {amenity}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <div>
+                      <span className="text-lg font-bold text-green-600">₹{hall.price_per_day}</span>
+                      <span className="text-sm text-gray-500">/day</span>
+                    </div>
+                    <Button onClick={() => handleBookNow(hall)} className="bg-blue-600 hover:bg-blue-700">
+                      Book Now
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!loading && filteredStudyHalls.length === 0 && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Study Halls Found</h3>
+            <p className="text-gray-600">
+              {searchQuery ? `No results for "${searchQuery}"` : "No study halls available at the moment."}
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 
