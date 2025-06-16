@@ -26,6 +26,9 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const loadingRef = useRef<boolean>(false);
+  const isMountedRef = useRef<boolean>(true);
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -35,15 +38,36 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
   );
   const { toast } = useToast();
 
+  // Cleanup function
+  const cleanupMap = () => {
+    try {
+      if (markerRef.current) {
+        markerRef.current.map = null;
+        markerRef.current = null;
+      }
+      
+      if (mapInstanceRef.current && window.google?.maps?.event) {
+        window.google.maps.event.clearInstanceListeners(mapInstanceRef.current);
+        mapInstanceRef.current = null;
+      }
+    } catch (error) {
+      console.warn('Map cleanup warning:', error);
+    }
+  };
+
   useEffect(() => {
-    let isMounted = true;
+    isMountedRef.current = true;
     
     const initializeMap = async () => {
+      if (loadingRef.current || !isMountedRef.current) return;
+      
       try {
+        loadingRef.current = true;
+        
         const apiKey = localStorage.getItem('google_maps_api_key');
         
         if (!apiKey || apiKey.trim() === '') {
-          if (isMounted) {
+          if (isMountedRef.current) {
             setMapError('Google Maps API key not configured. Please set your Google Maps API key in Developer Management settings.');
           }
           return;
@@ -57,10 +81,11 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
 
         await loader.load();
         
-        if (!mapRef.current || !window.google || !isMounted) {
+        if (!mapRef.current || !window.google || !isMountedRef.current) {
           return;
         }
 
+        // Create map instance
         const mapInstance = new window.google.maps.Map(mapRef.current, {
           center: { lat: currentLocation.lat, lng: currentLocation.lng },
           zoom: 15,
@@ -70,6 +95,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           mapId: 'DEMO_MAP_ID',
         });
 
+        // Create marker
         const markerInstance = new window.google.maps.marker.AdvancedMarkerElement({
           position: { lat: currentLocation.lat, lng: currentLocation.lng },
           map: mapInstance,
@@ -77,25 +103,24 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           gmpDraggable: true,
         });
 
-        // Add click listener to map
+        // Add event listeners
         mapInstance.addListener('click', (event: google.maps.MapMouseEvent) => {
-          if (event.latLng && isMounted) {
+          if (event.latLng && isMountedRef.current) {
             const lat = event.latLng.lat();
             const lng = event.latLng.lng();
             updateLocation(lat, lng, mapInstance, markerInstance);
           }
         });
 
-        // Add drag listener to marker
         markerInstance.addListener('dragend', (event: google.maps.MapMouseEvent) => {
-          if (event.latLng && isMounted) {
+          if (event.latLng && isMountedRef.current) {
             const lat = event.latLng.lat();
             const lng = event.latLng.lng();
             updateLocation(lat, lng, mapInstance, markerInstance);
           }
         });
 
-        if (isMounted) {
+        if (isMountedRef.current) {
           mapInstanceRef.current = mapInstance;
           markerRef.current = markerInstance;
           setIsLoaded(true);
@@ -104,7 +129,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
-        if (isMounted) {
+        if (isMountedRef.current) {
           if (error instanceof Error) {
             if (error.message.includes('InvalidKeyMapError')) {
               setMapError('Invalid Google Maps API key. Please check your API key in Developer Management settings.');
@@ -117,34 +142,16 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
             setMapError('Failed to load Google Maps. Please check your API key and settings.');
           }
         }
+      } finally {
+        loadingRef.current = false;
       }
     };
 
     initializeMap();
 
     return () => {
-      isMounted = false;
-      
-      // Safe cleanup without DOM manipulation
-      if (markerRef.current) {
-        try {
-          markerRef.current.map = null;
-        } catch (e) {
-          console.warn('Marker cleanup warning:', e);
-        }
-        markerRef.current = null;
-      }
-      
-      if (mapInstanceRef.current) {
-        try {
-          if (window.google?.maps?.event) {
-            window.google.maps.event.clearInstanceListeners(mapInstanceRef.current);
-          }
-        } catch (e) {
-          console.warn('Map cleanup warning:', e);
-        }
-        mapInstanceRef.current = null;
-      }
+      isMountedRef.current = false;
+      cleanupMap();
     };
   }, []);
 

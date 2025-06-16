@@ -43,6 +43,7 @@ import GeneralSettings from "@/components/admin/GeneralSettings";
 import ErrorBoundary from "@/components/admin/ErrorBoundary";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useToast } from "@/hooks/use-toast";
+import SafeStudyHallsWrapper from "@/components/admin/SafeStudyHallsWrapper";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -156,7 +157,7 @@ const AdminDashboard = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900">Study Halls Management</h2>
               </div>
-              <StudyHallsTable />
+              <SafeStudyHallsWrapper />
             </div>
           );
         case "bookings":

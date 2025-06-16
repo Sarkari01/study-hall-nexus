@@ -20,9 +20,31 @@ export class DeepSeekService {
     this.apiKey = apiKey;
   }
 
+  async validateApiKey(): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseURL}/models`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('API key validation error:', error);
+      return false;
+    }
+  }
+
   async chat(messages: DeepSeekMessage[], temperature: number = 0.7): Promise<string> {
     if (!this.apiKey || this.apiKey.trim() === '') {
       throw new Error('DeepSeek API key is not configured. Please set your API key in Developer Management.');
+    }
+
+    // Validate API key first
+    const isValidKey = await this.validateApiKey();
+    if (!isValidKey) {
+      throw new Error('Invalid DeepSeek API key. Please check your API key in Developer Management settings.');
     }
 
     try {

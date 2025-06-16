@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,27 +35,50 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
   const [isLoading, setIsLoading] = useState(false);
   const [deepSeekService, setDeepSeekService] = useState<DeepSeekService | null>(null);
   const [apiKeyError, setApiKeyError] = useState<string>('');
+  const [isValidatingKey, setIsValidatingKey] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Auto-set the DeepSeek API key if not already set
-    const storedApiKey = localStorage.getItem('deepseek_api_key');
-    if (!storedApiKey) {
-      const defaultApiKey = 'sk-528c2a6b0f984e7f88d3b62bb54f5e5a';
-      localStorage.setItem('deepseek_api_key', defaultApiKey);
-      console.log('DeepSeek API key has been automatically configured');
-    }
+    const initializeDeepSeek = async () => {
+      try {
+        setIsValidatingKey(true);
+        
+        // Use the provided API key: sk-528c2a6b0f984e7f88d3b62bb54f5e5a
+        const defaultApiKey = 'sk-528c2a6b0f984e7f88d3b62bb54f5e5a';
+        const finalApiKey = apiKey || localStorage.getItem('deepseek_api_key') || defaultApiKey;
+        
+        if (finalApiKey && finalApiKey.trim() !== '') {
+          // Store the API key
+          localStorage.setItem('deepseek_api_key', finalApiKey);
+          
+          const service = new DeepSeekService(finalApiKey);
+          
+          // Validate the API key
+          const isValid = await service.validateApiKey();
+          
+          if (isValid) {
+            setDeepSeekService(service);
+            setApiKeyError('');
+            console.log('DeepSeek API key validated successfully');
+          } else {
+            setDeepSeekService(null);
+            setApiKeyError('Invalid DeepSeek API key. Please check your API key configuration.');
+          }
+        } else {
+          setDeepSeekService(null);
+          setApiKeyError('DeepSeek API key not configured');
+        }
+      } catch (error) {
+        console.error('Error initializing DeepSeek:', error);
+        setDeepSeekService(null);
+        setApiKeyError('Failed to initialize DeepSeek service');
+      } finally {
+        setIsValidatingKey(false);
+      }
+    };
 
-    const finalApiKey = apiKey || localStorage.getItem('deepseek_api_key');
-    
-    if (finalApiKey && finalApiKey.trim() !== '') {
-      setDeepSeekService(new DeepSeekService(finalApiKey));
-      setApiKeyError('');
-    } else {
-      setDeepSeekService(null);
-      setApiKeyError('DeepSeek API key not configured');
-    }
+    initializeDeepSeek();
   }, [apiKey]);
 
   useEffect(() => {
@@ -96,7 +118,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
     if (!deepSeekService) {
       toast({
         title: "Configuration Error",
-        description: "DeepSeek API key not configured. Please set it in Developer Management settings.",
+        description: "DeepSeek API key not configured or invalid. Please check Developer Management settings.",
         variant: "destructive"
       });
       return;
@@ -178,6 +200,9 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
           <Badge variant="outline" className="ml-auto">
             {userType}
           </Badge>
+          {isValidatingKey && (
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+          )}
         </CardTitle>
       </CardHeader>
       
@@ -281,11 +306,11 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            disabled={isLoading || !!apiKeyError}
+            disabled={isLoading || !!apiKeyError || isValidatingKey}
           />
           <Button 
             onClick={handleSendMessage} 
-            disabled={!inputMessage.trim() || isLoading || !!apiKeyError}
+            disabled={!inputMessage.trim() || isLoading || !!apiKeyError || isValidatingKey}
           >
             <Send className="h-4 w-4" />
           </Button>
