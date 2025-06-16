@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,9 +112,8 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       setOrderData(order);
       setPaymentStage('pending');
 
-      // Always generate QR code for direct scanning
+      // Generate QR code for direct scanning
       if (order.upiIntent) {
-        // Get the first available UPI intent
         const upiLinks = [
           order.upiIntent.phonepe_link,
           order.upiIntent.gpay_link,
@@ -130,7 +128,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
         }
       }
 
-      // Start polling for payment status
+      // Start polling for payment status with current date in DD/MM/YYYY format
       const now = new Date();
       const txnDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
       console.log('Starting status polling for transaction:', order.clientTxnId, 'on date:', txnDate);
@@ -138,17 +136,19 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       startStatusPolling(
         order.clientTxnId,
         txnDate,
-        (status) => {
-          console.log('Payment status update received:', status);
+        (status, transactionId) => {
+          console.log('Payment status update received:', status, 'Transaction ID:', transactionId);
           if (status === 'completed') {
             setPaymentStage('completed');
             toast({
               title: "Payment Successful",
               description: `Payment of ₹${finalAmount} completed successfully`
             });
-            onPaymentSuccess(order.orderId);
+            // Pass the transaction ID to trigger booking creation
+            onPaymentSuccess(transactionId || order.orderId);
           } else if (status === 'failed') {
             setPaymentStage('failed');
+            setErrorMessage('Payment was not completed. Please try again.');
             toast({
               title: "Payment Failed",
               description: "Payment was not completed. Please try again.",
@@ -156,6 +156,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
             });
           } else if (status === 'timeout') {
             setPaymentStage('failed');
+            setErrorMessage('Payment verification timed out. Please check your payment status manually.');
             toast({
               title: "Payment Timeout",
               description: "Payment verification timed out. Please check your payment status manually.",
@@ -207,12 +208,6 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
               <p className="text-gray-600 mb-4">
                 Open PhonePe and scan the QR code below to complete your payment
               </p>
-              
-              {selectedMethod === 'web' && (
-                <Button onClick={handleWebPayment} className="mb-4">
-                  Open Payment Page
-                </Button>
-              )}
 
               {qrCodeDataURL && (
                 <div className="mb-4">
@@ -236,7 +231,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
           <div className="text-center py-8">
             <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
             <h3 className="text-lg font-medium mb-2 text-green-700">Payment Successful!</h3>
-            <p className="text-gray-600">Your booking has been confirmed</p>
+            <p className="text-gray-600">Your booking is being processed...</p>
           </div>
         );
 
@@ -273,19 +268,6 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                     <p className="text-sm text-gray-500">Scan with PhonePe or any UPI app</p>
                   </div>
                   <Badge variant="secondary">Recommended</Badge>
-                </div>
-
-                <div 
-                  className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                    selectedMethod === 'web' ? 'border-blue-500 bg-blue-50' : ''
-                  }`}
-                  onClick={() => setSelectedMethod('web')}
-                >
-                  <CreditCard className="h-5 w-5 text-green-600" />
-                  <div className="flex-1">
-                    <div className="font-medium">Web Payment</div>
-                    <p className="text-sm text-gray-500">Cards, Net Banking, Wallets & UPI</p>
-                  </div>
                 </div>
               </CardContent>
             </Card>

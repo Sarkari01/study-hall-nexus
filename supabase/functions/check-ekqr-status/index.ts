@@ -28,7 +28,7 @@ serve(async (req) => {
 
     console.log('Checking EKQR payment status:', { clientTxnId, txnDate })
 
-    // Call EKQR API to check order status
+    // Call EKQR API to check status
     const response = await fetch('https://api.ekqr.in/api/check_order_status', {
       method: 'POST',
       headers: {
@@ -48,51 +48,50 @@ serve(async (req) => {
       throw new Error(ekqrResponse.msg || 'Failed to check payment status')
     }
 
-    // Update payment transaction in database
+    // Find the payment transaction
     const { data: paymentTransaction, error: fetchError } = await supabase
       .from('payment_transactions')
       .select('*')
       .eq('gateway_response->client_txn_id', clientTxnId)
       .single()
 
-    if (fetchError) {
+    if (fetchError || !paymentTransaction) {
       console.error('Error fetching payment transaction:', fetchError)
       throw new Error('Payment transaction not found')
     }
 
-    // Update payment status based on EKQR response
+    // Determine payment status from EKQR response
+    const paymentStatus = ekqrResponse.data.status
     let newStatus = 'pending'
     let bookingStatus = 'pending'
     
-    if (ekqrResponse.data) {
-      const paymentStatus = ekqrResponse.data.status?.toLowerCase()
-      
-      switch (paymentStatus) {
-        case 'success':
-        case 'completed':
-          newStatus = 'completed'
-          bookingStatus = 'confirmed'
-          break
-        case 'failed':
-        case 'cancelled':
-          newStatus = 'failed'
-          bookingStatus = 'cancelled'
-          break
-        default:
-          newStatus = 'pending'
-          bookingStatus = 'pending'
-      }
+    switch (paymentStatus?.toLowerCase()) {
+      case 'success':
+      case 'completed':
+        newStatus = 'completed'
+        bookingStatus = 'confirmed'
+        break
+      case 'failed':
+      case 'cancelled':
+        newStatus = 'failed'
+        bookingStatus = 'cancelled'
+        break
+      default:
+        newStatus = 'pending'
+        bookingStatus = 'pending'
     }
 
-    // Update payment transaction
+    // Update payment transaction status
     const { error: updateError } = await supabase
       .from('payment_transactions')
       .update({
         payment_status: newStatus,
         gateway_response: {
           ...paymentTransaction.gateway_response,
-          status_check: ekqrResponse.data,
-          last_checked: new Date().toISOString()
+          status_check_data: {
+            ...ekqrResponse.data,
+            checked_at: new Date().toISOString()
+          }
         }
       })
       .eq('id', paymentTransaction.id)
@@ -102,15 +101,25 @@ serve(async (req) => {
       throw new Error('Failed to update payment status')
     }
 
-    // Update booking status if payment completed
-    if (newStatus === 'completed' && paymentTransaction.booking_id) {
-      await supabase
-        .from('bookings')
-        .update({
-          status: bookingStatus,
-          payment_status: newStatus
-        })
-        .eq('id', paymentTransaction.booking_id)
+    // If payment is completed and we have a temp booking ID, create the actual booking
+    if (newStatus === 'completed') {
+      const tempBookingId = paymentTransaction.gateway_response?.temp_booking_id
+      
+      if (tempBookingId && tempBookingId.startsWith('temp_')) {
+        console.log('Creating booking for successful payment:', paymentTransaction.id)
+        
+        // The booking creation should be handled by the frontend after successful payment
+        // We'll just return the success status so the frontend can proceed
+      } else if (paymentTransaction.booking_id) {
+        // Update existing booking status
+        await supabase
+          .from('bookings')
+          .update({
+            status: bookingStatus,
+            payment_status: newStatus
+          })
+          .eq('id', paymentTransaction.booking_id)
+      }
     }
 
     return new Response(
@@ -119,7 +128,7 @@ serve(async (req) => {
         data: {
           paymentStatus: newStatus,
           bookingStatus: bookingStatus,
-          ekqrData: ekqrResponse.data
+          transactionId: paymentTransaction.gateway_transaction_id
         }
       }),
       { 

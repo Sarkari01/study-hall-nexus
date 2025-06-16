@@ -96,7 +96,7 @@ export const useEkqrPayment = () => {
   const startStatusPolling = (
     clientTxnId: string,
     txnDate: string,
-    onStatusUpdate: (status: string) => void,
+    onStatusUpdate: (status: string, transactionId?: string) => void,
     maxPolls: number = 60 // Poll for 5 minutes (60 * 5 seconds)
   ) => {
     let pollCount = 0;
@@ -115,13 +115,14 @@ export const useEkqrPayment = () => {
       
       if (result && result.success) {
         const status = result.data.paymentStatus;
+        const transactionId = result.data.transactionId;
         
         if (status === 'completed' || status === 'failed') {
           if (pollInterval) {
             clearInterval(pollInterval);
             setPollInterval(null);
           }
-          onStatusUpdate(status);
+          onStatusUpdate(status, transactionId);
           return;
         }
       }
