@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,6 +47,7 @@ const MerchantsTable = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log('MerchantsTable: Component mounted, fetching merchants...');
     fetchMerchants();
   }, []);
 
@@ -62,6 +62,7 @@ const MerchantsTable = () => {
   };
 
   const fetchMerchants = async () => {
+    console.log('MerchantsTable: Starting to fetch merchants...');
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -69,7 +70,12 @@ const MerchantsTable = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('MerchantsTable: Supabase response:', { data, error });
+
+      if (error) {
+        console.error('MerchantsTable: Error fetching merchants:', error);
+        throw error;
+      }
 
       // Type-cast and parse the data properly
       const typedMerchants: MerchantProfile[] = (data || []).map(merchant => ({
@@ -84,9 +90,15 @@ const MerchantsTable = () => {
         approval_status: (merchant.approval_status || 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended'
       }));
 
+      console.log('MerchantsTable: Processed merchants:', typedMerchants);
       setMerchants(typedMerchants);
+      
+      toast({
+        title: "Success",
+        description: `Loaded ${typedMerchants.length} merchants`,
+      });
     } catch (error) {
-      console.error('Error fetching merchants:', error);
+      console.error('MerchantsTable: Error in fetchMerchants:', error);
       toast({
         title: "Error",
         description: "Failed to fetch merchants data",
@@ -211,6 +223,8 @@ const MerchantsTable = () => {
     suspended: merchants.filter(m => m.approval_status === 'suspended').length
   };
 
+  console.log('MerchantsTable: Rendering with stats:', stats);
+
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -321,141 +335,143 @@ const MerchantsTable = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Business Details</TableHead>
-                  <TableHead>Owner Information</TableHead>
-                  <TableHead>Contact Person</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Approval Status</TableHead>
-                  <TableHead>Security Deposit</TableHead>
-                  <TableHead>Registration Date</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredMerchants.map((merchant) => (
-                  <TableRow key={merchant.id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium text-gray-900">{merchant.business_name}</div>
-                        <div className="text-sm text-gray-500">{merchant.business_phone}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">{merchant.full_name}</div>
-                        <div className="text-sm text-gray-500">{merchant.contact_number}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {merchant.incharge_name ? (
-                          <>
-                            <div className="font-medium">{merchant.incharge_name}</div>
-                            <div className="text-sm text-gray-500">{merchant.incharge_designation}</div>
-                            <div className="text-sm text-gray-500">{merchant.incharge_phone}</div>
-                          </>
-                        ) : (
-                          <span className="text-sm text-gray-400">Not specified</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {merchant.business_address?.city && merchant.business_address?.state
-                          ? `${merchant.business_address.city}, ${merchant.business_address.state}`
-                          : 'Address not provided'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(merchant.approval_status)}
-                        <Select
-                          value={merchant.approval_status}
-                          onValueChange={(value) => handleStatusChange(merchant.id, value)}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="approved">Approved</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                            <SelectItem value="suspended">Suspended</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-emerald-600">
-                        ₹{merchant.refundable_security_deposit?.toLocaleString() || '0'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {new Date(merchant.created_at).toLocaleDateString()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => openDetailsModal(merchant.id, 'view')}
-                          title="View Details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => openDetailsModal(merchant.id, 'edit')}
-                          title="Edit Merchant"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleDeleteMerchant(merchant.id)}
-                          title="Delete Merchant"
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredMerchants.length === 0 && !loading && (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12">
-                      <div className="flex flex-col items-center">
-                        <Building2 className="h-12 w-12 text-gray-400 mb-4" />
-                        <p className="text-gray-500 text-lg">No merchants found</p>
-                        <p className="text-sm text-gray-400 mt-2">
-                          {searchTerm || statusFilter !== 'all' 
-                            ? 'Try adjusting your search or filter criteria'
-                            : 'Add your first merchant to get started'
-                          }
-                        </p>
-                        {searchTerm === '' && statusFilter === 'all' && (
-                          <Button 
-                            onClick={openCreateModal} 
-                            className="mt-4 bg-emerald-600 hover:bg-emerald-700"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add First Merchant
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
+                    <TableHead>Business Details</TableHead>
+                    <TableHead>Owner Information</TableHead>
+                    <TableHead>Contact Person</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Security Deposit</TableHead>
+                    <TableHead>Registration Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredMerchants.map((merchant) => (
+                    <TableRow key={merchant.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium text-gray-900">{merchant.business_name}</div>
+                          <div className="text-sm text-gray-500">{merchant.business_phone}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium">{merchant.full_name}</div>
+                          <div className="text-sm text-gray-500">{merchant.contact_number}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {merchant.incharge_name ? (
+                            <>
+                              <div className="font-medium">{merchant.incharge_name}</div>
+                              <div className="text-sm text-gray-500">{merchant.incharge_designation}</div>
+                              <div className="text-sm text-gray-500">{merchant.incharge_phone}</div>
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-400">Not specified</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {merchant.business_address?.city && merchant.business_address?.state
+                            ? `${merchant.business_address.city}, ${merchant.business_address.state}`
+                            : 'Address not provided'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {getStatusIcon(merchant.approval_status)}
+                          <Select
+                            value={merchant.approval_status}
+                            onValueChange={(value) => handleStatusChange(merchant.id, value)}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                              <SelectItem value="suspended">Suspended</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium text-emerald-600">
+                          ₹{merchant.refundable_security_deposit?.toLocaleString() || '0'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {new Date(merchant.created_at).toLocaleDateString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openDetailsModal(merchant.id, 'view')}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => openDetailsModal(merchant.id, 'edit')}
+                            title="Edit Merchant"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleDeleteMerchant(merchant.id)}
+                            title="Delete Merchant"
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredMerchants.length === 0 && !loading && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-12">
+                        <div className="flex flex-col items-center">
+                          <Building2 className="h-12 w-12 text-gray-400 mb-4" />
+                          <p className="text-gray-500 text-lg">No merchants found</p>
+                          <p className="text-sm text-gray-400 mt-2">
+                            {searchTerm || statusFilter !== 'all' 
+                              ? 'Try adjusting your search or filter criteria'
+                              : 'Add your first merchant to get started'
+                            }
+                          </p>
+                          {searchTerm === '' && statusFilter === 'all' && (
+                            <Button 
+                              onClick={openCreateModal} 
+                              className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add First Merchant
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

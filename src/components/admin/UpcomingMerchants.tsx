@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MapPin, Phone, Calendar, CheckCircle, Clock, Eye, XCircle } from "lucide-react";
+import { MapPin, Phone, Calendar, CheckCircle, Clock, Eye, XCircle, Loader2 } from "lucide-react";
 import { useMerchants } from "@/hooks/useMerchants";
 
 const UpcomingMerchants = () => {
   const { merchants, loading, updateMerchant } = useMerchants();
+
+  console.log('UpcomingMerchants: Rendering with merchants:', merchants, 'loading:', loading);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -50,7 +52,10 @@ const UpcomingMerchants = () => {
         {[1, 2].map((i) => (
           <Card key={i}>
             <CardHeader>
-              <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -78,7 +83,10 @@ const UpcomingMerchants = () => {
       {/* Pending Approvals */}
       <Card>
         <CardHeader>
-          <CardTitle>Pending Merchant Approvals</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-orange-500" />
+            Pending Merchant Approvals ({pendingMerchants.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -87,8 +95,8 @@ const UpcomingMerchants = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback>
-                        {merchant.full_name.split(' ').map(n => n[0]).join('')}
+                      <AvatarFallback className="bg-orange-100 text-orange-600">
+                        {merchant.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -128,6 +136,7 @@ const UpcomingMerchants = () => {
               <div className="text-center py-8 text-gray-500">
                 <CheckCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No pending approvals</p>
+                <p className="text-sm text-gray-400 mt-1">All merchants have been reviewed</p>
               </div>
             )}
           </div>
@@ -137,7 +146,10 @@ const UpcomingMerchants = () => {
       {/* Recently Approved */}
       <Card>
         <CardHeader>
-          <CardTitle>Recently Approved Merchants</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            Recently Approved Merchants ({recentlyApproved.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -146,8 +158,8 @@ const UpcomingMerchants = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback>
-                        {merchant.full_name.split(' ').map(n => n[0]).join('')}
+                      <AvatarFallback className="bg-green-100 text-green-600">
+                        {merchant.full_name.split(' ').map(n => n[0]).join('').toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
@@ -190,6 +202,7 @@ const UpcomingMerchants = () => {
               <div className="text-center py-8 text-gray-500">
                 <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No recently approved merchants</p>
+                <p className="text-sm text-gray-400 mt-1">No merchants have been approved recently</p>
               </div>
             )}
           </div>
