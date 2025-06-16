@@ -8,7 +8,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
-import MerchantAuthPage from "./pages/MerchantAuthPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentPortal from "./pages/StudentPortal";
 import MerchantDashboard from "./pages/MerchantDashboard";
@@ -27,11 +26,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/merchant/auth" element={<MerchantAuthPage />} />
             <Route 
               path="/admin" 
               element={
-                <ProtectedRoute allowedRoles={['admin']}>
+                <ProtectedRoute>
                   <AdminDashboard />
                 </ProtectedRoute>
               } 
@@ -39,7 +37,7 @@ const App = () => (
             <Route 
               path="/student" 
               element={
-                <ProtectedRoute allowedRoles={['student']}>
+                <ProtectedRoute>
                   <StudentPortal />
                 </ProtectedRoute>
               } 
@@ -47,7 +45,7 @@ const App = () => (
             <Route 
               path="/merchant" 
               element={
-                <ProtectedRoute allowedRoles={['merchant']}>
+                <ProtectedRoute>
                   <MerchantDashboard />
                 </ProtectedRoute>
               } 
@@ -55,7 +53,7 @@ const App = () => (
             <Route 
               path="/editor" 
               element={
-                <ProtectedRoute allowedRoles={['editor']}>
+                <ProtectedRoute>
                   <EditorDashboard />
                 </ProtectedRoute>
               } 

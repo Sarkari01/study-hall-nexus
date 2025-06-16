@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock, User, MapPin } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import MerchantDetailsModal from "./MerchantDetailsModal";
@@ -34,12 +35,6 @@ interface MerchantProfile {
   refundable_security_deposit: number;
   created_at: string;
   updated_at: string;
-  study_halls?: Array<{
-    id: string;
-    name: string;
-    status: string;
-    total_revenue: number;
-  }>;
 }
 
 const MerchantsTable = () => {
@@ -69,43 +64,25 @@ const MerchantsTable = () => {
   const fetchMerchants = async () => {
     setLoading(true);
     try {
-      // Fetch merchants with study halls data
-      const { data: merchantsData, error: merchantsError } = await supabase
+      const { data, error } = await supabase
         .from('merchant_profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (merchantsError) throw merchantsError;
-
-      // Fetch study halls separately
-      const { data: studyHalls, error: studyHallsError } = await supabase
-        .from('study_halls')
-        .select('merchant_id, total_revenue, id, name, status');
-
-      if (studyHallsError) throw studyHallsError;
+      if (error) throw error;
 
       // Type-cast and parse the data properly
-      const typedMerchants: MerchantProfile[] = (merchantsData || []).map(merchant => {
-        const merchantStudyHalls = studyHalls?.filter(hall => hall.merchant_id === merchant.id) || [];
-        
-        return {
-          ...merchant,
-          business_address: safeParseJson(merchant.business_address, {
-            street: '',
-            city: '',
-            state: '',
-            postal_code: '',
-            country: 'India'
-          }),
-          approval_status: (merchant.approval_status || 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended',
-          study_halls: merchantStudyHalls.map(hall => ({
-            id: hall.id,
-            name: hall.name,
-            status: hall.status,
-            total_revenue: hall.total_revenue || 0
-          }))
-        };
-      });
+      const typedMerchants: MerchantProfile[] = (data || []).map(merchant => ({
+        ...merchant,
+        business_address: safeParseJson(merchant.business_address, {
+          street: '',
+          city: '',
+          state: '',
+          postal_code: '',
+          country: 'India'
+        }),
+        approval_status: (merchant.approval_status || 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended'
+      }));
 
       setMerchants(typedMerchants);
     } catch (error) {
@@ -350,10 +327,10 @@ const MerchantsTable = () => {
                   <TableHead>Business Details</TableHead>
                   <TableHead>Owner Information</TableHead>
                   <TableHead>Contact Person</TableHead>
-                  <TableHead>Study Halls</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Approval Status</TableHead>
                   <TableHead>Security Deposit</TableHead>
+                  <TableHead>Registration Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -376,16 +353,9 @@ const MerchantsTable = () => {
                       <div className="space-y-1">
                         {merchant.incharge_name ? (
                           <>
-                            <div className="font-medium text-sm">{merchant.incharge_name}</div>
-                            {merchant.incharge_designation && (
-                              <div className="text-xs text-gray-500">{merchant.incharge_designation}</div>
-                            )}
-                            {merchant.incharge_phone && (
-                              <div className="text-xs text-gray-500">{merchant.incharge_phone}</div>
-                            )}
-                            {merchant.incharge_email && (
-                              <div className="text-xs text-gray-500">{merchant.incharge_email}</div>
-                            )}
+                            <div className="font-medium">{merchant.incharge_name}</div>
+                            <div className="text-sm text-gray-500">{merchant.incharge_designation}</div>
+                            <div className="text-sm text-gray-500">{merchant.incharge_phone}</div>
                           </>
                         ) : (
                           <span className="text-sm text-gray-400">Not specified</span>
@@ -393,39 +363,7 @@ const MerchantsTable = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        {merchant.study_halls && merchant.study_halls.length > 0 ? (
-                          <>
-                            <div className="font-medium text-sm">
-                              {merchant.study_halls.length} Study Hall{merchant.study_halls.length > 1 ? 's' : ''}
-                            </div>
-                            <div className="space-y-1">
-                              {merchant.study_halls.slice(0, 2).map((hall) => (
-                                <div key={hall.id} className="text-xs">
-                                  <span className="text-gray-700">{hall.name}</span>
-                                  <Badge 
-                                    variant={hall.status === 'active' ? 'default' : 'secondary'} 
-                                    className="ml-1 text-xs"
-                                  >
-                                    {hall.status}
-                                  </Badge>
-                                </div>
-                              ))}
-                              {merchant.study_halls.length > 2 && (
-                                <div className="text-xs text-gray-500">
-                                  +{merchant.study_halls.length - 2} more
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <span className="text-sm text-gray-400">No study halls</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm flex items-center gap-1">
-                        <MapPin className="h-3 w-3 text-gray-400" />
+                      <div className="text-sm">
                         {merchant.business_address?.city && merchant.business_address?.state
                           ? `${merchant.business_address.city}, ${merchant.business_address.state}`
                           : 'Address not provided'}
@@ -453,6 +391,11 @@ const MerchantsTable = () => {
                     <TableCell>
                       <div className="font-medium text-emerald-600">
                         ₹{merchant.refundable_security_deposit?.toLocaleString() || '0'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {new Date(merchant.created_at).toLocaleDateString()}
                       </div>
                     </TableCell>
                     <TableCell>
