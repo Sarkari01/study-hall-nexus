@@ -441,7 +441,11 @@ const MerchantDashboard = () => {
           onSubmit={editingStudyHall ? handleEditStudyHall : handleAddStudyHall}
           editData={editingStudyHall}
           isAdmin={false}
-          currentMerchant={merchantProfile}
+          currentMerchant={{
+            id: merchantProfile.id,
+            name: merchantProfile.full_name,
+            businessName: merchantProfile.business_name
+          }}
         />
 
         {/* Study Hall View Modal */}
