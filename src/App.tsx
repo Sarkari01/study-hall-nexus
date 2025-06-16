@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import RoleBasedRoute from "@/components/RoleBasedRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -15,7 +16,14 @@ import MerchantDashboard from "./pages/MerchantDashboard";
 import EditorDashboard from "./pages/EditorDashboard";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Component to handle role-based dashboard routing
 const DashboardRouter = () => {
@@ -55,98 +63,112 @@ const DashboardRouter = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <DashboardRouter />
-              </ProtectedRoute>
-            } />
-            
-            {/* Role-specific routes */}
-            <Route 
-              path="/admin" 
-              element={
+      <ErrorBoundary>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/dashboard" element={
                 <ProtectedRoute>
-                  <RoleBasedRoute allowedRoles={['admin']}>
-                    <AdminDashboard />
-                  </RoleBasedRoute>
+                  <DashboardRouter />
                 </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/student" 
-              element={
-                <ProtectedRoute>
-                  <RoleBasedRoute allowedRoles={['student']}>
-                    <StudentPortal />
-                  </RoleBasedRoute>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/merchant" 
-              element={
-                <ProtectedRoute>
-                  <RoleBasedRoute allowedRoles={['merchant']}>
-                    <MerchantDashboard />
-                  </RoleBasedRoute>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/editor" 
-              element={
-                <ProtectedRoute>
-                  <RoleBasedRoute allowedRoles={['editor']}>
-                    <EditorDashboard />
-                  </RoleBasedRoute>
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Legacy routes for backward compatibility */}
-            <Route 
-              path="/telecaller" 
-              element={
-                <ProtectedRoute>
-                  <RoleBasedRoute allowedRoles={['telecaller']}>
-                    <div className="min-h-screen flex items-center justify-center">
-                      <div className="text-center">
-                        <h1 className="text-2xl font-bold mb-4">Telecaller Dashboard</h1>
-                        <p className="text-gray-600">Coming soon...</p>
-                      </div>
-                    </div>
-                  </RoleBasedRoute>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/incharge" 
-              element={
-                <ProtectedRoute>
-                  <RoleBasedRoute allowedRoles={['incharge']}>
-                    <div className="min-h-screen flex items-center justify-center">
-                      <div className="text-center">
-                        <h1 className="text-2xl font-bold mb-4">Incharge Dashboard</h1>
-                        <p className="text-gray-600">Coming soon...</p>
-                      </div>
-                    </div>
-                  </RoleBasedRoute>
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+              } />
+              
+              {/* Role-specific routes */}
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute>
+                    <RoleBasedRoute allowedRoles={['admin']}>
+                      <ErrorBoundary>
+                        <AdminDashboard />
+                      </ErrorBoundary>
+                    </RoleBasedRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/student" 
+                element={
+                  <ProtectedRoute>
+                    <RoleBasedRoute allowedRoles={['student']}>
+                      <ErrorBoundary>
+                        <StudentPortal />
+                      </ErrorBoundary>
+                    </RoleBasedRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/merchant" 
+                element={
+                  <ProtectedRoute>
+                    <RoleBasedRoute allowedRoles={['merchant']}>
+                      <ErrorBoundary>
+                        <MerchantDashboard />
+                      </ErrorBoundary>
+                    </RoleBasedRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/editor" 
+                element={
+                  <ProtectedRoute>
+                    <RoleBasedRoute allowedRoles={['editor']}>
+                      <ErrorBoundary>
+                        <EditorDashboard />
+                      </ErrorBoundary>
+                    </RoleBasedRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Legacy routes for backward compatibility */}
+              <Route 
+                path="/telecaller" 
+                element={
+                  <ProtectedRoute>
+                    <RoleBasedRoute allowedRoles={['telecaller']}>
+                      <ErrorBoundary>
+                        <div className="min-h-screen flex items-center justify-center">
+                          <div className="text-center">
+                            <h1 className="text-2xl font-bold mb-4">Telecaller Dashboard</h1>
+                            <p className="text-gray-600">Coming soon...</p>
+                          </div>
+                        </div>
+                      </ErrorBoundary>
+                    </RoleBasedRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/incharge" 
+                element={
+                  <ProtectedRoute>
+                    <RoleBasedRoute allowedRoles={['incharge']}>
+                      <ErrorBoundary>
+                        <div className="min-h-screen flex items-center justify-center">
+                          <div className="text-center">
+                            <h1 className="text-2xl font-bold mb-4">Incharge Dashboard</h1>
+                            <p className="text-gray-600">Coming soon...</p>
+                          </div>
+                        </div>
+                      </ErrorBoundary>
+                    </RoleBasedRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ErrorBoundary>
     </AuthProvider>
   </QueryClientProvider>
 );

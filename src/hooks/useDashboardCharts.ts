@@ -1,211 +1,172 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface RevenueData {
-  name: string;
-  revenue: number;
-  bookings: number;
-  students: number;
+interface ChartData {
+  bookingsChart: Array<{ name: string; bookings: number; revenue: number }>;
+  studyHallsChart: Array<{ name: string; halls: number; revenue: number }>;
+  revenueChart: Array<{ month: string; revenue: number }>;
+  userGrowthChart: Array<{ month: string; students: number; merchants: number }>;
 }
 
-interface MerchantPerformance {
-  name: string;
-  revenue: number;
-  bookings: number;
-  growth: number;
-}
-
-interface BookingDistribution {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface StudentActivity {
-  hour: string;
-  active: number;
-}
-
-interface DashboardChartsData {
-  revenueData: RevenueData[];
-  merchantData: MerchantPerformance[];
-  bookingDistribution: BookingDistribution[];
-  studentActivityData: StudentActivity[];
-}
+const defaultChartData: ChartData = {
+  bookingsChart: [],
+  studyHallsChart: [],
+  revenueChart: [],
+  userGrowthChart: [],
+};
 
 export const useDashboardCharts = () => {
-  const [chartsData, setChartsData] = useState<DashboardChartsData>({
-    revenueData: [],
-    merchantData: [],
-    bookingDistribution: [],
-    studentActivityData: []
-  });
+  const [chartData, setChartData] = useState<ChartData>(defaultChartData);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const isMountedRef = useRef(true);
 
-  const fetchChartsData = async () => {
+  const fetchChartData = async () => {
     try {
       setLoading(true);
+      setError(null);
 
-      // Fetch revenue data for the last 7 days
-      const { data: bookings, error: bookingsError } = await supabase
-        .from('bookings')
-        .select('booking_date, final_amount, created_at')
-        .gte('booking_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .eq('status', 'completed');
+      // Initialize with default data
+      let calculatedData = { ...defaultChartData };
 
-      if (bookingsError) throw bookingsError;
+      try {
+        // Fetch bookings data for charts
+        const { data: bookings, error: bookingsError } = await supabase
+          .from('bookings')
+          .select('created_at, final_amount, status');
 
-      // Process revenue data by day
-      const revenueByDay = new Map();
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-        const dayName = days[date.getDay()];
-        revenueByDay.set(dayName, {
-          name: dayName,
-          revenue: 0,
-          bookings: 0,
-          students: 0
-        });
+        if (bookingsError) {
+          console.warn('Bookings chart fetch error:', bookingsError);
+        } else if (bookings) {
+          // Process bookings data for charts
+          const monthlyBookings = bookings.reduce((acc: any, booking) => {
+            const month = new Date(booking.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            if (!acc[month]) {
+              acc[month] = { bookings: 0, revenue: 0 };
+            }
+            acc[month].bookings += 1;
+            acc[month].revenue += Number(booking.final_amount) || 0;
+            return acc;
+          }, {});
+
+          calculatedData.bookingsChart = Object.entries(monthlyBookings).map(([name, data]: [string, any]) => ({
+            name,
+            bookings: data.bookings,
+            revenue: data.revenue,
+          }));
+
+          calculatedData.revenueChart = Object.entries(monthlyBookings).map(([month, data]: [string, any]) => ({
+            month,
+            revenue: data.revenue,
+          }));
+        }
+      } catch (error) {
+        console.warn('Error processing bookings chart data:', error);
       }
 
-      bookings?.forEach(booking => {
-        const date = new Date(booking.booking_date);
-        const dayName = days[date.getDay()];
-        if (revenueByDay.has(dayName)) {
-          const dayData = revenueByDay.get(dayName);
-          dayData.revenue += Number(booking.final_amount);
-          dayData.bookings += 1;
-          dayData.students += 1; // Assuming one student per booking
+      try {
+        // Fetch study halls data for charts
+        const { data: studyHalls, error: studyHallsError } = await supabase
+          .from('study_halls')
+          .select('created_at, total_revenue, status');
+
+        if (studyHallsError) {
+          console.warn('Study halls chart fetch error:', studyHallsError);
+        } else if (studyHalls) {
+          const monthlyHalls = studyHalls.reduce((acc: any, hall) => {
+            const month = new Date(hall.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            if (!acc[month]) {
+              acc[month] = { halls: 0, revenue: 0 };
+            }
+            acc[month].halls += 1;
+            acc[month].revenue += Number(hall.total_revenue) || 0;
+            return acc;
+          }, {});
+
+          calculatedData.studyHallsChart = Object.entries(monthlyHalls).map(([name, data]: [string, any]) => ({
+            name,
+            halls: data.halls,
+            revenue: data.revenue,
+          }));
         }
-      });
+      } catch (error) {
+        console.warn('Error processing study halls chart data:', error);
+      }
 
-      const revenueData = Array.from(revenueByDay.values());
+      try {
+        // Fetch user growth data
+        const { data: students, error: studentsError } = await supabase
+          .from('students')
+          .select('created_at');
 
-      // Fetch merchants separately
-      const { data: merchants, error: merchantsError } = await supabase
-        .from('merchant_profiles')
-        .select('id, full_name, business_name')
-        .limit(5);
+        const { data: merchants, error: merchantsError } = await supabase
+          .from('merchant_profiles')
+          .select('created_at');
 
-      if (merchantsError) throw merchantsError;
-
-      // Fetch study halls separately to get revenue data
-      const { data: studyHalls, error: studyHallsError } = await supabase
-        .from('study_halls')
-        .select('merchant_id, total_revenue, total_bookings');
-
-      if (studyHallsError) throw studyHallsError;
-
-      // Combine merchant and study hall data
-      const merchantData = merchants?.map(merchant => {
-        const merchantStudyHalls = studyHalls?.filter(hall => hall.merchant_id === merchant.id) || [];
-        const totalRevenue = merchantStudyHalls.reduce((sum, hall) => sum + (hall.total_revenue || 0), 0);
-        const totalBookings = merchantStudyHalls.reduce((sum, hall) => sum + (hall.total_bookings || 0), 0);
+        if (studentsError) {
+          console.warn('Students growth chart fetch error:', studentsError);
+        }
         
-        return {
-          name: merchant.business_name || merchant.full_name,
-          revenue: totalRevenue,
-          bookings: totalBookings,
-          growth: Math.random() * 30 // Mock growth for now
-        };
-      }) || [];
-
-      // Fetch booking distribution by time
-      const { data: timeBookings, error: timeError } = await supabase
-        .from('bookings')
-        .select('start_time')
-        .eq('status', 'completed');
-
-      if (timeError) throw timeError;
-
-      const timeDistribution = {
-        morning: 0,
-        afternoon: 0,
-        evening: 0
-      };
-
-      timeBookings?.forEach(booking => {
-        const hour = parseInt(booking.start_time.split(':')[0]);
-        if (hour >= 6 && hour < 12) timeDistribution.morning++;
-        else if (hour >= 12 && hour < 18) timeDistribution.afternoon++;
-        else timeDistribution.evening++;
-      });
-
-      const total = timeDistribution.morning + timeDistribution.afternoon + timeDistribution.evening;
-      const bookingDistribution = [
-        {
-          name: 'Morning (6-12)',
-          value: total > 0 ? Math.round((timeDistribution.morning / total) * 100) : 0,
-          color: '#0088FE'
-        },
-        {
-          name: 'Afternoon (12-18)',
-          value: total > 0 ? Math.round((timeDistribution.afternoon / total) * 100) : 0,
-          color: '#00C49F'
-        },
-        {
-          name: 'Evening (18-24)',
-          value: total > 0 ? Math.round((timeDistribution.evening / total) * 100) : 0,
-          color: '#FFBB28'
+        if (merchantsError) {
+          console.warn('Merchants growth chart fetch error:', merchantsError);
         }
-      ];
 
-      // Generate student activity data (simplified for now)
-      const studentActivityData = [
-        { hour: '06:00', active: Math.floor(Math.random() * 50) + 20 },
-        { hour: '08:00', active: Math.floor(Math.random() * 100) + 80 },
-        { hour: '10:00', active: Math.floor(Math.random() * 150) + 120 },
-        { hour: '12:00', active: Math.floor(Math.random() * 200) + 150 },
-        { hour: '14:00', active: Math.floor(Math.random() * 180) + 130 },
-        { hour: '16:00', active: Math.floor(Math.random() * 220) + 180 },
-        { hour: '18:00', active: Math.floor(Math.random() * 200) + 150 },
-        { hour: '20:00', active: Math.floor(Math.random() * 150) + 100 },
-        { hour: '22:00', active: Math.floor(Math.random() * 80) + 40 }
-      ];
+        if (students || merchants) {
+          const monthlyUsers: any = {};
 
-      // Only update state if component is still mounted
-      if (isMountedRef.current) {
-        setChartsData({
-          revenueData,
-          merchantData,
-          bookingDistribution,
-          studentActivityData
-        });
+          // Process students
+          students?.forEach(student => {
+            const month = new Date(student.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            if (!monthlyUsers[month]) {
+              monthlyUsers[month] = { students: 0, merchants: 0 };
+            }
+            monthlyUsers[month].students += 1;
+          });
+
+          // Process merchants
+          merchants?.forEach(merchant => {
+            const month = new Date(merchant.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            if (!monthlyUsers[month]) {
+              monthlyUsers[month] = { students: 0, merchants: 0 };
+            }
+            monthlyUsers[month].merchants += 1;
+          });
+
+          calculatedData.userGrowthChart = Object.entries(monthlyUsers).map(([month, data]: [string, any]) => ({
+            month,
+            students: data.students,
+            merchants: data.merchants,
+          }));
+        }
+      } catch (error) {
+        console.warn('Error processing user growth chart data:', error);
       }
+
+      setChartData(calculatedData);
+      console.log('Dashboard charts loaded successfully:', calculatedData);
     } catch (error) {
-      console.error('Error fetching charts data:', error);
-      if (isMountedRef.current) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch dashboard charts data",
-          variant: "destructive",
-        });
-      }
+      console.error('Error fetching dashboard charts:', error);
+      setError('Failed to fetch dashboard charts');
+      toast({
+        title: "Warning",
+        description: "Some dashboard charts could not be loaded. Using default values.",
+        variant: "default",
+      });
     } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    isMountedRef.current = true;
-    fetchChartsData();
-
-    return () => {
-      isMountedRef.current = false;
-    };
+    fetchChartData();
   }, []);
 
   return {
-    chartsData,
+    chartData,
     loading,
-    refetch: fetchChartsData
+    error,
+    refetch: fetchChartData,
   };
 };
