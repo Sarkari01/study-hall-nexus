@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import { CreditCard, Smartphone, Shield, ArrowLeft, Loader2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { CreditCard, Smartphone, Shield, ArrowLeft, Loader2, CheckCircle, XCircle, Clock, QrCode } from "lucide-react";
 import { useEkqrPayment } from "@/hooks/useEkqrPayment";
 import { useToast } from "@/hooks/use-toast";
 
@@ -37,9 +37,10 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
   onPaymentCancel
 }) => {
   const [paymentStage, setPaymentStage] = useState<'select' | 'processing' | 'pending' | 'completed' | 'failed'>('select');
-  const [selectedMethod, setSelectedMethod] = useState<'upi' | 'web'>('upi');
+  const [selectedMethod, setSelectedMethod] = useState<'upi' | 'web' | 'qr'>('upi');
   const [orderData, setOrderData] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [qrCodeData, setQrCodeData] = useState<string>('');
   const { toast } = useToast();
   
   const { processing, createOrder, startStatusPolling, stopStatusPolling, openUpiApp } = useEkqrPayment();
@@ -53,6 +54,13 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       stopStatusPolling();
     };
   }, [stopStatusPolling]);
+
+  const generateQRCode = (upiString: string) => {
+    // Generate UPI QR code data
+    const qrData = `upi://pay?${upiString}`;
+    setQrCodeData(qrData);
+    return qrData;
+  };
 
   const handlePayment = async () => {
     try {
@@ -87,8 +95,17 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       setOrderData(order);
       setPaymentStage('pending');
 
-      // Start polling for payment status
-      const txnDate = new Date().toLocaleDateString('en-GB');
+      // Generate QR code if QR method is selected
+      if (selectedMethod === 'qr' && order.upiIntent) {
+        const upiString = Object.values(order.upiIntent)[0] as string;
+        if (upiString) {
+          generateQRCode(upiString);
+        }
+      }
+
+      // Start polling for payment status with correct date format
+      const now = new Date();
+      const txnDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
       console.log('Starting status polling for transaction:', order.clientTxnId, 'on date:', txnDate);
       
       startStatusPolling(
@@ -124,14 +141,16 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
       // If UPI method is selected and UPI intents are available, open the app
       if (selectedMethod === 'upi' && order.upiIntent) {
         console.log('Opening UPI app with intent:', order.upiIntent);
-        if (order.upiIntent.gpay_link) {
-          openUpiApp(order.upiIntent.gpay_link);
-        } else if (order.upiIntent.phonepe_link) {
-          openUpiApp(order.upiIntent.phonepe_link);
-        } else if (order.upiIntent.paytm_link) {
-          openUpiApp(order.upiIntent.paytm_link);
-        } else if (order.upiIntent.bhim_link) {
-          openUpiApp(order.upiIntent.bhim_link);
+        // Try to open the first available UPI app
+        const upiLinks = [
+          order.upiIntent.gpay_link,
+          order.upiIntent.phonepe_link,
+          order.upiIntent.paytm_link,
+          order.upiIntent.bhim_link
+        ].filter(Boolean);
+        
+        if (upiLinks.length > 0) {
+          openUpiApp(upiLinks[0]);
         }
       }
 
@@ -177,6 +196,8 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
               <p className="text-gray-600 mb-4">
                 {selectedMethod === 'upi' 
                   ? "Complete the payment in your UPI app"
+                  : selectedMethod === 'qr'
+                  ? "Scan the QR code with any UPI app to pay"
                   : "Complete the payment in the opened browser tab"
                 }
               </p>
@@ -185,6 +206,15 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                 <Button onClick={handleWebPayment} className="mb-4">
                   Open Payment Page
                 </Button>
+              )}
+
+              {selectedMethod === 'qr' && qrCodeData && (
+                <div className="mb-4">
+                  <div className="w-64 h-64 mx-auto bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
+                    <QrCode className="h-32 w-32 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Scan with any UPI app</p>
+                </div>
               )}
 
               {orderData?.upiIntent && selectedMethod === 'upi' && (
@@ -276,6 +306,19 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                     <p className="text-sm text-gray-500">Google Pay, PhonePe, Paytm, BHIM</p>
                   </div>
                   <Badge variant="secondary">Recommended</Badge>
+                </div>
+
+                <div 
+                  className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
+                    selectedMethod === 'qr' ? 'border-blue-500 bg-blue-50' : ''
+                  }`}
+                  onClick={() => setSelectedMethod('qr')}
+                >
+                  <QrCode className="h-5 w-5 text-green-600" />
+                  <div className="flex-1">
+                    <div className="font-medium">QR Code</div>
+                    <p className="text-sm text-gray-500">Scan with any UPI app</p>
+                  </div>
                 </div>
                 
                 <div 
