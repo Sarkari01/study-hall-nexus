@@ -40,8 +40,18 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
   const { toast } = useToast();
 
   useEffect(() => {
-    if (apiKey && apiKey.trim() !== '') {
-      setDeepSeekService(new DeepSeekService(apiKey));
+    // Auto-set the DeepSeek API key if not already set
+    const storedApiKey = localStorage.getItem('deepseek_api_key');
+    if (!storedApiKey) {
+      const defaultApiKey = 'sk-528c2a6b0f984e7f88d3b62bb54f5e5a';
+      localStorage.setItem('deepseek_api_key', defaultApiKey);
+      console.log('DeepSeek API key has been automatically configured');
+    }
+
+    const finalApiKey = apiKey || localStorage.getItem('deepseek_api_key');
+    
+    if (finalApiKey && finalApiKey.trim() !== '') {
+      setDeepSeekService(new DeepSeekService(finalApiKey));
       setApiKeyError('');
     } else {
       setDeepSeekService(null);
@@ -156,7 +166,6 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
   };
 
   const openDeveloperSettings = () => {
-    // Navigate to developer management
     window.location.href = '/admin?tab=developer-management';
   };
 

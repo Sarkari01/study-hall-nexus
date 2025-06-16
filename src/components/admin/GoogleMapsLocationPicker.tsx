@@ -34,17 +34,16 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
     initialLocation || { lat: 28.6315, lng: 77.2167, address: 'New Delhi, India' }
   );
   const { toast } = useToast();
-  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    isMountedRef.current = true;
+    let isMounted = true;
     
     const initializeMap = async () => {
       try {
         const apiKey = localStorage.getItem('google_maps_api_key');
         
         if (!apiKey || apiKey.trim() === '') {
-          if (isMountedRef.current) {
+          if (isMounted) {
             setMapError('Google Maps API key not configured. Please set your Google Maps API key in Developer Management settings.');
           }
           return;
@@ -56,27 +55,9 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           libraries: ['places', 'geometry', 'marker']
         });
 
-        try {
-          await loader.load();
-        } catch (loadError) {
-          console.error('Google Maps loading error:', loadError);
-          if (isMountedRef.current) {
-            if (loadError instanceof Error) {
-              if (loadError.message.includes('InvalidKeyMapError')) {
-                setMapError('Invalid Google Maps API key. Please check your API key in Developer Management settings.');
-              } else if (loadError.message.includes('RefererNotAllowedMapError')) {
-                setMapError('Google Maps API key domain restriction error. Please configure your API key for this domain.');
-              } else {
-                setMapError(`Google Maps loading error: ${loadError.message}`);
-              }
-            } else {
-              setMapError('Failed to load Google Maps. Please check your API key and settings.');
-            }
-          }
-          return;
-        }
+        await loader.load();
         
-        if (!mapRef.current || !window.google || !isMountedRef.current) {
+        if (!mapRef.current || !window.google || !isMounted) {
           return;
         }
 
@@ -98,7 +79,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
 
         // Add click listener to map
         mapInstance.addListener('click', (event: google.maps.MapMouseEvent) => {
-          if (event.latLng && isMountedRef.current) {
+          if (event.latLng && isMounted) {
             const lat = event.latLng.lat();
             const lng = event.latLng.lng();
             updateLocation(lat, lng, mapInstance, markerInstance);
@@ -107,14 +88,14 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
 
         // Add drag listener to marker
         markerInstance.addListener('dragend', (event: google.maps.MapMouseEvent) => {
-          if (event.latLng && isMountedRef.current) {
+          if (event.latLng && isMounted) {
             const lat = event.latLng.lat();
             const lng = event.latLng.lng();
             updateLocation(lat, lng, mapInstance, markerInstance);
           }
         });
 
-        if (isMountedRef.current) {
+        if (isMounted) {
           mapInstanceRef.current = mapInstance;
           markerRef.current = markerInstance;
           setIsLoaded(true);
@@ -123,8 +104,18 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
-        if (isMountedRef.current) {
-          setMapError('Failed to load Google Maps. Please check your API key and internet connection.');
+        if (isMounted) {
+          if (error instanceof Error) {
+            if (error.message.includes('InvalidKeyMapError')) {
+              setMapError('Invalid Google Maps API key. Please check your API key in Developer Management settings.');
+            } else if (error.message.includes('RefererNotAllowedMapError')) {
+              setMapError('Google Maps API key domain restriction error. Please configure your API key for this domain.');
+            } else {
+              setMapError(`Google Maps loading error: ${error.message}`);
+            }
+          } else {
+            setMapError('Failed to load Google Maps. Please check your API key and settings.');
+          }
         }
       }
     };
@@ -132,28 +123,32 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
     initializeMap();
 
     return () => {
-      isMountedRef.current = false;
+      isMounted = false;
       
-      // Clean up map instance safely
-      try {
-        if (markerRef.current) {
+      // Safe cleanup without DOM manipulation
+      if (markerRef.current) {
+        try {
           markerRef.current.map = null;
-          markerRef.current = null;
+        } catch (e) {
+          console.warn('Marker cleanup warning:', e);
         }
-        if (mapInstanceRef.current) {
-          // Clear all listeners before destroying map
-          window.google?.maps.event.clearInstanceListeners(mapInstanceRef.current);
-          mapInstanceRef.current = null;
+        markerRef.current = null;
+      }
+      
+      if (mapInstanceRef.current) {
+        try {
+          if (window.google?.maps?.event) {
+            window.google.maps.event.clearInstanceListeners(mapInstanceRef.current);
+          }
+        } catch (e) {
+          console.warn('Map cleanup warning:', e);
         }
-      } catch (error) {
-        console.warn('Map cleanup warning:', error);
+        mapInstanceRef.current = null;
       }
     };
   }, []);
 
   const updateLocation = async (lat: number, lng: number, mapInstance: google.maps.Map, markerInstance: google.maps.marker.AdvancedMarkerElement) => {
-    if (!isMountedRef.current) return;
-    
     try {
       markerInstance.position = { lat, lng };
       
@@ -168,29 +163,25 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
       }
 
       const locationData = { lat, lng, address };
-      if (isMountedRef.current) {
-        setCurrentLocation(locationData);
-        onLocationSelect(locationData);
-      }
+      setCurrentLocation(locationData);
+      onLocationSelect(locationData);
 
     } catch (error) {
       console.error('Error getting address:', error);
       const locationData = { lat, lng, address: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
-      if (isMountedRef.current) {
-        setCurrentLocation(locationData);
-        onLocationSelect(locationData);
-      }
+      setCurrentLocation(locationData);
+      onLocationSelect(locationData);
     }
   };
 
   const searchLocation = async () => {
-    if (!mapInstanceRef.current || !searchQuery.trim() || !window.google || !isMountedRef.current) return;
+    if (!mapInstanceRef.current || !searchQuery.trim() || !window.google) return;
 
     try {
       const geocoder = new window.google.maps.Geocoder();
       const response = await geocoder.geocode({ address: searchQuery });
 
-      if (response.results && response.results[0] && isMountedRef.current) {
+      if (response.results && response.results[0]) {
         const location = response.results[0].geometry.location;
         const lat = location.lat();
         const lng = location.lng();
@@ -201,7 +192,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
         if (markerRef.current) {
           updateLocation(lat, lng, mapInstanceRef.current, markerRef.current);
         }
-      } else if (isMountedRef.current) {
+      } else {
         toast({
           title: "Location not found",
           description: "Please try a different search query.",
@@ -210,13 +201,11 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
       }
     } catch (error) {
       console.error('Error searching location:', error);
-      if (isMountedRef.current) {
-        toast({
-          title: "Search error",
-          description: "Failed to search for the location. Please try again.",
-          variant: "destructive"
-        });
-      }
+      toast({
+        title: "Search error",
+        description: "Failed to search for the location. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -234,8 +223,6 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        if (!isMountedRef.current) return;
-        
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         
@@ -248,7 +235,6 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
       },
       (error) => {
         console.error('Geolocation error:', error);
-        if (!isMountedRef.current) return;
         
         let errorMessage = "Unable to get your current location.";
         
