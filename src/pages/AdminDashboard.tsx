@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, DollarSign, Calendar, TrendingUp, Settings, Building2, UserPlus, FileText, Bell, MessageSquare, Megaphone, User, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import AdminSidebar from "@/components/AdminSidebar";
 import StudentsTable from "@/components/admin/StudentsTable";
@@ -51,8 +50,21 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Mock user data for development mode
+  const mockUser = {
+    id: 'demo-admin-id',
+    email: 'admin@demo.com',
+    user_metadata: {
+      full_name: 'Demo Admin'
+    }
+  };
+
+  console.log('AdminDashboard: Development mode - using mock auth data', {
+    user: mockUser.email,
+    role: 'admin'
+  });
 
   // Enhanced dashboard data management
   const dashboardData = useDashboardData();
@@ -74,12 +86,11 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut();
       toast({
         title: "Logged out",
         description: "You have been successfully logged out."
       });
-      navigate('/auth');
+      navigate('/');
     } catch (error) {
       toast({
         title: "Error",
@@ -378,10 +389,10 @@ const AdminDashboard = () => {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="font-medium leading-none text-base">
-                        {user?.user_metadata?.full_name || 'Admin User'}
+                        {mockUser?.user_metadata?.full_name || 'Demo Admin'}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {user?.email || 'admin@sarkarininja.com'}
+                        {mockUser?.email || 'admin@demo.com'}
                       </p>
                     </div>
                   </DropdownMenuLabel>
