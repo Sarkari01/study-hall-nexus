@@ -21,6 +21,10 @@ export class DeepSeekService {
   }
 
   async chat(messages: DeepSeekMessage[], temperature: number = 0.7): Promise<string> {
+    if (!this.apiKey || this.apiKey.trim() === '') {
+      throw new Error('DeepSeek API key is not configured. Please set your API key in Developer Management.');
+    }
+
     try {
       const response = await fetch(`${this.baseURL}/chat/completions`, {
         method: 'POST',
@@ -37,14 +41,31 @@ export class DeepSeekService {
       });
 
       if (!response.ok) {
-        throw new Error(`DeepSeek API error: ${response.statusText}`);
+        if (response.status === 401) {
+          throw new Error('Invalid DeepSeek API key. Please check your API key in Developer Management settings.');
+        } else if (response.status === 429) {
+          throw new Error('DeepSeek API rate limit exceeded. Please try again later.');
+        } else if (response.status >= 500) {
+          throw new Error('DeepSeek API service is temporarily unavailable. Please try again later.');
+        } else {
+          throw new Error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+        }
       }
 
       const data: DeepSeekResponse = await response.json();
-      return data.choices[0]?.message?.content || '';
+      
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error('No response received from DeepSeek API');
+      }
+
+      return data.choices[0]?.message?.content || 'Sorry, I couldn\'t generate a response. Please try again.';
     } catch (error) {
       console.error('DeepSeek API error:', error);
-      throw error;
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('An unexpected error occurred while communicating with DeepSeek API');
+      }
     }
   }
 
@@ -94,7 +115,12 @@ export class DeepSeekService {
       }
     ];
 
-    return await this.chat(messages, 0.3);
+    try {
+      return await this.chat(messages, 0.3);
+    } catch (error) {
+      console.error('Text improvement error:', error);
+      return text; // Return original text if improvement fails
+    }
   }
 
   async predictRevenue(historicalData: any[]): Promise<{ prediction: number; confidence: number }> {

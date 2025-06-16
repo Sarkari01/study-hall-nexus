@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, AlertCircle, Settings } from 'lucide-react';
 import { DeepSeekService, DeepSeekMessage } from '@/services/deepseekService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,6 +14,7 @@ interface ChatMessage {
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  error?: boolean;
 }
 
 interface AIChatbotProps {
@@ -34,12 +35,17 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [deepSeekService, setDeepSeekService] = useState<DeepSeekService | null>(null);
+  const [apiKeyError, setApiKeyError] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (apiKey) {
+    if (apiKey && apiKey.trim() !== '') {
       setDeepSeekService(new DeepSeekService(apiKey));
+      setApiKeyError('');
+    } else {
+      setDeepSeekService(null);
+      setApiKeyError('DeepSeek API key not configured');
     }
   }, [apiKey]);
 
@@ -52,7 +58,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
   };
 
   const getSystemPrompt = (): string => {
-    const basePrompt = `You are a helpful AI assistant for a study hall booking platform. You can help with:
+    const basePrompt = `You are a helpful AI assistant for a study hall booking platform called Sarkari Ninja. You can help with:
     - Booking study halls
     - Finding available halls
     - Pricing information
@@ -80,7 +86,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
     if (!deepSeekService) {
       toast({
         title: "Configuration Error",
-        description: "DeepSeek API key not configured. Please contact support.",
+        description: "DeepSeek API key not configured. Please set it in Developer Management settings.",
         variant: "destructive"
       });
       return;
@@ -119,9 +125,22 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('AI Chat error:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      const errorResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `I apologize, but I encountered an error: ${errorMessage}`,
+        role: 'assistant',
+        timestamp: new Date(),
+        error: true
+      };
+
+      setMessages(prev => [...prev, errorResponse]);
+      
       toast({
         title: "Error",
-        description: "Failed to get AI response. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -134,6 +153,11 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const openDeveloperSettings = () => {
+    // Navigate to developer management
+    window.location.href = '/admin?tab=developer-management';
   };
 
   return (
@@ -149,6 +173,23 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
       </CardHeader>
       
       <CardContent className="space-y-4">
+        {/* API Key Status */}
+        {apiKeyError && (
+          <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <AlertCircle className="h-4 w-4 text-yellow-600" />
+            <span className="text-sm text-yellow-800 flex-1">{apiKeyError}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={openDeveloperSettings}
+              className="flex items-center gap-1"
+            >
+              <Settings className="h-3 w-3" />
+              Configure
+            </Button>
+          </div>
+        )}
+
         {/* Messages */}
         <div className="h-96 overflow-y-auto space-y-3 p-3 bg-gray-50 rounded-lg">
           {messages.map((message) => (
@@ -160,8 +201,12 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
             >
               {message.role === 'assistant' && (
                 <Avatar className="w-8 h-8">
-                  <AvatarFallback className="bg-blue-100">
-                    <Bot className="h-4 w-4 text-blue-600" />
+                  <AvatarFallback className={`${message.error ? 'bg-red-100' : 'bg-blue-100'}`}>
+                    {message.error ? (
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                    ) : (
+                      <Bot className="h-4 w-4 text-blue-600" />
+                    )}
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -170,12 +215,22 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
                 className={`max-w-[80%] p-3 rounded-lg ${
                   message.role === 'user'
                     ? 'bg-blue-600 text-white'
+                    : message.error
+                    ? 'bg-red-50 border border-red-200'
                     : 'bg-white border'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <p className={`text-sm whitespace-pre-wrap ${
+                  message.error ? 'text-red-800' : ''
+                }`}>
+                  {message.content}
+                </p>
                 <p className={`text-xs mt-1 ${
-                  message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                  message.role === 'user' 
+                    ? 'text-blue-100' 
+                    : message.error 
+                    ? 'text-red-500' 
+                    : 'text-gray-500'
                 }`}>
                   {message.timestamp.toLocaleTimeString()}
                 </p>
@@ -213,25 +268,19 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
         {/* Input */}
         <div className="flex gap-2">
           <Input
-            placeholder="Ask me anything about study halls..."
+            placeholder={apiKeyError ? "Please configure API key first..." : "Ask me anything about study halls..."}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            disabled={isLoading}
+            disabled={isLoading || !!apiKeyError}
           />
           <Button 
             onClick={handleSendMessage} 
-            disabled={!inputMessage.trim() || isLoading}
+            disabled={!inputMessage.trim() || isLoading || !!apiKeyError}
           >
             <Send className="h-4 w-4" />
           </Button>
         </div>
-
-        {!apiKey && (
-          <div className="text-center text-sm text-gray-500 p-2 bg-yellow-50 rounded">
-            DeepSeek API key not configured. Please configure it in Developer Management.
-          </div>
-        )}
       </CardContent>
     </Card>
   );

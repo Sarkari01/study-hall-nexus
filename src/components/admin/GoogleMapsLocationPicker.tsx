@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Search, AlertCircle } from "lucide-react";
+import { MapPin, Search, AlertCircle, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LocationData {
@@ -29,6 +29,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [mapError, setMapError] = useState<string>('');
   const [currentLocation, setCurrentLocation] = useState<LocationData>(
     initialLocation || { lat: 28.6315, lng: 77.2167, address: 'New Delhi, India' }
   );
@@ -40,12 +41,8 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
         // Get Google Maps API key from localStorage (set by Developer Management)
         const apiKey = localStorage.getItem('google_maps_api_key');
         
-        if (!apiKey) {
-          toast({
-            title: "Google Maps API Key Required",
-            description: "Please set your Google Maps API key in Developer Management settings.",
-            variant: "destructive"
-          });
+        if (!apiKey || apiKey.trim() === '') {
+          setMapError('Google Maps API key not configured. Please set your Google Maps API key in Developer Management settings.');
           return;
         }
         
@@ -55,9 +52,28 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           libraries: ['places', 'geometry', 'marker']
         });
 
-        await loader.load();
+        try {
+          await loader.load();
+        } catch (loadError) {
+          console.error('Google Maps loading error:', loadError);
+          if (loadError instanceof Error) {
+            if (loadError.message.includes('InvalidKeyMapError')) {
+              setMapError('Invalid Google Maps API key. Please check your API key in Developer Management settings.');
+            } else if (loadError.message.includes('RefererNotAllowedMapError')) {
+              setMapError('Google Maps API key domain restriction error. Please configure your API key for this domain.');
+            } else {
+              setMapError(`Google Maps loading error: ${loadError.message}`);
+            }
+          } else {
+            setMapError('Failed to load Google Maps. Please check your API key and settings.');
+          }
+          return;
+        }
         
-        if (!mapRef.current || !window.google) return;
+        if (!mapRef.current || !window.google) {
+          setMapError('Failed to initialize map container.');
+          return;
+        }
 
         const mapInstance = new window.google.maps.Map(mapRef.current, {
           center: { lat: currentLocation.lat, lng: currentLocation.lng },
@@ -97,14 +113,11 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
         setMap(mapInstance);
         setMarker(markerInstance);
         setIsLoaded(true);
+        setMapError('');
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load Google Maps. Please check your API key and internet connection.",
-          variant: "destructive"
-        });
+        setMapError('Failed to load Google Maps. Please check your API key and internet connection.');
       }
     };
 
@@ -229,26 +242,28 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
     );
   };
 
-  const hasApiKey = localStorage.getItem('google_maps_api_key');
+  const openDeveloperSettings = () => {
+    window.location.href = '/admin?tab=developer-management';
+  };
 
-  if (!hasApiKey) {
+  if (mapError) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-red-500" />
-            Google Maps API Key Required
+            Google Maps Configuration Error
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-gray-600">
-            To use location selection, please configure your Google Maps API key in the Developer Management settings.
-          </p>
+          <p className="text-gray-600 text-sm">{mapError}</p>
           <Button 
-            onClick={() => window.location.href = '/admin?tab=developer-management'}
+            onClick={openDeveloperSettings}
             variant="outline"
+            className="flex items-center gap-2"
           >
-            Go to Developer Settings
+            <Settings className="h-4 w-4" />
+            Configure API Key
           </Button>
         </CardContent>
       </Card>
@@ -302,7 +317,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
             className="w-full h-64 bg-gray-100 rounded-lg border relative"
             style={{ minHeight: '300px' }}
           >
-            {!isLoaded && (
+            {!isLoaded && !mapError && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
