@@ -14,6 +14,12 @@ interface Merchant {
   business_address: any;
   total_revenue?: number;
   total_study_halls?: number;
+  study_halls?: Array<{
+    id: string;
+    name: string;
+    status: string;
+    total_revenue: number;
+  }>;
 }
 
 export const useMerchants = () => {
@@ -35,10 +41,10 @@ export const useMerchants = () => {
 
       if (merchantsError) throw merchantsError;
 
-      // Fetch study halls separately
+      // Fetch study halls separately with merchant association
       const { data: studyHalls, error: studyHallsError } = await supabase
         .from('study_halls')
-        .select('merchant_id, total_revenue, id');
+        .select('merchant_id, total_revenue, id, name, status');
 
       if (studyHallsError) throw studyHallsError;
 
@@ -52,7 +58,13 @@ export const useMerchants = () => {
           ...merchant,
           approval_status: merchant.approval_status as 'pending' | 'approved' | 'rejected',
           total_revenue: totalRevenue,
-          total_study_halls: totalStudyHalls
+          total_study_halls: totalStudyHalls,
+          study_halls: merchantStudyHalls.map(hall => ({
+            id: hall.id,
+            name: hall.name,
+            status: hall.status,
+            total_revenue: hall.total_revenue || 0
+          }))
         };
       });
 

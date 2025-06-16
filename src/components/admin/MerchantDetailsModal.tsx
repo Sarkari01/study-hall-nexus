@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, User, CreditCard, FileText, UserCheck, Phone, MapPin, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Building2, User, CreditCard, FileText, UserCheck, Phone, MapPin, Mail, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AddressData {
@@ -29,6 +28,16 @@ interface BankAccountData {
   ifsc_code: string;
   bank_name: string;
   account_holder_name: string;
+}
+
+interface StudyHall {
+  id: string;
+  name: string;
+  status: string;
+  capacity: number;
+  total_revenue: number;
+  total_bookings: number;
+  rating: number;
 }
 
 interface MerchantProfile {
@@ -56,6 +65,7 @@ interface MerchantProfile {
   email?: string;
   created_at: string;
   updated_at: string;
+  study_halls?: StudyHall[];
 }
 
 interface MerchantFormData {
@@ -98,6 +108,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
   const [merchant, setMerchant] = useState<MerchantProfile | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [studyHalls, setStudyHalls] = useState<StudyHall[]>([]);
   const { toast } = useToast();
   
   const form = useForm<MerchantFormData>({
@@ -149,9 +160,11 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
   useEffect(() => {
     if (isOpen && merchantId && mode !== 'create') {
       fetchMerchantDetails();
+      fetchStudyHalls();
     } else if (mode === 'create') {
       form.reset();
       setMerchant(null);
+      setStudyHalls([]);
     }
   }, [isOpen, merchantId, mode]);
 
@@ -162,6 +175,22 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
       return JSON.parse(data);
     } catch {
       return fallback;
+    }
+  };
+
+  const fetchStudyHalls = async () => {
+    if (!merchantId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('study_halls')
+        .select('*')
+        .eq('merchant_id', merchantId);
+
+      if (error) throw error;
+      setStudyHalls(data || []);
+    } catch (error) {
+      console.error('Error fetching study halls:', error);
     }
   };
 
@@ -443,7 +472,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-emerald-600" />
@@ -465,11 +494,12 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Tabs defaultValue="credentials" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="credentials">Login & Auth</TabsTrigger>
                   <TabsTrigger value="business">Business</TabsTrigger>
                   <TabsTrigger value="personal">Personal</TabsTrigger>
                   <TabsTrigger value="incharge">Contact Person</TabsTrigger>
+                  <TabsTrigger value="study-halls">Study Halls</TabsTrigger>
                   <TabsTrigger value="financial">Financial & Status</TabsTrigger>
                 </TabsList>
 
@@ -830,7 +860,10 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                           name="incharge_phone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Phone Number</FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                <Phone className="h-4 w-4" />
+                                Phone Number
+                              </FormLabel>
                               <FormControl>
                                 <Input placeholder="Contact number" {...field} disabled={isViewMode} />
                               </FormControl>
@@ -843,7 +876,10 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                           name="incharge_email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Email Address</FormLabel>
+                              <FormLabel className="flex items-center gap-2">
+                                <Mail className="h-4 w-4" />
+                                Email Address
+                              </FormLabel>
                               <FormControl>
                                 <Input placeholder="Email address" type="email" {...field} disabled={isViewMode} />
                               </FormControl>
@@ -852,6 +888,116 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                           )}
                         />
                       </div>
+
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Contact Person Address
+                        </Label>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="incharge_address.street"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input placeholder="Street Address" {...field} disabled={isViewMode} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="incharge_address.city"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input placeholder="City" {...field} disabled={isViewMode} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="incharge_address.state"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input placeholder="State" {...field} disabled={isViewMode} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="incharge_address.postal_code"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input placeholder="Postal Code" {...field} disabled={isViewMode} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="study-halls" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4" />
+                        Associated Study Halls ({studyHalls.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {studyHalls.length > 0 ? (
+                        <div className="space-y-4">
+                          {studyHalls.map((hall) => (
+                            <div key={hall.id} className="border rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-lg">{hall.name}</h4>
+                                  <div className="flex items-center gap-4 mt-2">
+                                    <Badge variant={hall.status === 'active' ? 'default' : 'secondary'}>
+                                      {hall.status}
+                                    </Badge>
+                                    <span className="text-sm text-gray-600">
+                                      Capacity: {hall.capacity}
+                                    </span>
+                                    <span className="text-sm text-gray-600">
+                                      Rating: {hall.rating}/5
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-lg font-semibold text-emerald-600">
+                                    ₹{hall.total_revenue.toLocaleString()}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {hall.total_bookings} bookings
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-500">No study halls associated with this merchant</p>
+                          <p className="text-sm text-gray-400 mt-2">
+                            Study halls will appear here once created
+                          </p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
