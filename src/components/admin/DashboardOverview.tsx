@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, DollarSign, Calendar, TrendingUp, AlertCircle, RefreshCw, Building2, BookOpen, CheckCircle, Clock, Award } from "lucide-react";
 import DashboardStats from './DashboardStats';
+import UpcomingMerchants from './UpcomingMerchants';
 import ErrorBoundary from "./ErrorBoundary";
 
 interface QuickStat {
@@ -124,6 +125,12 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onRefresh, loadin
 
       {/* Main Statistics Grid */}
       <DashboardStats />
+
+      {/* Upcoming Merchants Section */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900">Merchant Management</h3>
+        <UpcomingMerchants />
+      </div>
 
       {/* Quick Actions */}
       <Card>
