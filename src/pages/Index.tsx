@@ -114,9 +114,7 @@ const Index = () => {
             <Building2 className="h-8 w-8 text-blue-400" />
             <span className="ml-2 text-xl font-bold">StudyHall Manager</span>
           </div>
-          <p className="text-gray-400">
-            © 2024 StudyHall Manager. All rights reserved.
-          </p>
+          <p className="text-gray-400">© 2024 Sarkari Ninja  All rights reserved.</p>
         </div>
       </footer>
     </div>;
