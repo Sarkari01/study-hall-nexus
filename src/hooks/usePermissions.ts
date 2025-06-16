@@ -53,7 +53,6 @@ export const usePermissions = () => {
     accessAllFeatures: () => isAdmin,
     viewAllReports: () => isAdmin,
     manageAllTransactions: () => isAdmin,
-    viewAllUsers: () => isAdmin,
     manageSystemConfiguration: () => isAdmin,
   };
 
