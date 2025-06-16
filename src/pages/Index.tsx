@@ -49,9 +49,9 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
       {/* Notification Bar */}
-      <div className="bg-blue-600 text-white text-center py-2 text-sm">
+      <div className="bg-emerald-600 text-white text-center py-2 text-sm">
         <span>🎉 New Feature: AI-powered study hall recommendations now available!</span>
       </div>
 
@@ -60,33 +60,33 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <Building2 className="h-8 w-8 text-blue-600" />
+              <Building2 className="h-8 w-8 text-emerald-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">Sarkari Ninja</span>
             </div>
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
               <div className="relative group">
-                <button className="flex items-center text-gray-700 hover:text-blue-600 transition-colors">
+                <button className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors">
                   Features <ChevronDown className="ml-1 h-4 w-4" />
                 </button>
                 <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="py-2">
-                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Student Management</a>
-                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Merchant Portal</a>
-                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Booking System</a>
+                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Student Management</a>
+                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Merchant Portal</a>
+                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Booking System</a>
                   </div>
                 </div>
               </div>
-              <a href="#pricing" className="text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
-              <a href="#testimonials" className="text-gray-700 hover:text-blue-600 transition-colors">Reviews</a>
-              <a href="#contact" className="text-gray-700 hover:text-blue-600 transition-colors">Contact</a>
+              <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-colors">Pricing</a>
+              <a href="#testimonials" className="text-gray-700 hover:text-emerald-600 transition-colors">Reviews</a>
+              <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-colors">Contact</a>
             </nav>
 
             <div className="hidden md:flex items-center space-x-4">
               <Button variant="outline" size="sm">Free Demo</Button>
               <Link to="/auth">
-                <Button size="sm">Admin Login</Button>
+                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">Admin Login</Button>
               </Link>
             </div>
 
@@ -103,14 +103,14 @@ const Index = () => {
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-gray-200 py-4">
               <div className="flex flex-col space-y-4">
-                <a href="#features" className="text-gray-700 hover:text-blue-600">Features</a>
-                <a href="#pricing" className="text-gray-700 hover:text-blue-600">Pricing</a>
-                <a href="#testimonials" className="text-gray-700 hover:text-blue-600">Reviews</a>
-                <a href="#contact" className="text-gray-700 hover:text-blue-600">Contact</a>
+                <a href="#features" className="text-gray-700 hover:text-emerald-600">Features</a>
+                <a href="#pricing" className="text-gray-700 hover:text-emerald-600">Pricing</a>
+                <a href="#testimonials" className="text-gray-700 hover:text-emerald-600">Reviews</a>
+                <a href="#contact" className="text-gray-700 hover:text-emerald-600">Contact</a>
                 <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
                   <Button variant="outline" size="sm">Free Demo</Button>
                   <Link to="/auth">
-                    <Button size="sm" className="w-full">Admin Login</Button>
+                    <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">Admin Login</Button>
                   </Link>
                 </div>
               </div>
@@ -126,7 +126,7 @@ const Index = () => {
             <div>
               <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
                 Revolutionize Your
-                <span className="text-blue-600 block">Study Hall Management</span>
+                <span className="text-emerald-600 block">Study Hall Management</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8 max-w-2xl">
                 The complete solution for study hall owners, students, and administrators. 
@@ -136,27 +136,27 @@ const Index = () => {
               {/* Trust Indicators */}
               <div className="flex items-center space-x-6 mb-8">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">500+</div>
+                  <div className="text-2xl font-bold text-emerald-600">500+</div>
                   <div className="text-sm text-gray-600">Study Halls</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">10K+</div>
+                  <div className="text-2xl font-bold text-emerald-600">10K+</div>
                   <div className="text-sm text-gray-600">Active Students</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">99.9%</div>
+                  <div className="text-2xl font-bold text-emerald-600">99.9%</div>
                   <div className="text-sm text-gray-600">Uptime</div>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/auth">
-                  <Button size="lg" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700">
                     Start Free Trial
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white">
                   Watch Demo
                 </Button>
               </div>
@@ -175,11 +175,11 @@ const Index = () => {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <div className="h-4 bg-blue-200 rounded animate-pulse"></div>
+                    <div className="h-4 bg-emerald-200 rounded animate-pulse"></div>
                     <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                     <div className="h-4 bg-green-200 rounded animate-pulse"></div>
                     <div className="grid grid-cols-2 gap-4 mt-6">
-                      <div className="h-20 bg-blue-100 rounded-lg animate-pulse"></div>
+                      <div className="h-20 bg-emerald-100 rounded-lg animate-pulse"></div>
                       <div className="h-20 bg-green-100 rounded-lg animate-pulse"></div>
                     </div>
                   </div>
@@ -205,7 +205,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center">
-                <Users className="h-12 w-12 text-blue-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                <Users className="h-12 w-12 text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
                 <CardTitle>Student Management</CardTitle>
               </CardHeader>
               <CardContent>
@@ -213,16 +213,16 @@ const Index = () => {
                   Complete student lifecycle management with profiles, bookings, and usage analytics
                 </CardDescription>
                 <ul className="text-sm space-y-2">
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Profile Management</li>
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Booking History</li>
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Usage Analytics</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Profile Management</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Booking History</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Usage Analytics</li>
                 </ul>
               </CardContent>
             </Card>
 
             <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center">
-                <Building2 className="h-12 w-12 text-green-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                <Building2 className="h-12 w-12 text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
                 <CardTitle>Merchant Portal</CardTitle>
               </CardHeader>
               <CardContent>
@@ -230,16 +230,16 @@ const Index = () => {
                   Comprehensive merchant dashboard with verification and growth tools
                 </CardDescription>
                 <ul className="text-sm space-y-2">
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Easy Onboarding</li>
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Revenue Analytics</li>
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Quality Verification</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Easy Onboarding</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Revenue Analytics</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Quality Verification</li>
                 </ul>
               </CardContent>
             </Card>
 
             <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="text-center">
-                <Calendar className="h-12 w-12 text-purple-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                <Calendar className="h-12 w-12 text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
                 <CardTitle>Smart Booking</CardTitle>
               </CardHeader>
               <CardContent>
@@ -247,9 +247,9 @@ const Index = () => {
                   AI-powered booking system with real-time availability and recommendations
                 </CardDescription>
                 <ul className="text-sm space-y-2">
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Real-time Availability</li>
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Smart Recommendations</li>
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Flexible Scheduling</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Real-time Availability</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Smart Recommendations</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Flexible Scheduling</li>
                 </ul>
               </CardContent>
             </Card>
@@ -264,9 +264,9 @@ const Index = () => {
                   Enterprise-grade security with comprehensive admin controls and reporting
                 </CardDescription>
                 <ul className="text-sm space-y-2">
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Role-based Access</li>
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Data Encryption</li>
-                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-green-500 mr-2" />Audit Trails</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Role-based Access</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Data Encryption</li>
+                  <li className="flex items-center"><CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />Audit Trails</li>
                 </ul>
               </CardContent>
             </Card>
@@ -275,7 +275,7 @@ const Index = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <section id="testimonials" className="py-20 bg-gradient-to-r from-emerald-50 to-green-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -330,17 +330,17 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Up to 100 bookings</li>
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Basic analytics</li>
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Email support</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Up to 100 bookings</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Basic analytics</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Email support</li>
                 </ul>
                 <Button className="w-full mt-6" variant="outline">Get Started</Button>
               </CardContent>
             </Card>
 
-            <Card className="hover:shadow-lg transition-shadow border-blue-500 border-2 relative">
+            <Card className="hover:shadow-lg transition-shadow border-emerald-500 border-2 relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm">Most Popular</span>
+                <span className="bg-emerald-500 text-white px-4 py-1 rounded-full text-sm">Most Popular</span>
               </div>
               <CardHeader className="text-center">
                 <CardTitle>Professional</CardTitle>
@@ -351,12 +351,12 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Unlimited bookings</li>
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Advanced analytics</li>
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Priority support</li>
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />AI recommendations</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Unlimited bookings</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Advanced analytics</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Priority support</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />AI recommendations</li>
                 </ul>
-                <Button className="w-full mt-6">Get Started</Button>
+                <Button className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700">Get Started</Button>
               </CardContent>
             </Card>
 
@@ -369,10 +369,10 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3">
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Everything in Pro</li>
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Custom integrations</li>
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />Dedicated support</li>
-                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-green-500 mr-3" />SLA guarantee</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Everything in Pro</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Custom integrations</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />Dedicated support</li>
+                  <li className="flex items-center"><CheckCircle className="h-5 w-5 text-emerald-500 mr-3" />SLA guarantee</li>
                 </ul>
                 <Button className="w-full mt-6" variant="outline">Contact Sales</Button>
               </CardContent>
@@ -407,12 +407,12 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-blue-600">
+      <section className="py-20 bg-emerald-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Ready to Transform Your Study Hall Management?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-emerald-100 mb-8">
             Join thousands of satisfied customers and start your free trial today
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -422,7 +422,7 @@ const Index = () => {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-white hover:text-blue-600">
+            <Button size="lg" variant="outline" className="w-full sm:w-auto text-white border-white hover:bg-white hover:text-emerald-600">
               Schedule Demo
             </Button>
           </div>
@@ -436,7 +436,7 @@ const Index = () => {
             {/* Company Info */}
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-4">
-                <Building2 className="h-8 w-8 text-blue-400" />
+                <Building2 className="h-8 w-8 text-emerald-400" />
                 <span className="ml-2 text-xl font-bold">Sarkari Ninja</span>
               </div>
               <p className="text-gray-400 mb-6 max-w-md">
@@ -445,15 +445,15 @@ const Index = () => {
               </p>
               <div className="space-y-2">
                 <div className="flex items-center">
-                  <Mail className="h-5 w-5 text-blue-400 mr-3" />
+                  <Mail className="h-5 w-5 text-emerald-400 mr-3" />
                   <span className="text-gray-400">support@sarkarininja.com</span>
                 </div>
                 <div className="flex items-center">
-                  <Phone className="h-5 w-5 text-blue-400 mr-3" />
+                  <Phone className="h-5 w-5 text-emerald-400 mr-3" />
                   <span className="text-gray-400">+91 98765 43210</span>
                 </div>
                 <div className="flex items-center">
-                  <MapPin className="h-5 w-5 text-blue-400 mr-3" />
+                  <MapPin className="h-5 w-5 text-emerald-400 mr-3" />
                   <span className="text-gray-400">New Delhi, India</span>
                 </div>
               </div>
