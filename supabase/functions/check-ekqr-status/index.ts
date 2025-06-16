@@ -28,19 +28,19 @@ serve(async (req) => {
 
     console.log('Checking EKQR payment status:', { clientTxnId, txnDate })
 
-    // Ensure date format is DD/MM/YYYY for EKQR API
+    // Ensure date format is DD-MM-YYYY for EKQR API (with hyphens, not slashes)
     let formattedDate = txnDate;
-    if (txnDate && txnDate.includes('/')) {
-      const parts = txnDate.split('/');
-      if (parts.length === 3) {
-        // If it's already DD/MM/YYYY format, use as is
-        formattedDate = txnDate;
-      }
+    if (txnDate && txnDate.includes('-')) {
+      // If it's already DD-MM-YYYY format, use as is
+      formattedDate = txnDate;
+    } else if (txnDate && txnDate.includes('/')) {
+      // Convert DD/MM/YYYY to DD-MM-YYYY
+      formattedDate = txnDate.replace(/\//g, '-');
     } else {
       // If date is in different format, try to parse and reformat
       const date = new Date(txnDate);
       if (!isNaN(date.getTime())) {
-        formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+        formattedDate = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
       }
     }
 

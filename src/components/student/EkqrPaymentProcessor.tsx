@@ -130,9 +130,9 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
         }
       }
 
-      // Fix date format for EKQR API - use DD/MM/YYYY format
+      // Fix date format for EKQR API - use DD-MM-YYYY format with hyphens
       const now = new Date();
-      const txnDate = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+      const txnDate = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
       console.log('Starting status polling for transaction:', order.clientTxnId, 'on date:', txnDate);
       
       startStatusPolling(
