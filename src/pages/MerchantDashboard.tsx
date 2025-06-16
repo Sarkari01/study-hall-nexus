@@ -24,6 +24,7 @@ import { uuidToNumericId } from "@/utils/uuidUtils";
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [showDevelopmentMode, setShowDevelopmentMode] = useState(true);
   const { toast } = useToast();
   
   // Mock user data for development mode
@@ -86,8 +87,8 @@ const MerchantDashboard = () => {
     );
   }
 
-  // For development mode, show merchant profile setup if no real profile exists
-  if (!merchantProfile && mockUserProfile.role === 'merchant') {
+  // For development mode, show merchant profile setup if no real profile exists and user hasn't continued
+  if (!merchantProfile && mockUserProfile.role === 'merchant' && showDevelopmentMode) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
@@ -96,7 +97,7 @@ const MerchantDashboard = () => {
           <p className="text-gray-600 mb-4">
             Merchant dashboard loaded in development mode. Real merchant profile will be loaded when authentication is enabled.
           </p>
-          <Button onClick={() => setActiveTab("profile")}>
+          <Button onClick={() => setShowDevelopmentMode(false)}>
             Continue to Dashboard
           </Button>
         </div>
