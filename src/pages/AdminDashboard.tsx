@@ -15,6 +15,15 @@ import SmartTextAssistant from '@/components/ai/SmartTextAssistant';
 import ChatSystem from '@/components/chat/ChatSystem';
 import CommunityFeed from '@/components/community/CommunityFeed';
 import DeveloperManagement from '@/components/admin/DeveloperManagement';
+import PaymentHistoryTable from '@/components/admin/PaymentHistoryTable';
+import TransactionsTable from '@/components/admin/TransactionsTable';
+import SettleNowTable from '@/components/admin/SettleNowTable';
+import LocationsTable from '@/components/admin/LocationsTable';
+import LeadsTable from '@/components/admin/LeadsTable';
+import BannerManager from '@/components/banners/BannerManager';
+import SubscriptionManagement from '@/components/admin/SubscriptionManagement';
+import PromotionsRewards from '@/components/admin/PromotionsRewards';
+import PushNotifications from '@/components/admin/PushNotifications';
 
 const AdminDashboard = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
@@ -46,6 +55,24 @@ const AdminDashboard = () => {
         return <StudyHallsTable />;
       case "bookings":
         return <BookingsTable />;
+      case "subscription-management":
+        return <SubscriptionManagement />;
+      case "promotions-rewards":
+        return <PromotionsRewards />;
+      case "push-notifications":
+        return <PushNotifications />;
+      case "payments":
+        return <PaymentHistoryTable />;
+      case "transactions":
+        return <TransactionsTable />;
+      case "settle-now":
+        return <SettleNowTable />;
+      case "locations":
+        return <LocationsTable />;
+      case "leads":
+        return <LeadsTable />;
+      case "banner-management":
+        return <BannerManager />;
       case "ai-analytics":
         return <AIAnalyticsDashboard />;
       case "ai-chatbot":

@@ -16,7 +16,16 @@ import {
   Brain,
   Wand2,
   MessageCircle,
-  Globe
+  Globe,
+  CreditCard,
+  Receipt,
+  MapPin,
+  Phone,
+  Image,
+  Gift,
+  Bell,
+  DollarSign,
+  Banknote
 } from 'lucide-react';
 
 export interface AdminSidebarItem {
@@ -70,6 +79,59 @@ export const sidebarItems: AdminSidebarItem[] = [
     id: 'bookings',
     label: 'Bookings',
     icon: <BookOpen className="h-5 w-5" />,
+  },
+  {
+    id: 'subscription-management',
+    label: 'Subscription Management',
+    icon: <CreditCard className="h-5 w-5" />,
+  },
+  {
+    id: 'promotions-rewards',
+    label: 'Promotions & Rewards',
+    icon: <Gift className="h-5 w-5" />,
+  },
+  {
+    id: 'push-notifications',
+    label: 'Push Notifications',
+    icon: <Bell className="h-5 w-5" />,
+  },
+  {
+    id: 'financial-management',
+    label: 'Financial Management',
+    icon: <DollarSign className="h-5 w-5" />,
+    hasSubmenu: true,
+    submenu: [
+      {
+        id: 'payments',
+        label: 'Payments',
+        icon: <CreditCard className="h-4 w-4" />,
+      },
+      {
+        id: 'transactions',
+        label: 'Transactions',
+        icon: <Receipt className="h-4 w-4" />,
+      },
+      {
+        id: 'settle-now',
+        label: 'Settle Now (Payouts)',
+        icon: <Banknote className="h-4 w-4" />,
+      },
+    ],
+  },
+  {
+    id: 'locations',
+    label: 'Locations',
+    icon: <MapPin className="h-5 w-5" />,
+  },
+  {
+    id: 'leads',
+    label: 'Leads',
+    icon: <Phone className="h-5 w-5" />,
+  },
+  {
+    id: 'banner-management',
+    label: 'Banner Management',
+    icon: <Image className="h-5 w-5" />,
   },
   {
     id: 'ai-features',
