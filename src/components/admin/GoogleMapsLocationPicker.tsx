@@ -24,8 +24,8 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
   onLocationSelect
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [marker, setMarker] = useState<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -34,15 +34,19 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
     initialLocation || { lat: 28.6315, lng: 77.2167, address: 'New Delhi, India' }
   );
   const { toast } = useToast();
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
+    
     const initializeMap = async () => {
       try {
-        // Get Google Maps API key from localStorage (set by Developer Management)
         const apiKey = localStorage.getItem('google_maps_api_key');
         
         if (!apiKey || apiKey.trim() === '') {
-          setMapError('Google Maps API key not configured. Please set your Google Maps API key in Developer Management settings.');
+          if (isMountedRef.current) {
+            setMapError('Google Maps API key not configured. Please set your Google Maps API key in Developer Management settings.');
+          }
           return;
         }
         
@@ -56,22 +60,23 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           await loader.load();
         } catch (loadError) {
           console.error('Google Maps loading error:', loadError);
-          if (loadError instanceof Error) {
-            if (loadError.message.includes('InvalidKeyMapError')) {
-              setMapError('Invalid Google Maps API key. Please check your API key in Developer Management settings.');
-            } else if (loadError.message.includes('RefererNotAllowedMapError')) {
-              setMapError('Google Maps API key domain restriction error. Please configure your API key for this domain.');
+          if (isMountedRef.current) {
+            if (loadError instanceof Error) {
+              if (loadError.message.includes('InvalidKeyMapError')) {
+                setMapError('Invalid Google Maps API key. Please check your API key in Developer Management settings.');
+              } else if (loadError.message.includes('RefererNotAllowedMapError')) {
+                setMapError('Google Maps API key domain restriction error. Please configure your API key for this domain.');
+              } else {
+                setMapError(`Google Maps loading error: ${loadError.message}`);
+              }
             } else {
-              setMapError(`Google Maps loading error: ${loadError.message}`);
+              setMapError('Failed to load Google Maps. Please check your API key and settings.');
             }
-          } else {
-            setMapError('Failed to load Google Maps. Please check your API key and settings.');
           }
           return;
         }
         
-        if (!mapRef.current || !window.google) {
-          setMapError('Failed to initialize map container.');
+        if (!mapRef.current || !window.google || !isMountedRef.current) {
           return;
         }
 
@@ -81,10 +86,9 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           mapTypeControl: true,
           streetViewControl: true,
           fullscreenControl: true,
-          mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
+          mapId: 'DEMO_MAP_ID',
         });
 
-        // Create advanced marker instead of deprecated Marker
         const markerInstance = new window.google.maps.marker.AdvancedMarkerElement({
           position: { lat: currentLocation.lat, lng: currentLocation.lng },
           map: mapInstance,
@@ -94,7 +98,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
 
         // Add click listener to map
         mapInstance.addListener('click', (event: google.maps.MapMouseEvent) => {
-          if (event.latLng) {
+          if (event.latLng && isMountedRef.current) {
             const lat = event.latLng.lat();
             const lng = event.latLng.lng();
             updateLocation(lat, lng, mapInstance, markerInstance);
@@ -103,33 +107,56 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
 
         // Add drag listener to marker
         markerInstance.addListener('dragend', (event: google.maps.MapMouseEvent) => {
-          if (event.latLng) {
+          if (event.latLng && isMountedRef.current) {
             const lat = event.latLng.lat();
             const lng = event.latLng.lng();
             updateLocation(lat, lng, mapInstance, markerInstance);
           }
         });
 
-        setMap(mapInstance);
-        setMarker(markerInstance);
-        setIsLoaded(true);
-        setMapError('');
+        if (isMountedRef.current) {
+          mapInstanceRef.current = mapInstance;
+          markerRef.current = markerInstance;
+          setIsLoaded(true);
+          setMapError('');
+        }
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
-        setMapError('Failed to load Google Maps. Please check your API key and internet connection.');
+        if (isMountedRef.current) {
+          setMapError('Failed to load Google Maps. Please check your API key and internet connection.');
+        }
       }
     };
 
     initializeMap();
+
+    return () => {
+      isMountedRef.current = false;
+      
+      // Clean up map instance safely
+      try {
+        if (markerRef.current) {
+          markerRef.current.map = null;
+          markerRef.current = null;
+        }
+        if (mapInstanceRef.current) {
+          // Clear all listeners before destroying map
+          window.google?.maps.event.clearInstanceListeners(mapInstanceRef.current);
+          mapInstanceRef.current = null;
+        }
+      } catch (error) {
+        console.warn('Map cleanup warning:', error);
+      }
+    };
   }, []);
 
   const updateLocation = async (lat: number, lng: number, mapInstance: google.maps.Map, markerInstance: google.maps.marker.AdvancedMarkerElement) => {
+    if (!isMountedRef.current) return;
+    
     try {
-      // Update marker position
       markerInstance.position = { lat, lng };
       
-      // Reverse geocoding to get address
       if (!window.google) return;
       
       const geocoder = new window.google.maps.Geocoder();
@@ -141,36 +168,40 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
       }
 
       const locationData = { lat, lng, address };
-      setCurrentLocation(locationData);
-      onLocationSelect(locationData);
+      if (isMountedRef.current) {
+        setCurrentLocation(locationData);
+        onLocationSelect(locationData);
+      }
 
     } catch (error) {
       console.error('Error getting address:', error);
       const locationData = { lat, lng, address: `${lat.toFixed(6)}, ${lng.toFixed(6)}` };
-      setCurrentLocation(locationData);
-      onLocationSelect(locationData);
+      if (isMountedRef.current) {
+        setCurrentLocation(locationData);
+        onLocationSelect(locationData);
+      }
     }
   };
 
   const searchLocation = async () => {
-    if (!map || !searchQuery.trim() || !window.google) return;
+    if (!mapInstanceRef.current || !searchQuery.trim() || !window.google || !isMountedRef.current) return;
 
     try {
       const geocoder = new window.google.maps.Geocoder();
       const response = await geocoder.geocode({ address: searchQuery });
 
-      if (response.results && response.results[0]) {
+      if (response.results && response.results[0] && isMountedRef.current) {
         const location = response.results[0].geometry.location;
         const lat = location.lat();
         const lng = location.lng();
         
-        map.setCenter({ lat, lng });
-        map.setZoom(15);
+        mapInstanceRef.current.setCenter({ lat, lng });
+        mapInstanceRef.current.setZoom(15);
         
-        if (marker) {
-          updateLocation(lat, lng, map, marker);
+        if (markerRef.current) {
+          updateLocation(lat, lng, mapInstanceRef.current, markerRef.current);
         }
-      } else {
+      } else if (isMountedRef.current) {
         toast({
           title: "Location not found",
           description: "Please try a different search query.",
@@ -179,11 +210,13 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
       }
     } catch (error) {
       console.error('Error searching location:', error);
-      toast({
-        title: "Search error",
-        description: "Failed to search for the location. Please try again.",
-        variant: "destructive"
-      });
+      if (isMountedRef.current) {
+        toast({
+          title: "Search error",
+          description: "Failed to search for the location. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -201,18 +234,22 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
     
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (!isMountedRef.current) return;
+        
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         
-        if (map && marker) {
-          map.setCenter({ lat, lng });
-          map.setZoom(15);
-          updateLocation(lat, lng, map, marker);
+        if (mapInstanceRef.current && markerRef.current) {
+          mapInstanceRef.current.setCenter({ lat, lng });
+          mapInstanceRef.current.setZoom(15);
+          updateLocation(lat, lng, mapInstanceRef.current, markerRef.current);
         }
         setIsLoadingLocation(false);
       },
       (error) => {
         console.error('Geolocation error:', error);
+        if (!isMountedRef.current) return;
+        
         let errorMessage = "Unable to get your current location.";
         
         switch (error.code) {
@@ -237,7 +274,7 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 600000 // 10 minutes
+        maximumAge: 600000
       }
     );
   };
@@ -279,7 +316,6 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Search Bar */}
         <div className="flex gap-2">
           <div className="flex-1">
             <Label htmlFor="location-search">Search Location</Label>
@@ -310,7 +346,6 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           </div>
         </div>
 
-        {/* Map Container */}
         <div className="space-y-2">
           <div 
             ref={mapRef} 
@@ -328,7 +363,6 @@ const GoogleMapsLocationPicker: React.FC<GoogleMapsLocationPickerProps> = ({
           </div>
         </div>
 
-        {/* Selected Location Info */}
         <div className="bg-gray-50 p-3 rounded-lg">
           <Label className="text-sm font-medium">Selected Location:</Label>
           <p className="text-sm text-gray-700 mt-1">{currentLocation.address}</p>
