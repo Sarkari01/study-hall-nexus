@@ -9,7 +9,6 @@ interface Merchant {
   business_name: string;
   business_phone: string;
   contact_number: string;
-  verification_status: 'unverified' | 'pending' | 'verified' | 'rejected';
   approval_status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   business_address: any;
@@ -51,7 +50,6 @@ export const useMerchants = () => {
 
         return {
           ...merchant,
-          verification_status: merchant.verification_status as 'unverified' | 'pending' | 'verified' | 'rejected',
           approval_status: merchant.approval_status as 'pending' | 'approved' | 'rejected',
           total_revenue: totalRevenue,
           total_study_halls: totalStudyHalls

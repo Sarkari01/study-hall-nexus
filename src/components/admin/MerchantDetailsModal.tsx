@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, User, CreditCard, FileText, Upload, X, Check, AlertCircle, UserCheck } from "lucide-react";
+import { Building2, User, CreditCard, FileText, UserCheck, Phone, MapPin } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AddressData {
@@ -51,8 +52,6 @@ interface MerchantProfile {
   incharge_email?: string;
   incharge_address?: AddressData;
   approval_status: 'pending' | 'approved' | 'rejected' | 'suspended';
-  verification_status: 'unverified' | 'pending' | 'verified';
-  onboarding_completed: boolean;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -73,7 +72,6 @@ interface MerchantFormData {
   incharge_address: AddressData;
   refundable_security_deposit: number;
   approval_status: 'pending' | 'approved' | 'rejected' | 'suspended';
-  verification_status: 'unverified' | 'pending' | 'verified';
   notes: string;
 }
 
@@ -135,7 +133,6 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
       },
       refundable_security_deposit: 0,
       approval_status: 'pending' as const,
-      verification_status: 'unverified' as const,
       notes: ''
     }
   });
@@ -203,7 +200,6 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
           country: 'India'
         }),
         approval_status: (data.approval_status || 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended',
-        verification_status: (data.verification_status || 'unverified') as 'unverified' | 'pending' | 'verified',
         slide_images: data.slide_images || []
       };
 
@@ -242,7 +238,6 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
         },
         refundable_security_deposit: merchantData.refundable_security_deposit || 0,
         approval_status: merchantData.approval_status,
-        verification_status: merchantData.verification_status,
         notes: merchantData.notes || ''
       };
       
@@ -290,7 +285,6 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
         incharge_address: data.incharge_address as unknown as Json,
         refundable_security_deposit: data.refundable_security_deposit,
         approval_status: data.approval_status,
-        verification_status: data.verification_status,
         notes: data.notes
       };
 
@@ -339,23 +333,16 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
     }
   };
 
-  const getStatusBadge = (status: string, type: 'approval' | 'verification') => {
+  const getStatusBadge = (status: string) => {
     const colors = {
-      approval: {
-        pending: 'bg-yellow-100 text-yellow-800',
-        approved: 'bg-green-100 text-green-800',
-        rejected: 'bg-red-100 text-red-800',
-        suspended: 'bg-gray-100 text-gray-800'
-      },
-      verification: {
-        unverified: 'bg-gray-100 text-gray-800',
-        pending: 'bg-yellow-100 text-yellow-800',
-        verified: 'bg-green-100 text-green-800'
-      }
+      pending: 'bg-yellow-100 text-yellow-800',
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
+      suspended: 'bg-gray-100 text-gray-800'
     };
 
     return (
-      <Badge className={colors[type][status as keyof typeof colors[typeof type]]}>
+      <Badge className={colors[status as keyof typeof colors]}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
@@ -368,26 +355,30 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
+            <Building2 className="h-5 w-5 text-emerald-600" />
             {mode === 'create' ? 'Add New Merchant' : 
              mode === 'edit' ? 'Edit Merchant Profile' : 'Merchant Details'}
+            {merchant && isViewMode && (
+              <div className="ml-auto">
+                {getStatusBadge(merchant.approval_status)}
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
 
         {loading ? (
           <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
           </div>
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <Tabs defaultValue="business" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="business">Business</TabsTrigger>
                   <TabsTrigger value="personal">Personal</TabsTrigger>
-                  <TabsTrigger value="incharge">Incharge</TabsTrigger>
-                  <TabsTrigger value="financial">Financial</TabsTrigger>
-                  <TabsTrigger value="status">Status</TabsTrigger>
+                  <TabsTrigger value="incharge">Contact Person</TabsTrigger>
+                  <TabsTrigger value="financial">Financial & Status</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="business" className="space-y-4">
@@ -407,7 +398,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                             <FormItem>
                               <FormLabel>Business Name *</FormLabel>
                               <FormControl>
-                                <Input {...field} disabled={isViewMode} />
+                                <Input {...field} disabled={isViewMode} placeholder="Enter business name" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -420,7 +411,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                             <FormItem>
                               <FormLabel>Business Phone *</FormLabel>
                               <FormControl>
-                                <Input {...field} disabled={isViewMode} />
+                                <Input {...field} disabled={isViewMode} placeholder="Enter business phone" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -429,7 +420,10 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Business Address *</Label>
+                        <Label className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Business Address *
+                        </Label>
                         <div className="grid grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
@@ -490,7 +484,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        Personal Information
+                        Owner Information
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -502,7 +496,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                             <FormItem>
                               <FormLabel>Full Name *</FormLabel>
                               <FormControl>
-                                <Input {...field} disabled={isViewMode} />
+                                <Input {...field} disabled={isViewMode} placeholder="Enter full name" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -515,7 +509,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                             <FormItem>
                               <FormLabel>Contact Number *</FormLabel>
                               <FormControl>
-                                <Input {...field} disabled={isViewMode} />
+                                <Input {...field} disabled={isViewMode} placeholder="Enter contact number" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -585,7 +579,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <UserCheck className="h-4 w-4" />
-                        Incharge Details
+                        Contact Person Details
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -595,7 +589,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                           name="incharge_name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Incharge Name</FormLabel>
+                              <FormLabel>Contact Person Name</FormLabel>
                               <FormControl>
                                 <Input placeholder="Name of person in charge" {...field} disabled={isViewMode} />
                               </FormControl>
@@ -621,7 +615,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                           name="incharge_phone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Incharge Phone</FormLabel>
+                              <FormLabel>Phone Number</FormLabel>
                               <FormControl>
                                 <Input placeholder="Contact number" {...field} disabled={isViewMode} />
                               </FormControl>
@@ -634,7 +628,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                           name="incharge_email"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Incharge Email</FormLabel>
+                              <FormLabel>Email Address</FormLabel>
                               <FormControl>
                                 <Input placeholder="Email address" type="email" {...field} disabled={isViewMode} />
                               </FormControl>
@@ -643,159 +637,106 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                           )}
                         />
                       </div>
-
-                      <div className="space-y-2">
-                        <Label>Incharge Address</Label>
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="incharge_address.street"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input placeholder="Street Address" {...field} disabled={isViewMode} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="incharge_address.city"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input placeholder="City" {...field} disabled={isViewMode} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="incharge_address.state"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input placeholder="State" {...field} disabled={isViewMode} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="incharge_address.postal_code"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input placeholder="Postal Code" {...field} disabled={isViewMode} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
 
                 <TabsContent value="financial" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4" />
-                        Financial Information
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="refundable_security_deposit"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Refundable Security Deposit (₹)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                type="number" 
-                                {...field} 
-                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                disabled={isViewMode} 
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4" />
+                          Financial Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="refundable_security_deposit"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Security Deposit (₹)</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  {...field} 
+                                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                  disabled={isViewMode} 
+                                  placeholder="Enter deposit amount"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="space-y-2">
+                          <Label>Bank Account Details</Label>
+                          <div className="space-y-3">
+                            <FormField
+                              control={form.control}
+                              name="bank_account_details.account_holder_name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input placeholder="Account Holder Name" {...field} disabled={isViewMode} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="grid grid-cols-2 gap-3">
+                              <FormField
+                                control={form.control}
+                                name="bank_account_details.account_number"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input placeholder="Account Number" {...field} disabled={isViewMode} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
                               />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="space-y-2">
-                        <Label>Bank Account Details</Label>
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="bank_account_details.account_holder_name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input placeholder="Account Holder Name" {...field} disabled={isViewMode} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="bank_account_details.account_number"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input placeholder="Account Number" {...field} disabled={isViewMode} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="bank_account_details.bank_name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input placeholder="Bank Name" {...field} disabled={isViewMode} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="bank_account_details.ifsc_code"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input placeholder="IFSC Code" {...field} disabled={isViewMode} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                              <FormField
+                                control={form.control}
+                                name="bank_account_details.ifsc_code"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormControl>
+                                      <Input placeholder="IFSC Code" {...field} disabled={isViewMode} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <FormField
+                              control={form.control}
+                              name="bank_account_details.bank_name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input placeholder="Bank Name" {...field} disabled={isViewMode} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+                      </CardContent>
+                    </Card>
 
-                <TabsContent value="status" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        Status & Notes
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Status & Notes
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
                         <FormField
                           control={form.control}
                           name="approval_status"
@@ -819,61 +760,39 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                             </FormItem>
                           )}
                         />
+
                         <FormField
                           control={form.control}
-                          name="verification_status"
+                          name="notes"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Verification Status</FormLabel>
-                              <Select value={field.value} onValueChange={field.onChange} disabled={isViewMode}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="unverified">Unverified</SelectItem>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="verified">Verified</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <FormLabel>Admin Notes</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Internal notes about this merchant..."
+                                  {...field}
+                                  disabled={isViewMode}
+                                  rows={6}
+                                />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                      </div>
 
-                      <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Admin Notes</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Internal notes about this merchant..."
-                                {...field}
-                                disabled={isViewMode}
-                                rows={4}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+                        {!isViewMode && (
+                          <div className="flex justify-end space-x-2 pt-4">
+                            <Button type="button" variant="outline" onClick={onClose}>
+                              Cancel
+                            </Button>
+                            <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
+                              {loading ? 'Saving...' : mode === 'create' ? 'Create Merchant' : 'Update Merchant'}
+                            </Button>
+                          </div>
                         )}
-                      />
-
-                      {!isViewMode && (
-                        <div className="flex justify-end space-x-2 pt-4">
-                          <Button type="button" variant="outline" onClick={onClose}>
-                            Cancel
-                          </Button>
-                          <Button type="submit" disabled={loading}>
-                            {loading ? 'Saving...' : mode === 'create' ? 'Create Merchant' : 'Update Merchant'}
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </TabsContent>
               </Tabs>
             </form>

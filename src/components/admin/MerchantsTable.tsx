@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock, FileText, User, CreditCard, UserCheck } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import MerchantDetailsModal from "./MerchantDetailsModal";
@@ -32,8 +32,6 @@ interface MerchantProfile {
   incharge_phone?: string;
   incharge_email?: string;
   approval_status: 'pending' | 'approved' | 'rejected' | 'suspended';
-  verification_status: 'unverified' | 'pending' | 'verified';
-  onboarding_completed: boolean;
   refundable_security_deposit: number;
   created_at: string;
   updated_at: string;
@@ -83,8 +81,7 @@ const MerchantsTable = () => {
           postal_code: '',
           country: 'India'
         }),
-        approval_status: (merchant.approval_status || 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended',
-        verification_status: (merchant.verification_status || 'unverified') as 'unverified' | 'pending' | 'verified'
+        approval_status: (merchant.approval_status || 'pending') as 'pending' | 'approved' | 'rejected' | 'suspended'
       }));
 
       setMerchants(typedMerchants);
@@ -127,24 +124,24 @@ const MerchantsTable = () => {
     }
   };
 
-  const handleStatusChange = async (merchantId: string, newStatus: string, field: 'approval_status' | 'verification_status') => {
+  const handleStatusChange = async (merchantId: string, newStatus: string) => {
     try {
       const { error } = await supabase
         .from('merchant_profiles')
-        .update({ [field]: newStatus })
+        .update({ approval_status: newStatus })
         .eq('id', merchantId);
 
       if (error) throw error;
 
       setMerchants(prev => prev.map(merchant => 
         merchant.id === merchantId 
-          ? { ...merchant, [field]: newStatus as any }
+          ? { ...merchant, approval_status: newStatus as any }
           : merchant
       ));
 
       toast({
         title: "Success",
-        description: `Merchant ${field.replace('_', ' ')} updated to ${newStatus}`,
+        description: `Merchant approval status updated to ${newStatus}`,
       });
     } catch (error) {
       console.error('Error updating merchant status:', error);
@@ -168,34 +165,25 @@ const MerchantsTable = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const getStatusColor = (status: string, type: 'approval' | 'verification') => {
+  const getStatusColor = (status: string) => {
     const colors = {
-      approval: {
-        pending: 'bg-yellow-100 text-yellow-800',
-        approved: 'bg-green-100 text-green-800',
-        rejected: 'bg-red-100 text-red-800',
-        suspended: 'bg-gray-100 text-gray-800'
-      },
-      verification: {
-        unverified: 'bg-gray-100 text-gray-800',
-        pending: 'bg-yellow-100 text-yellow-800',
-        verified: 'bg-green-100 text-green-800'
-      }
+      pending: 'bg-yellow-100 text-yellow-800',
+      approved: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
+      suspended: 'bg-gray-100 text-gray-800'
     };
 
-    return colors[type][status as keyof typeof colors[typeof type]] || 'bg-gray-100 text-gray-800';
+    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-      case 'verified':
         return <CheckCircle className="h-4 w-4" />;
       case 'pending':
         return <Clock className="h-4 w-4" />;
       case 'rejected':
       case 'suspended':
-      case 'unverified':
         return <XCircle className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
@@ -220,7 +208,7 @@ const MerchantsTable = () => {
     approved: merchants.filter(m => m.approval_status === 'approved').length,
     pending: merchants.filter(m => m.approval_status === 'pending').length,
     rejected: merchants.filter(m => m.approval_status === 'rejected').length,
-    verified: merchants.filter(m => m.verification_status === 'verified').length
+    suspended: merchants.filter(m => m.approval_status === 'suspended').length
   };
 
   return (
@@ -274,100 +262,95 @@ const MerchantsTable = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-blue-600" />
+              <XCircle className="h-8 w-8 text-gray-600" />
               <div className="ml-4">
-                <p className="text-sm text-gray-600">Verified</p>
-                <p className="text-2xl font-bold">{stats.verified}</p>
+                <p className="text-sm text-gray-600">Suspended</p>
+                <p className="text-2xl font-bold">{stats.suspended}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters and Add Button */}
+      {/* Enhanced Filters and Add Button */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4 items-center">
-            <div className="flex-1">
-              <div className="relative">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col md:flex-row gap-4 items-center flex-1">
+              <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Search merchants by name, business, phone, or incharge..."
+                  placeholder="Search by name, business, phone, or contact person..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={openCreateModal}>
+            <Button onClick={openCreateModal} className="bg-emerald-600 hover:bg-emerald-700">
               <Plus className="h-4 w-4 mr-2" />
-              Add Merchant
+              Add New Merchant
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Merchants Table */}
+      {/* Enhanced Merchants Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Merchants ({filteredMerchants.length})</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Merchants ({filteredMerchants.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Business Info</TableHead>
-                  <TableHead>Owner Details</TableHead>
-                  <TableHead>Incharge Details</TableHead>
-                  <TableHead>Contact</TableHead>
+                  <TableHead>Business Details</TableHead>
+                  <TableHead>Owner Information</TableHead>
+                  <TableHead>Contact Person</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead>Approval Status</TableHead>
-                  <TableHead>Verification</TableHead>
-                  <TableHead>Deposit</TableHead>
+                  <TableHead>Security Deposit</TableHead>
+                  <TableHead>Registration Date</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredMerchants.map((merchant) => (
-                  <TableRow key={merchant.id}>
+                  <TableRow key={merchant.id} className="hover:bg-gray-50">
                     <TableCell>
-                      <div>
-                        <div className="font-medium">{merchant.business_name}</div>
+                      <div className="space-y-1">
+                        <div className="font-medium text-gray-900">{merchant.business_name}</div>
                         <div className="text-sm text-gray-500">{merchant.business_phone}</div>
-                        <div className="flex items-center mt-1">
-                          {merchant.onboarding_completed ? (
-                            <Badge variant="secondary" className="text-xs">Onboarded</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs">Pending Onboarding</Badge>
-                          )}
-                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div>
+                      <div className="space-y-1">
                         <div className="font-medium">{merchant.full_name}</div>
                         <div className="text-sm text-gray-500">{merchant.contact_number}</div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div>
+                      <div className="space-y-1">
                         {merchant.incharge_name ? (
                           <>
                             <div className="font-medium">{merchant.incharge_name}</div>
@@ -387,16 +370,11 @@ const MerchantsTable = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {merchant.business_address?.city || 'Not specified'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
                       <div className="flex items-center space-x-2">
                         {getStatusIcon(merchant.approval_status)}
                         <Select
                           value={merchant.approval_status}
-                          onValueChange={(value) => handleStatusChange(merchant.id, value, 'approval_status')}
+                          onValueChange={(value) => handleStatusChange(merchant.id, value)}
                         >
                           <SelectTrigger className="w-32">
                             <SelectValue />
@@ -411,30 +389,17 @@ const MerchantsTable = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(merchant.verification_status)}
-                        <Select
-                          value={merchant.verification_status}
-                          onValueChange={(value) => handleStatusChange(merchant.id, value, 'verification_status')}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unverified">Unverified</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="verified">Verified</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-green-600">
+                      <div className="font-medium text-emerald-600">
                         ₹{merchant.refundable_security_deposit?.toLocaleString() || '0'}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
+                      <div className="text-sm">
+                        {new Date(merchant.created_at).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -456,8 +421,9 @@ const MerchantsTable = () => {
                           size="sm" 
                           onClick={() => handleDeleteMerchant(merchant.id)}
                           title="Delete Merchant"
+                          className="text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="h-4 w-4 text-red-600" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
@@ -465,16 +431,25 @@ const MerchantsTable = () => {
                 ))}
                 {filteredMerchants.length === 0 && !loading && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-12">
                       <div className="flex flex-col items-center">
                         <Building2 className="h-12 w-12 text-gray-400 mb-4" />
-                        <p className="text-gray-500">No merchants found</p>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <p className="text-gray-500 text-lg">No merchants found</p>
+                        <p className="text-sm text-gray-400 mt-2">
                           {searchTerm || statusFilter !== 'all' 
                             ? 'Try adjusting your search or filter criteria'
                             : 'Add your first merchant to get started'
                           }
                         </p>
+                        {searchTerm === '' && statusFilter === 'all' && (
+                          <Button 
+                            onClick={openCreateModal} 
+                            className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add First Merchant
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

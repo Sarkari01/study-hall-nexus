@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MapPin, Phone, Calendar, CheckCircle, Clock, Eye } from "lucide-react";
+import { MapPin, Phone, Calendar, CheckCircle, Clock, Eye, XCircle } from "lucide-react";
 import { useMerchants } from "@/hooks/useMerchants";
 
 const UpcomingMerchants = () => {
@@ -13,10 +13,8 @@ const UpcomingMerchants = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-      case 'verified':
         return 'bg-green-100 text-green-800';
       case 'pending':
-      case 'unverified':
         return 'bg-yellow-100 text-yellow-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
@@ -28,22 +26,22 @@ const UpcomingMerchants = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'approved':
-      case 'verified':
         return <CheckCircle className="h-3 w-3" />;
       case 'pending':
-      case 'unverified':
         return <Clock className="h-3 w-3" />;
+      case 'rejected':
+        return <XCircle className="h-3 w-3" />;
       default:
         return <Clock className="h-3 w-3" />;
     }
   };
 
   const pendingMerchants = merchants.filter(m => 
-    m.approval_status === 'pending' || m.verification_status === 'pending'
+    m.approval_status === 'pending'
   ).slice(0, 5);
 
   const recentlyApproved = merchants.filter(m => 
-    m.approval_status === 'approved' && m.verification_status === 'verified'
+    m.approval_status === 'approved'
   ).slice(0, 5);
 
   if (loading) {
@@ -111,16 +109,10 @@ const UpcomingMerchants = () => {
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center space-x-2">
-                          <Badge className={`${getStatusColor(merchant.approval_status)} flex items-center gap-1`}>
-                            {getStatusIcon(merchant.approval_status)}
-                            {merchant.approval_status}
-                          </Badge>
-                          <Badge className={`${getStatusColor(merchant.verification_status)} flex items-center gap-1`}>
-                            {getStatusIcon(merchant.verification_status)}
-                            {merchant.verification_status}
-                          </Badge>
-                        </div>
+                        <Badge className={`${getStatusColor(merchant.approval_status)} flex items-center gap-1`}>
+                          {getStatusIcon(merchant.approval_status)}
+                          {merchant.approval_status}
+                        </Badge>
                         <Button variant="outline" size="sm">
                           <Eye className="h-3 w-3 mr-1" />
                           Review
