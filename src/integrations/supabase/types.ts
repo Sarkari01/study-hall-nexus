@@ -1470,6 +1470,19 @@ export type Database = {
           action: string
         }[]
       }
+      get_user_permissions_safe: {
+        Args: { user_id: string }
+        Returns: {
+          permission_name: string
+          permission_description: string
+          module: string
+          action: string
+        }[]
+      }
+      get_user_role_safe: {
+        Args: { user_id: string }
+        Returns: string
+      }
       user_has_permission: {
         Args: { user_id: string; permission_name: string }
         Returns: boolean

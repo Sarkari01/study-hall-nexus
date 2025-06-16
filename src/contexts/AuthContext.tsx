@@ -163,6 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let roleData = null;
       let userPermissions: Permission[] = [];
       
+      // Try to get role data from custom_role_id first
       if (profile.custom_role_id) {
         console.log('Fetching role with ID:', profile.custom_role_id);
         const { data: customRole, error: roleError } = await supabase
@@ -180,6 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
+      // Fallback to role string if custom role not found
       if (!roleData && profile.role) {
         console.log('Fallback to role string:', profile.role);
         const { data: systemRole, error: systemRoleError } = await supabase
@@ -194,6 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           roleData = systemRole;
           userPermissions = await fetchUserPermissions(systemRole.id);
           
+          // Update profile with the correct custom_role_id
           await supabase
             .from('user_profiles')
             .update({ custom_role_id: systemRole.id })
@@ -203,10 +206,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
+      // If we still don't have role data, create a minimal role object from the role string
+      if (!roleData && profile.role) {
+        console.log('Creating minimal role object from role string:', profile.role);
+        roleData = {
+          id: '',
+          name: profile.role,
+          description: `${profile.role} role`,
+          is_system_role: true,
+          color: '#3B82F6'
+        };
+      }
+
       console.log('Final user data:', { profile, role: roleData, permissions: userPermissions });
       return { profile, role: roleData, permissions: userPermissions };
     } catch (error) {
       console.error('Error fetching user data:', error);
+      // Return a fallback structure to prevent complete failure
+      if (userEmail) {
+        const fallbackProfile = {
+          id: '',
+          user_id: userId,
+          full_name: userEmail.split('@')[0],
+          role: 'student',
+          custom_role_id: null,
+          merchant_id: null,
+          study_hall_id: null,
+          phone: null,
+          avatar_url: null,
+          bio: null
+        };
+        const fallbackRole = {
+          id: '',
+          name: 'student',
+          description: 'Student role',
+          is_system_role: true,
+          color: '#3B82F6'
+        };
+        return { profile: fallbackProfile, role: fallbackRole, permissions: [] };
+      }
       throw error;
     }
   };
@@ -261,9 +299,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (mounted) {
               console.error('Error loading initial user data:', error);
               setError('Failed to load user data');
-              setUserProfile(null);
-              setUserRole(null);
-              setPermissions([]);
+              // Don't completely reset user data on error - let them stay logged in
             }
           }
         }
@@ -293,8 +329,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user?.id && event !== 'TOKEN_REFRESHED') {
           setLoading(true);
-          setIsAuthReady(false);
           
+          // Use a small delay to ensure database consistency
           setTimeout(async () => {
             if (!mounted) return;
             
@@ -309,19 +345,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setUserRole(role);
                 setPermissions(userPermissions);
                 setError(null);
+                setIsAuthReady(true);
               }
             } catch (error) {
               if (mounted) {
                 console.error('Error loading user data:', error);
                 setError('Failed to load user data');
-                setUserProfile(null);
-                setUserRole(null);
-                setPermissions([]);
+                // Still set auth as ready even on error
+                setIsAuthReady(true);
               }
             } finally {
               if (mounted) {
                 setLoading(false);
-                setIsAuthReady(true);
               }
             }
           }, 100);

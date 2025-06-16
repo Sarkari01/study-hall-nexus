@@ -18,8 +18,8 @@ const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [hasAttemptedRedirect, setHasAttemptedRedirect] = useState(false);
-  const { user, userRole, isAuthReady, loading: authLoading } = useAuth();
+  const [redirectAttempted, setRedirectAttempted] = useState(false);
+  const { user, userRole, userProfile, isAuthReady, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -30,23 +30,44 @@ const AuthPage = () => {
   };
 
   useEffect(() => {
-    // Only redirect if we have a complete auth state (user + role) and haven't already redirected
-    if (isAuthReady && user && userRole && !hasAttemptedRedirect && !authLoading) {
-      console.log('User authenticated with role, attempting redirect...', { userRole: userRole.name });
-      setHasAttemptedRedirect(true);
+    // Only attempt redirect once when conditions are met
+    if (isAuthReady && user && !authLoading && !redirectAttempted) {
+      console.log('Auth ready, checking for redirect...', { 
+        user: !!user, 
+        userRole: userRole?.name, 
+        userProfile: !!userProfile 
+      });
       
-      if (isValidRole(userRole.name)) {
-        const targetRoute = getRoleRoute(userRole.name as ValidRole);
+      setRedirectAttempted(true);
+      
+      // Try to determine the user's role for redirect
+      let targetRole = userRole?.name || userProfile?.role;
+      
+      if (targetRole && isValidRole(targetRole)) {
+        const targetRoute = getRoleRoute(targetRole as ValidRole);
         const from = location.state?.from?.pathname || targetRoute;
         
-        console.log(`Redirecting ${userRole.name} to ${from}`);
+        console.log(`Redirecting ${targetRole} to ${from}`);
         
         setTimeout(() => {
           navigate(from, { replace: true });
         }, 100);
+      } else if (targetRole) {
+        // If we have a role but it's not valid, log and redirect to a default
+        console.warn('Invalid role detected:', targetRole, 'redirecting to student portal');
+        navigate('/student', { replace: true });
+      } else {
+        // If no role determined yet, wait a bit more or redirect to default
+        console.log('No role determined yet, waiting...');
+        setTimeout(() => {
+          if (!userRole && !userProfile?.role) {
+            console.log('Still no role after wait, redirecting to student portal as fallback');
+            navigate('/student', { replace: true });
+          }
+        }, 2000); // Wait 2 seconds for role to load
       }
     }
-  }, [user, userRole, isAuthReady, authLoading, navigate, location.state, hasAttemptedRedirect]);
+  }, [user, userRole, userProfile, isAuthReady, authLoading, navigate, location.state, redirectAttempted]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +78,7 @@ const AuthPage = () => {
 
     setLoading(true);
     setError('');
+    setRedirectAttempted(false); // Reset redirect attempt for new login
 
     try {
       console.log('Attempting sign in for:', email);
@@ -162,7 +184,7 @@ const AuthPage = () => {
   }
 
   // Show loading while user profile is being loaded after authentication
-  if (user && authLoading && isAuthReady) {
+  if (user && (authLoading || !redirectAttempted) && isAuthReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
