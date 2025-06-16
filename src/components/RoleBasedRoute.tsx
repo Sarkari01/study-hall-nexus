@@ -28,12 +28,18 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     );
   }
 
+  // Admin has access to all routes
+  const isAdmin = userRole?.name === 'admin';
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
   // Check if user has required role
   const hasRequiredRole = userRole && 
     isValidRole(userRole.name) && 
     allowedRoles.includes(userRole.name as ValidRole);
   
-  // Check if user has all required permissions
+  // Check if user has all required permissions (admin automatically has all)
   const hasRequiredPermissions = requiredPermissions.every(permission => 
     hasPermission(permission)
   );

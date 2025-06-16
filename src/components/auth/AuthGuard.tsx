@@ -34,6 +34,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     return fallback ? <>{fallback}</> : null;
   }
 
+  // Admin has access to everything
+  const isAdmin = userRole?.name === 'admin';
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
   // Check role requirement - validate it's one of our 6 retained roles
   if (requiredRole && (!isValidRole(requiredRole) || userRole?.name !== requiredRole)) {
     return fallback ? <>{fallback}</> : (

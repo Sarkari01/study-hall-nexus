@@ -5,44 +5,56 @@ import { isValidRole, canManageRole } from '@/utils/roleValidation';
 export const usePermissions = () => {
   const { permissions, hasPermission, hasRole, userRole } = useAuth();
 
+  // Admin users have full access to everything
+  const isAdmin = userRole?.name === 'admin';
+
   const can = {
     // Admin permissions - full access
-    viewAllUsers: () => hasPermission('admin.users.view'),
-    createUsers: () => hasPermission('admin.users.create'),
-    editUsers: () => hasPermission('admin.users.edit'),
-    deleteUsers: () => hasPermission('admin.users.delete'),
-    accessSystemSettings: () => hasPermission('admin.system.settings'),
-    manageRoles: () => hasPermission('admin.roles.manage'),
+    viewAllUsers: () => isAdmin || hasPermission('admin.users.view'),
+    createUsers: () => isAdmin || hasPermission('admin.users.create'),
+    editUsers: () => isAdmin || hasPermission('admin.users.edit'),
+    deleteUsers: () => isAdmin || hasPermission('admin.users.delete'),
+    accessSystemSettings: () => isAdmin || hasPermission('admin.system.settings'),
+    manageRoles: () => isAdmin || hasPermission('admin.roles.manage'),
 
-    // Merchant permissions
-    viewStudyHalls: () => hasPermission('merchant.study_halls.view'),
-    createStudyHalls: () => hasPermission('merchant.study_halls.create'),
-    editStudyHalls: () => hasPermission('merchant.study_halls.edit'),
-    deleteStudyHalls: () => hasPermission('merchant.study_halls.delete'),
-    viewBookings: () => hasPermission('merchant.bookings.view') || hasPermission('student.bookings.view'),
-    manageBookings: () => hasPermission('merchant.bookings.manage') || hasPermission('incharge.bookings.manage'),
-    viewAnalytics: () => hasPermission('merchant.analytics.view'),
-    assignIncharge: () => hasPermission('merchant.incharge.assign'),
+    // Merchant permissions - admin has full access
+    viewStudyHalls: () => isAdmin || hasPermission('merchant.study_halls.view'),
+    createStudyHalls: () => isAdmin || hasPermission('merchant.study_halls.create'),
+    editStudyHalls: () => isAdmin || hasPermission('merchant.study_halls.edit'),
+    deleteStudyHalls: () => isAdmin || hasPermission('merchant.study_halls.delete'),
+    viewBookings: () => isAdmin || hasPermission('merchant.bookings.view') || hasPermission('student.bookings.view'),
+    manageBookings: () => isAdmin || hasPermission('merchant.bookings.manage') || hasPermission('incharge.bookings.manage'),
+    viewAnalytics: () => isAdmin || hasPermission('merchant.analytics.view'),
+    assignIncharge: () => isAdmin || hasPermission('merchant.incharge.assign'),
 
-    // Incharge permissions
-    allocateSeats: () => hasPermission('incharge.seats.allocate'),
-    manageCheckIn: () => hasPermission('incharge.checkin.manage'),
-    viewHall: () => hasPermission('incharge.hall.view'),
+    // Incharge permissions - admin has full access
+    allocateSeats: () => isAdmin || hasPermission('incharge.seats.allocate'),
+    manageCheckIn: () => isAdmin || hasPermission('incharge.checkin.manage'),
+    viewHall: () => isAdmin || hasPermission('incharge.hall.view'),
 
-    // Telecaller permissions
-    viewLeads: () => hasPermission('telecaller.leads.view'),
-    editLeads: () => hasPermission('telecaller.leads.edit'),
-    updateBookingStatus: () => hasPermission('telecaller.bookings.status'),
+    // Telecaller permissions - admin has full access
+    viewLeads: () => isAdmin || hasPermission('telecaller.leads.view'),
+    editLeads: () => isAdmin || hasPermission('telecaller.leads.edit'),
+    updateBookingStatus: () => isAdmin || hasPermission('telecaller.bookings.status'),
 
-    // Editor permissions
-    manageBanners: () => hasPermission('editor.banners.manage'),
-    manageContent: () => hasPermission('editor.content.manage'),
-    manageNews: () => hasPermission('editor.news.manage'),
+    // Editor permissions - admin has full access
+    manageBanners: () => isAdmin || hasPermission('editor.banners.manage'),
+    manageContent: () => isAdmin || hasPermission('editor.content.manage'),
+    manageNews: () => isAdmin || hasPermission('editor.news.manage'),
 
-    // Student permissions
-    createBookings: () => hasPermission('student.bookings.create'),
-    viewSeats: () => hasPermission('student.seats.view'),
-    participateInCommunity: () => hasPermission('student.community.participate'),
+    // Student permissions - admin has full access
+    createBookings: () => isAdmin || hasPermission('student.bookings.create'),
+    viewSeats: () => isAdmin || hasPermission('student.seats.view'),
+    participateInCommunity: () => isAdmin || hasPermission('student.community.participate'),
+
+    // Additional admin-specific permissions
+    viewAllData: () => isAdmin,
+    manageAllSettings: () => isAdmin,
+    accessAllFeatures: () => isAdmin,
+    viewAllReports: () => isAdmin,
+    manageAllTransactions: () => isAdmin,
+    viewAllUsers: () => isAdmin,
+    manageSystemConfiguration: () => isAdmin,
   };
 
   const is = {
@@ -54,23 +66,43 @@ export const usePermissions = () => {
     student: () => hasRole('student'),
   };
 
+  // Enhanced permission helper specifically for admin
+  const adminPermissions = {
+    hasFullAccess: () => isAdmin,
+    canAccessAnyFeature: () => isAdmin,
+    canManageAnyUser: () => isAdmin,
+    canViewAnyData: () => isAdmin,
+    canModifySystemSettings: () => isAdmin,
+  };
+
   // Role management helpers using the validation utils
   const roleManagement = {
     canManageRole: (targetRole: string) => {
       if (!userRole?.name) return false;
+      // Admin can manage all roles
+      if (isAdmin) return true;
       return canManageRole(userRole.name, targetRole);
     },
     isValidRole: (role: string) => isValidRole(role),
     hasValidRole: () => userRole?.name ? isValidRole(userRole.name) : false
   };
 
+  // Enhanced hasPermission function for admin
+  const enhancedHasPermission = (permission: string): boolean => {
+    // Admin has all permissions
+    if (isAdmin) return true;
+    return hasPermission(permission);
+  };
+
   return {
     permissions,
-    hasPermission,
+    hasPermission: enhancedHasPermission,
     hasRole,
     userRole,
     can,
     is,
     roleManagement,
+    adminPermissions,
+    isAdmin,
   };
 };

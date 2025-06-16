@@ -16,7 +16,12 @@ const Permission: React.FC<PermissionProps> = ({
   role, 
   fallback = null 
 }) => {
-  const { hasPermission, hasRole } = usePermissions();
+  const { hasPermission, hasRole, isAdmin } = usePermissions();
+
+  // Admin has access to everything
+  if (isAdmin) {
+    return <>{children}</>;
+  }
 
   // Check permission
   if (permission && !hasPermission(permission)) {
