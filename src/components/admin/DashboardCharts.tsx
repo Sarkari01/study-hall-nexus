@@ -1,26 +1,35 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import { useDashboardCharts } from "@/hooks/useDashboardCharts";
+import { RefreshCw, AlertCircle } from "lucide-react";
 import ErrorBoundary from "./ErrorBoundary";
 
-const ChartFallback = ({ title }: { title: string }) => (
+const ChartFallback = ({ title, onRetry }: { title: string; onRetry?: () => void }) => (
   <Card>
     <CardHeader>
       <CardTitle>{title}</CardTitle>
     </CardHeader>
     <CardContent>
-      <div className="h-[300px] flex items-center justify-center text-gray-500">
+      <div className="h-[300px] flex flex-col items-center justify-center text-gray-500 space-y-4">
+        <AlertCircle className="h-8 w-8" />
         <p>Chart temporarily unavailable</p>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry} className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
+        )}
       </div>
     </CardContent>
   </Card>
 );
 
 const DashboardCharts = () => {
-  const { chartData, loading } = useDashboardCharts();
+  const { chartData, loading, error, refetch } = useDashboardCharts();
 
   const chartConfig = {
     revenue: {
@@ -54,10 +63,30 @@ const DashboardCharts = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <AlertCircle className="h-12 w-12 text-red-500" />
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Charts Unavailable</h3>
+              <p className="text-gray-600 mb-4">We're having trouble loading the dashboard charts. This might be temporary.</p>
+              <Button onClick={refetch} className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Revenue Trend Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="Revenue Trend" />}>
+      <ErrorBoundary fallback={<ChartFallback title="Revenue Trend" onRetry={refetch} />}>
         <Card>
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
@@ -77,7 +106,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* Bookings Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="Bookings Overview" />}>
+      <ErrorBoundary fallback={<ChartFallback title="Bookings Overview" onRetry={refetch} />}>
         <Card>
           <CardHeader>
             <CardTitle>Bookings Overview</CardTitle>
@@ -97,7 +126,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* Study Halls Performance */}
-      <ErrorBoundary fallback={<ChartFallback title="Study Halls Performance" />}>
+      <ErrorBoundary fallback={<ChartFallback title="Study Halls Performance" onRetry={refetch} />}>
         <Card>
           <CardHeader>
             <CardTitle>Study Halls Performance</CardTitle>
@@ -118,7 +147,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* User Growth Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="User Growth" />}>
+      <ErrorBoundary fallback={<ChartFallback title="User Growth" onRetry={refetch} />}>
         <Card>
           <CardHeader>
             <CardTitle>User Growth</CardTitle>

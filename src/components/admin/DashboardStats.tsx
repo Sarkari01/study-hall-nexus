@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, DollarSign, Calendar, Building2, TrendingUp, CheckCircle, Clock, Award } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, DollarSign, Calendar, Building2, TrendingUp, CheckCircle, Clock, Award, RefreshCw, AlertCircle } from "lucide-react";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 
 const DashboardStats = () => {
-  const { stats, loading } = useDashboardStats();
+  const { stats, loading, error, refetch } = useDashboardStats();
 
   if (loading) {
     return (
@@ -21,6 +22,26 @@ const DashboardStats = () => {
           </Card>
         ))}
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <AlertCircle className="h-8 w-8 text-red-500" />
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Stats Unavailable</h3>
+              <p className="text-gray-600 mb-4">Unable to load dashboard statistics.</p>
+              <Button onClick={refetch} size="sm" className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Retry
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
