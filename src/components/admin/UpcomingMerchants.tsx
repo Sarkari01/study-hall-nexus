@@ -4,13 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MapPin, Phone, Calendar, CheckCircle, Clock, Eye, XCircle, Loader2 } from "lucide-react";
+import { MapPin, Phone, Calendar, CheckCircle, Clock, Eye, XCircle, Loader2, User, AlertTriangle } from "lucide-react";
 import { useMerchants } from "@/hooks/useMerchants";
+import { useAuth } from '@/contexts/AuthContext';
 
 const UpcomingMerchants = () => {
-  const { merchants, loading, updateMerchant } = useMerchants();
+  const { merchants, loading, error, updateMerchant } = useMerchants();
+  const { user, userRole, isAuthReady } = useAuth();
 
-  console.log('UpcomingMerchants: Rendering with merchants:', merchants, 'loading:', loading);
+  console.log('UpcomingMerchants: Rendering with merchants:', merchants, 'loading:', loading, 'error:', error);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -46,7 +48,8 @@ const UpcomingMerchants = () => {
     m.approval_status === 'approved'
   ).slice(0, 5);
 
-  if (loading) {
+  // Show authentication error state
+  if (!isAuthReady || loading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {[1, 2].map((i) => (
@@ -74,6 +77,42 @@ const UpcomingMerchants = () => {
             </CardContent>
           </Card>
         ))}
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-96 flex items-center justify-center">
+        <div className="text-center">
+          <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-600">Please log in to access merchant data.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (userRole?.name !== 'admin') {
+    return (
+      <div className="min-h-96 flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Access Denied</h3>
+          <p className="text-gray-600">Admin privileges required to view merchant data.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-96 flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Data</h3>
+          <p className="text-gray-600">{error}</p>
+        </div>
       </div>
     );
   }

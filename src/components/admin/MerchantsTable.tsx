@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock, User } from "lucide-react";
+import { Search, Eye, Edit, Trash2, Plus, Building2, CheckCircle, XCircle, Clock, User, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from '@/contexts/AuthContext';
 import MerchantDetailsModal from "./MerchantDetailsModal";
 
 interface AddressData {
@@ -44,12 +45,21 @@ const MerchantsTable = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedMerchantId, setSelectedMerchantId] = useState<string | undefined>();
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'create'>('view');
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, userRole, isAuthReady } = useAuth();
 
   useEffect(() => {
-    console.log('MerchantsTable: Component mounted, fetching merchants...');
-    fetchMerchants();
-  }, []);
+    console.log('MerchantsTable: Component mounted, auth state:', { 
+      user: user?.id, 
+      role: userRole?.name, 
+      isAuthReady 
+    });
+    
+    if (isAuthReady) {
+      fetchMerchants();
+    }
+  }, [user, userRole, isAuthReady]);
 
   const safeParseJson = (data: any, fallback: any) => {
     if (!data) return fallback;
@@ -64,7 +74,19 @@ const MerchantsTable = () => {
   const fetchMerchants = async () => {
     console.log('MerchantsTable: Starting to fetch merchants...');
     setLoading(true);
+    setError(null);
+    
     try {
+      // Check authentication
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+
+      // Check admin role
+      if (userRole?.name !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
       const { data, error } = await supabase
         .from('merchant_profiles')
         .select('*')
@@ -97,11 +119,14 @@ const MerchantsTable = () => {
         title: "Success",
         description: `Loaded ${typedMerchants.length} merchants`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('MerchantsTable: Error in fetchMerchants:', error);
+      setError(error.message || 'Failed to fetch merchants');
+      setMerchants([]);
+      
       toast({
         title: "Error",
-        description: "Failed to fetch merchants data",
+        description: error.message || "Failed to fetch merchants data",
         variant: "destructive",
       });
     } finally {
@@ -224,6 +249,58 @@ const MerchantsTable = () => {
   };
 
   console.log('MerchantsTable: Rendering with stats:', stats);
+
+  // Show authentication error state
+  if (!isAuthReady || loading) {
+    return (
+      <div className="min-h-96 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading merchant data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-96 flex items-center justify-center">
+        <div className="text-center">
+          <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+          <p className="text-gray-600">Please log in to access merchant data.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (userRole?.name !== 'admin') {
+    return (
+      <div className="min-h-96 flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Access Denied</h3>
+          <p className="text-gray-600">Admin privileges required to view merchant data.</p>
+          <p className="text-sm text-gray-500 mt-2">Current role: {userRole?.name || 'None'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-96 flex items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Data</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={fetchMerchants} className="bg-emerald-600 hover:bg-emerald-700">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

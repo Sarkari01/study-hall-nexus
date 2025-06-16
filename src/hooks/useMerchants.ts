@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Merchant {
   id: string;
@@ -21,11 +22,37 @@ export const useMerchants = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, userRole, isAuthReady } = useAuth();
   const isMountedRef = useRef(true);
 
   const fetchMerchants = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      console.log('useMerchants: Starting fetch, user:', user?.id, 'role:', userRole?.name);
+      
+      // Check authentication
+      if (!user || !isAuthReady) {
+        console.log('useMerchants: User not authenticated or auth not ready');
+        if (isMountedRef.current) {
+          setMerchants([]);
+          setError('Authentication required');
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Check admin role
+      if (userRole?.name !== 'admin') {
+        console.log('useMerchants: User does not have admin role:', userRole?.name);
+        if (isMountedRef.current) {
+          setMerchants([]);
+          setError('Admin access required');
+          setLoading(false);
+        }
+        return;
+      }
       
       // Fetch merchants first
       const { data: merchantsData, error: merchantsError } = await supabase
@@ -33,14 +60,22 @@ export const useMerchants = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (merchantsError) throw merchantsError;
+      console.log('useMerchants: Merchant profiles response:', { data: merchantsData, error: merchantsError });
 
-      // Fetch study halls separately
+      if (merchantsError) {
+        console.error('useMerchants: Error fetching merchants:', merchantsError);
+        throw merchantsError;
+      }
+
+      // Fetch study halls separately to get revenue data
       const { data: studyHalls, error: studyHallsError } = await supabase
         .from('study_halls')
         .select('merchant_id, total_revenue, id');
 
-      if (studyHallsError) throw studyHallsError;
+      if (studyHallsError) {
+        console.error('useMerchants: Error fetching study halls:', studyHallsError);
+        // Don't throw error for study halls, just log it
+      }
 
       // Combine the data
       const typedMerchants = (merchantsData || []).map(merchant => {
@@ -56,18 +91,26 @@ export const useMerchants = () => {
         };
       });
 
+      console.log('useMerchants: Final processed merchants:', typedMerchants);
+
       // Only update state if component is still mounted
       if (isMountedRef.current) {
         setMerchants(typedMerchants);
         setError(null);
+        
+        toast({
+          title: "Success",
+          description: `Loaded ${typedMerchants.length} merchants`,
+        });
       }
     } catch (err) {
-      console.error('Error fetching merchants:', err);
+      console.error('useMerchants: Error in fetchMerchants:', err);
       if (isMountedRef.current) {
         setError('Failed to fetch merchants');
+        setMerchants([]);
         toast({
           title: "Error",
-          description: "Failed to fetch merchants",
+          description: "Failed to fetch merchants. Please check your permissions.",
           variant: "destructive",
         });
       }
@@ -80,6 +123,8 @@ export const useMerchants = () => {
 
   const updateMerchant = async (merchantId: string, updates: Partial<Merchant>) => {
     try {
+      console.log('useMerchants: Updating merchant:', merchantId, updates);
+      
       const { error } = await supabase
         .from('merchant_profiles')
         .update(updates)
@@ -100,7 +145,7 @@ export const useMerchants = () => {
         });
       }
     } catch (err) {
-      console.error('Error updating merchant:', err);
+      console.error('useMerchants: Error updating merchant:', err);
       if (isMountedRef.current) {
         toast({
           title: "Error",
@@ -113,12 +158,16 @@ export const useMerchants = () => {
 
   useEffect(() => {
     isMountedRef.current = true;
-    fetchMerchants();
+    
+    // Only fetch when auth is ready
+    if (isAuthReady) {
+      fetchMerchants();
+    }
 
     return () => {
       isMountedRef.current = false;
     };
-  }, []);
+  }, [user, userRole, isAuthReady]);
 
   return {
     merchants,
