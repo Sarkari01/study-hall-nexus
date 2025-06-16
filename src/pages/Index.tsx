@@ -1,10 +1,58 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2, Users, Calendar, Shield, ArrowRight, CheckCircle, Star, Menu, X, ChevronDown, Mail, Phone, MapPin } from "lucide-react";
+import { Building2, Users, Calendar, Shield, ArrowRight, CheckCircle, Star, Menu, X, ChevronDown, Mail, Phone, MapPin, UserCheck, Settings, BookOpen, Phone as PhoneIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+
 const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Dashboard options for direct access
+  const dashboardOptions = [
+    {
+      title: "Admin Dashboard",
+      description: "Complete system administration and management",
+      icon: Settings,
+      path: "/admin",
+      color: "bg-red-600 hover:bg-red-700"
+    },
+    {
+      title: "Merchant Dashboard", 
+      description: "Manage your study halls and bookings",
+      icon: Building2,
+      path: "/merchant",
+      color: "bg-emerald-600 hover:bg-emerald-700"
+    },
+    {
+      title: "Student Portal",
+      description: "Book study halls and manage your sessions",
+      icon: BookOpen,
+      path: "/student", 
+      color: "bg-blue-600 hover:bg-blue-700"
+    },
+    {
+      title: "Editor Dashboard",
+      description: "Content management and moderation",
+      icon: UserCheck,
+      path: "/editor",
+      color: "bg-purple-600 hover:bg-purple-700"
+    },
+    {
+      title: "Telecaller Dashboard",
+      description: "Customer support and communication",
+      icon: PhoneIcon,
+      path: "/telecaller",
+      color: "bg-orange-600 hover:bg-orange-700"
+    },
+    {
+      title: "Incharge Dashboard",
+      description: "Regional management and oversight",
+      icon: Users,
+      path: "/incharge",
+      color: "bg-indigo-600 hover:bg-indigo-700"
+    }
+  ];
+
   const testimonials = [{
     name: "Dr. Rajesh Kumar",
     role: "Study Center Director",
@@ -21,6 +69,7 @@ const Index = () => {
     content: "The merchant dashboard provides excellent insights and has helped us increase our bookings by 40% in just 3 months.",
     rating: 5
   }];
+  
   const faqs = [{
     question: "How does the booking system work?",
     answer: "Students can browse available study halls, check real-time availability, and book their preferred slots instantly through our platform."
@@ -34,10 +83,12 @@ const Index = () => {
     question: "Is there customer support available?",
     answer: "Yes, we provide 24/7 customer support through chat, email, and phone to assist both students and merchants."
   }];
-  return <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-100">
       {/* Notification Bar */}
       <div className="bg-emerald-600 text-white text-center py-2 text-sm">
-        <span>🎉 New Feature: AI-powered study hall recommendations now available!</span>
+        <span>🎉 Development Mode: Direct dashboard access enabled!</span>
       </div>
 
       {/* Enhanced Header */}
@@ -53,16 +104,18 @@ const Index = () => {
             <nav className="hidden md:flex items-center space-x-8">
               <div className="relative group">
                 <button className="flex items-center text-gray-700 hover:text-emerald-600 transition-colors">
-                  Features <ChevronDown className="ml-1 h-4 w-4" />
+                  Dashboards <ChevronDown className="ml-1 h-4 w-4" />
                 </button>
                 <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="py-2">
-                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Student Management</a>
-                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Merchant Portal</a>
-                    <a href="#features" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Booking System</a>
+                    <Link to="/admin" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Admin</Link>
+                    <Link to="/merchant" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Merchant</Link>
+                    <Link to="/student" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Student</Link>
+                    <Link to="/editor" className="block px-4 py-2 text-gray-700 hover:bg-emerald-50">Editor</Link>
                   </div>
                 </div>
               </div>
+              <a href="#features" className="text-gray-700 hover:text-emerald-600 transition-colors">Features</a>
               <a href="#pricing" className="text-gray-700 hover:text-emerald-600 transition-colors">Pricing</a>
               <a href="#testimonials" className="text-gray-700 hover:text-emerald-600 transition-colors">Reviews</a>
               <a href="#contact" className="text-gray-700 hover:text-emerald-600 transition-colors">Contact</a>
@@ -70,8 +123,8 @@ const Index = () => {
 
             <div className="hidden md:flex items-center space-x-4">
               <Button variant="outline" size="sm">Free Demo</Button>
-              <Link to="/auth">
-                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">Admin Login</Button>
+              <Link to="/admin">
+                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">Quick Access</Button>
               </Link>
             </div>
 
@@ -82,7 +135,8 @@ const Index = () => {
           </div>
 
           {/* Mobile Navigation */}
-          {mobileMenuOpen && <div className="md:hidden border-t border-gray-200 py-4">
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 py-4">
               <div className="flex flex-col space-y-4">
                 <a href="#features" className="text-gray-700 hover:text-emerald-600">Features</a>
                 <a href="#pricing" className="text-gray-700 hover:text-emerald-600">Pricing</a>
@@ -90,81 +144,68 @@ const Index = () => {
                 <a href="#contact" className="text-gray-700 hover:text-emerald-600">Contact</a>
                 <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
                   <Button variant="outline" size="sm">Free Demo</Button>
-                  <Link to="/auth">
-                    <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">Admin Login</Button>
+                  <Link to="/admin">
+                    <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700">Quick Access</Button>
                   </Link>
                 </div>
               </div>
-            </div>}
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Enhanced Hero Section */}
+      {/* Hero Section with Dashboard Access */}
       <section className="py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-                Revolutionize Your
-                <span className="text-emerald-600 block">Study Hall Management</span>
-              </h1>
-              <p className="text-xl text-gray-600 mb-8 max-w-2xl">
-                The complete solution for study hall owners, students, and administrators. 
-                Streamline bookings, manage resources, and grow your business with our powerful platform.
-              </p>
-              
-              {/* Trust Indicators */}
-              <div className="flex items-center space-x-6 mb-8">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600">500+</div>
-                  <div className="text-sm text-gray-600">Study Halls</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600">10K+</div>
-                  <div className="text-sm text-gray-600">Active Students</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-emerald-600">99.9%</div>
-                  <div className="text-sm text-gray-600">Uptime</div>
-                </div>
-              </div>
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+              Choose Your
+              <span className="text-emerald-600 block">Dashboard</span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              Development mode enabled. Access any dashboard directly to explore the features and functionality.
+            </p>
+          </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/auth">
-                  <Button size="lg" className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700">
-                    Start Free Trial
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto border-emerald-600 text-emerald-600 hover:bg-emerald-600 hover:text-white">
-                  Watch Demo
-                </Button>
-              </div>
+          {/* Dashboard Access Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {dashboardOptions.map((dashboard, index) => {
+              const IconComponent = dashboard.icon;
+              return (
+                <Card key={index} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                  <CardHeader className="text-center">
+                    <IconComponent className="h-12 w-12 text-emerald-600 mx-auto mb-4 group-hover:scale-110 transition-transform" />
+                    <CardTitle>{dashboard.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-center">
+                    <CardDescription className="mb-4">
+                      {dashboard.description}
+                    </CardDescription>
+                    <Link to={dashboard.path}>
+                      <Button className={`w-full ${dashboard.color}`}>
+                        Access Dashboard
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Trust Indicators */}
+          <div className="flex items-center justify-center space-x-6 mb-8">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-600">500+</div>
+              <div className="text-sm text-gray-600">Study Halls</div>
             </div>
-
-            {/* Hero Image/Visual */}
-            <div className="relative">
-              <div className="bg-white rounded-2xl shadow-2xl p-8 transform rotate-1 hover:rotate-0 transition-transform duration-300">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">Dashboard Preview</h3>
-                    <div className="flex space-x-2">
-                      <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="h-4 bg-emerald-200 rounded animate-pulse"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-4 bg-green-200 rounded animate-pulse"></div>
-                    <div className="grid grid-cols-2 gap-4 mt-6">
-                      <div className="h-20 bg-emerald-100 rounded-lg animate-pulse"></div>
-                      <div className="h-20 bg-green-100 rounded-lg animate-pulse"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-600">10K+</div>
+              <div className="text-sm text-gray-600">Active Students</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-emerald-600">99.9%</div>
+              <div className="text-sm text-gray-600">Uptime</div>
             </div>
           </div>
         </div>
@@ -267,10 +308,13 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => <Card key={index} className="hover:shadow-lg transition-shadow">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardContent className="pt-6">
                   <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />)}
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                    ))}
                   </div>
                   <p className="text-gray-600 mb-4">"{testimonial.content}"</p>
                   <div>
@@ -278,7 +322,8 @@ const Index = () => {
                     <p className="text-sm text-gray-500">{testimonial.role}</p>
                   </div>
                 </CardContent>
-              </Card>)}
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -370,12 +415,14 @@ const Index = () => {
           </div>
 
           <div className="space-y-6">
-            {faqs.map((faq, index) => <Card key={index} className="hover:shadow-md transition-shadow">
+            {faqs.map((faq, index) => (
+              <Card key={index} className="hover:shadow-md transition-shadow">
                 <CardContent className="pt-6">
                   <h3 className="font-semibold text-gray-900 mb-2">{faq.question}</h3>
                   <p className="text-gray-600">{faq.answer}</p>
                 </CardContent>
-              </Card>)}
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -387,18 +434,20 @@ const Index = () => {
             Ready to Transform Your Study Hall Management?
           </h2>
           <p className="text-xl text-emerald-100 mb-8">
-            Join thousands of satisfied customers and start your free trial today
+            Explore our dashboards and see the power of our platform in action
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth">
+            <Link to="/admin">
               <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                Start Free Trial
+                Try Admin Dashboard
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto border-white hover:bg-white text-slate-950 font-normal">
-              Schedule Demo
-            </Button>
+            <Link to="/merchant">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-white hover:bg-white text-slate-950 font-normal">
+                Explore Merchant Portal
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -435,12 +484,12 @@ const Index = () => {
 
             {/* Quick Links */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <h3 className="text-lg font-semibold mb-4">Dashboards</h3>
               <ul className="space-y-2">
-                <li><a href="#features" className="text-gray-400 hover:text-white transition-colors">Features</a></li>
-                <li><a href="#pricing" className="text-gray-400 hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#testimonials" className="text-gray-400 hover:text-white transition-colors">Testimonials</a></li>
-                <li><Link to="/auth" className="text-gray-400 hover:text-white transition-colors">Login</Link></li>
+                <li><Link to="/admin" className="text-gray-400 hover:text-white transition-colors">Admin Dashboard</Link></li>
+                <li><Link to="/merchant" className="text-gray-400 hover:text-white transition-colors">Merchant Portal</Link></li>
+                <li><Link to="/student" className="text-gray-400 hover:text-white transition-colors">Student Portal</Link></li>
+                <li><Link to="/editor" className="text-gray-400 hover:text-white transition-colors">Editor Dashboard</Link></li>
               </ul>
             </div>
 
@@ -471,6 +520,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
