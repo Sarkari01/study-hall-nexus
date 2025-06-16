@@ -459,8 +459,8 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
               <Tabs defaultValue="credentials" className="w-full">
                 <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="credentials">Login & Auth</TabsTrigger>
-                  <TabsTrigger value="business">Business</TabsTrigger>
-                  <TabsTrigger value="personal">Personal</TabsTrigger>
+                  <TabsTrigger value="business">Business Details</TabsTrigger>
+                  <TabsTrigger value="personal">Business Details</TabsTrigger>
                   <TabsTrigger value="incharge">Incharge information</TabsTrigger>
                   <TabsTrigger value="study-halls">Study Halls</TabsTrigger>
                   <TabsTrigger value="financial">Financial & Status</TabsTrigger>
