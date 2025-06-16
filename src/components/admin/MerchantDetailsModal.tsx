@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, User, CreditCard, FileText, UserCheck, Phone, MapPin, Mail, Lock } from "lucide-react";
+import { Building2, User, CreditCard, FileText, UserCheck, Phone, MapPin, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AddressData {
@@ -61,6 +61,7 @@ interface MerchantProfile {
 interface MerchantFormData {
   email: string;
   password: string;
+  confirmPassword: string;
   business_name: string;
   business_phone: string;
   full_name: string;
@@ -95,12 +96,15 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [merchant, setMerchant] = useState<MerchantProfile | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
   
   const form = useForm<MerchantFormData>({
     defaultValues: {
       email: '',
       password: '',
+      confirmPassword: '',
       business_name: '',
       business_phone: '',
       full_name: '',
@@ -214,6 +218,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
       const formData: MerchantFormData = {
         email: merchantData.email || '',
         password: '', // Never populate password field
+        confirmPassword: '',
         business_name: merchantData.business_name || '',
         business_phone: merchantData.business_phone || '',
         full_name: merchantData.full_name || '',
@@ -261,7 +266,61 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
     }
   };
 
+  const validateForm = (data: MerchantFormData): string | null => {
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      return "Please enter a valid email address";
+    }
+
+    // Password validation for create mode
+    if (mode === 'create') {
+      if (!data.password || data.password.length < 6) {
+        return "Password must be at least 6 characters long";
+      }
+      if (data.password !== data.confirmPassword) {
+        return "Passwords do not match";
+      }
+    }
+
+    // Password validation for edit mode (only if password is provided)
+    if (mode === 'edit' && data.password) {
+      if (data.password.length < 6) {
+        return "Password must be at least 6 characters long";
+      }
+      if (data.password !== data.confirmPassword) {
+        return "Passwords do not match";
+      }
+    }
+
+    // Required field validation
+    if (!data.business_name.trim()) {
+      return "Business name is required";
+    }
+    if (!data.business_phone.trim()) {
+      return "Business phone is required";
+    }
+    if (!data.full_name.trim()) {
+      return "Full name is required";
+    }
+    if (!data.contact_number.trim()) {
+      return "Contact number is required";
+    }
+
+    return null;
+  };
+
   const onSubmit = async (data: MerchantFormData) => {
+    const validationError = validateForm(data);
+    if (validationError) {
+      toast({
+        title: "Validation Error",
+        description: validationError,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       if (mode === 'create') {
@@ -328,6 +387,23 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
 
         if (error) throw error;
 
+        // Update password if provided
+        if (data.password && merchant?.user_id) {
+          const { error: passwordError } = await supabase.auth.admin.updateUserById(
+            merchant.user_id,
+            { password: data.password }
+          );
+
+          if (passwordError) {
+            console.warn('Password update failed:', passwordError);
+            toast({
+              title: "Warning",
+              description: "Merchant profile updated but password change failed",
+              variant: "destructive",
+            });
+          }
+        }
+
         toast({
           title: "Success",
           description: "Merchant profile updated successfully",
@@ -388,13 +464,137 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <Tabs defaultValue="business" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+              <Tabs defaultValue="credentials" className="w-full">
+                <TabsList className="grid w-full grid-cols-5">
+                  <TabsTrigger value="credentials">Login & Auth</TabsTrigger>
                   <TabsTrigger value="business">Business</TabsTrigger>
                   <TabsTrigger value="personal">Personal</TabsTrigger>
                   <TabsTrigger value="incharge">Contact Person</TabsTrigger>
                   <TabsTrigger value="financial">Financial & Status</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="credentials" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        Login Credentials
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-1 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="flex items-center gap-2">
+                                <Mail className="h-4 w-4" />
+                                Email Address *
+                              </FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  type="email" 
+                                  placeholder="merchant@example.com" 
+                                  disabled={isViewMode}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <Lock className="h-4 w-4" />
+                                  {mode === 'create' ? 'Password *' : 'New Password (optional)'}
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input 
+                                      {...field} 
+                                      type={showPassword ? "text" : "password"} 
+                                      placeholder={mode === 'create' ? "Enter secure password" : "Leave blank to keep current"} 
+                                      disabled={isViewMode}
+                                    />
+                                    {!isViewMode && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                      >
+                                        {showPassword ? (
+                                          <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                          <Eye className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <Lock className="h-4 w-4" />
+                                  {mode === 'create' ? 'Confirm Password *' : 'Confirm New Password'}
+                                </FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input 
+                                      {...field} 
+                                      type={showConfirmPassword ? "text" : "password"} 
+                                      placeholder={mode === 'create' ? "Confirm password" : "Confirm new password"} 
+                                      disabled={isViewMode}
+                                    />
+                                    {!isViewMode && (
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                      >
+                                        {showConfirmPassword ? (
+                                          <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                          <Eye className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    )}
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {mode === 'edit' && (
+                          <div className="p-3 bg-blue-50 rounded-lg">
+                            <p className="text-sm text-blue-800">
+                              <strong>Note:</strong> Password fields are optional when editing. Leave blank to keep the current password unchanged.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
 
                 <TabsContent value="business" className="space-y-4">
                   <Card>
@@ -405,64 +605,6 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {mode === 'create' && (
-                        <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
-                          <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                  <Mail className="h-4 w-4" />
-                                  Login Email *
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="email" placeholder="merchant@example.com" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                  <Lock className="h-4 w-4" />
-                                  Login Password *
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="password" placeholder="Enter secure password" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      )}
-
-                      {mode === 'edit' && (
-                        <div className="p-4 bg-gray-50 rounded-lg">
-                          <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="flex items-center gap-2">
-                                  <Mail className="h-4 w-4" />
-                                  Email Address
-                                </FormLabel>
-                                <FormControl>
-                                  <Input {...field} type="email" disabled={isViewMode} placeholder="merchant@example.com" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      )}
-
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
