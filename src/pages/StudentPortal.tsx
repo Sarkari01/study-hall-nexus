@@ -1,106 +1,93 @@
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { BookOpen, Calendar, User, MessageSquare, LogOut } from "lucide-react";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
-import DashboardOverview from '@/components/student/DashboardOverview';
-import StudentBookings from '@/components/student/StudentBookings';
-import StudentProfile from '@/components/student/StudentProfile';
+import { Building2, BookOpen, User, Calendar } from 'lucide-react';
 
 const StudentPortal = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const { user, signOut } = useAuth();
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
+  const { userProfile } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white shadow-sm border-r min-h-screen">
-          <div className="p-6">
-            <div className="flex items-center space-x-2 mb-8">
-              <BookOpen className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold">StudySpace</span>
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <Building2 className="h-8 w-8 text-blue-600" />
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Student Portal</h1>
+              <p className="text-gray-600">Welcome, {userProfile?.full_name || 'Student'}</p>
             </div>
-            
-            <nav className="space-y-2">
-              <Button
-                variant={activeTab === 'overview' ? 'default' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => setActiveTab('overview')}
-              >
-                <BookOpen className="mr-2 h-4 w-4" />
-                Overview
-              </Button>
-              <Button
-                variant={activeTab === 'bookings' ? 'default' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => setActiveTab('bookings')}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                My Bookings
-              </Button>
-              <Button
-                variant={activeTab === 'community' ? 'default' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => setActiveTab('community')}
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                Community
-              </Button>
-              <Button
-                variant={activeTab === 'profile' ? 'default' : 'ghost'}
-                className="w-full justify-start"
-                onClick={() => setActiveTab('profile')}
-              >
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </Button>
-            </nav>
-          </div>
-          
-          <div className="absolute bottom-4 left-4 right-4">
-            <Button variant="outline" className="w-full" onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1">
-          <div className="bg-white border-b px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  {activeTab === 'overview' && 'Dashboard Overview'}
-                  {activeTab === 'bookings' && 'My Bookings'}
-                  {activeTab === 'community' && 'Community'}
-                  {activeTab === 'profile' && 'My Profile'}
-                </h1>
-                <p className="text-gray-600">
-                  Welcome back, {user?.email?.split('@')[0]}!
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Bookings</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">No active bookings</p>
+            </CardContent>
+          </Card>
 
-          <div className="p-6">
-            {activeTab === 'overview' && <DashboardOverview />}
-            {activeTab === 'bookings' && <StudentBookings />}
-            {activeTab === 'community' && (
-              <div className="text-center py-12">
-                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Community Coming Soon</h3>
-                <p className="text-gray-500">Connect with other students and share your study experiences</p>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Lifetime bookings</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Profile Status</CardTitle>
+              <User className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">Active</div>
+              <p className="text-xs text-muted-foreground">Account verified</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center">
+                <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-600">Find Study Halls</p>
+                <p className="text-sm text-gray-500">Discover and book study halls near you</p>
               </div>
-            )}
-            {activeTab === 'profile' && <StudentProfile />}
-          </div>
+              <div className="p-4 border border-dashed border-gray-300 rounded-lg text-center">
+                <Calendar className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-600">View Bookings</p>
+                <p className="text-sm text-gray-500">Manage your current and past bookings</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <div className="text-gray-400 mb-2">No recent activity</div>
+                <p className="text-sm text-gray-500">Your booking history will appear here</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

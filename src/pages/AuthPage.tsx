@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, Building2, User, Lock, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isValidRole, getRoleRoute, ValidRole } from '@/utils/roleValidation';
 
 const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -19,6 +20,7 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const { user, userRole, isAuthReady } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   // Quick login function for admin
@@ -28,23 +30,17 @@ const AuthPage = () => {
   };
 
   useEffect(() => {
+    // Only redirect if auth is ready and we have both user and role
     if (isAuthReady && user && userRole) {
-      // Redirect based on role
-      const roleRoutes = {
-        admin: '/admin',
-        merchant: '/merchant', 
-        student: '/student',
-        editor: '/editor',
-        telecaller: '/telecaller',
-        incharge: '/incharge'
-      };
+      console.log('User authenticated, redirecting...', { userRole: userRole.name });
       
-      const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes];
-      if (targetRoute) {
-        navigate(targetRoute, { replace: true });
+      if (isValidRole(userRole.name)) {
+        const targetRoute = getRoleRoute(userRole.name as ValidRole);
+        const from = location.state?.from?.pathname || targetRoute;
+        navigate(from, { replace: true });
       }
     }
-  }, [user, userRole, isAuthReady, navigate]);
+  }, [user, userRole, isAuthReady, navigate, location.state]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,12 +53,14 @@ const AuthPage = () => {
     setError('');
 
     try {
+      console.log('Attempting sign in for:', email);
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
       });
 
       if (signInError) {
+        console.error('Sign in error:', signInError);
         if (signInError.message.includes('Invalid login credentials')) {
           setError('Invalid email or password. Please check your credentials.');
         } else {
@@ -72,13 +70,14 @@ const AuthPage = () => {
       }
 
       if (data.user) {
+        console.log('Sign in successful:', data.user.id);
         toast({
           title: "Success",
           description: "Successfully signed in!",
         });
       }
     } catch (error: any) {
-      console.error('Sign in error:', error);
+      console.error('Unexpected sign in error:', error);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -139,12 +138,25 @@ const AuthPage = () => {
     }
   };
 
+  // Show loading while auth is initializing
   if (!isAuthReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is already logged in but we don't have role yet, show loading
+  if (user && !userRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading user profile...</p>
         </div>
       </div>
     );
@@ -247,6 +259,7 @@ const AuthPage = () => {
                     size="sm" 
                     onClick={quickAdminLogin}
                     className="w-full text-blue-700 border-blue-300 hover:bg-blue-100"
+                    disabled={loading}
                   >
                     Quick Admin Login
                   </Button>

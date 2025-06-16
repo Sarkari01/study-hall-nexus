@@ -17,13 +17,18 @@ export const useAuthRedirect = () => {
     
     // If user is not authenticated and trying to access protected routes
     if (!user && currentPath !== '/auth' && currentPath !== '/') {
+      console.log('User not authenticated, redirecting to auth');
       navigate('/auth', { replace: true });
       return;
     }
 
-    // Only redirect authenticated users away from auth page if they have a valid role
-    if (user && userRole && currentPath === '/auth') {
-      // Validate the role and create route mapping for only our 6 retained roles
+    // Don't redirect if already on auth page - let AuthPage handle its own redirects
+    if (currentPath === '/auth') {
+      return;
+    }
+
+    // Only redirect authenticated users if they don't have access to current route
+    if (user && userRole && isValidRole(userRole.name)) {
       const roleRoutes: Record<string, string> = {
         admin: '/admin',
         merchant: '/merchant',
@@ -33,10 +38,12 @@ export const useAuthRedirect = () => {
         incharge: '/incharge'
       };
       
-      // Only redirect if the role is valid and has a route
-      if (isValidRole(userRole.name) && roleRoutes[userRole.name]) {
-        const targetRoute = roleRoutes[userRole.name];
-        navigate(targetRoute, { replace: true });
+      const userRoute = roleRoutes[userRole.name];
+      
+      // If user is on a route they don't have access to, redirect to their proper route
+      if (userRoute && currentPath !== userRoute && !currentPath.startsWith(userRoute)) {
+        console.log(`Redirecting ${userRole.name} from ${currentPath} to ${userRoute}`);
+        navigate(userRoute, { replace: true });
       }
     }
   }, [user, userRole, loading, isAuthReady, navigate, location.pathname]);
