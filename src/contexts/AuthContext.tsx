@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Creating default profile for user:', userId);
       
-      // Get the student role
+      // Get the student role (default role for new users)
       const { data: studentRole } = await supabase
         .from('custom_roles')
         .select('id')

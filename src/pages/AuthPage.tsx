@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -126,6 +125,7 @@ const AuthPage = () => {
     setError(null);
     setSuccess(null);
 
+    // Updated demo credentials for only the 6 retained roles
     const demoCredentials: { [key: string]: { email: string; password: string } } = {
       admin: { email: 'admin@demo.com', password: 'Admin123!' },
       merchant: { email: 'merchant@demo.com', password: 'Merchant123!' },
@@ -276,7 +276,7 @@ const AuthPage = () => {
               </TabsContent>
             </Tabs>
 
-            {/* Demo Login Section */}
+            {/* Demo Login Section - Updated to show only 6 retained roles */}
             <div className="mt-6 pt-6 border-t">
               <h3 className="text-sm font-medium text-gray-700 mb-3 text-center">
                 Try Demo Accounts
