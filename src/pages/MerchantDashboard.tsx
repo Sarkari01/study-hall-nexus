@@ -31,6 +31,17 @@ const MerchantDashboard = () => {
   const { studyHalls, loading: studyHallsLoading, createStudyHall, updateStudyHall } = useMerchantStudyHalls();
   const { bookings, loading: bookingsLoading } = useMerchantBookings();
 
+  // Helper function to convert UUID to numeric ID
+  const uuidToNumericId = (uuid: string): number => {
+    let hash = 0;
+    for (let i = 0; i < uuid.length; i++) {
+      const char = uuid.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+  };
+
   // Loading state
   if (profileLoading) {
     return (
@@ -442,9 +453,9 @@ const MerchantDashboard = () => {
           editData={editingStudyHall}
           isAdmin={false}
           currentMerchant={{
-            id: merchantProfile.id,
-            name: merchantProfile.full_name,
-            businessName: merchantProfile.business_name
+            id: uuidToNumericId(merchantProfile?.id || ''),
+            name: merchantProfile?.full_name || '',
+            businessName: merchantProfile?.business_name || ''
           }}
         />
 
