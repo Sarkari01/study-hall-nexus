@@ -152,11 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { profile: null, role: null, permissions: [] };
       }
 
-      // Fetch user role
+      // Fetch user role using custom_role_id
       let roleData = null;
       let userPermissions: Permission[] = [];
       
       if (profile.custom_role_id) {
+        console.log('Fetching role with ID:', profile.custom_role_id);
         const { data: customRole } = await supabase
           .from('custom_roles')
           .select('*')
@@ -164,6 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
         
         if (customRole) {
+          console.log('Found custom role:', customRole);
           roleData = customRole;
           userPermissions = await fetchUserPermissions(customRole.id);
         }
@@ -171,6 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Fallback to role string if no custom role found
       if (!roleData && profile.role) {
+        console.log('Fallback to role string:', profile.role);
         const { data: systemRole } = await supabase
           .from('custom_roles')
           .select('*')
@@ -179,6 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (systemRole) {
+          console.log('Found system role:', systemRole);
           roleData = systemRole;
           userPermissions = await fetchUserPermissions(systemRole.id);
           
@@ -219,6 +223,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        console.log('Initial session:', initialSession?.user?.id);
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+        
+        if (initialSession?.user?.id) {
+          setLoading(true);
+          try {
+            const { profile, role, permissions: userPermissions } = await fetchUserData(
+              initialSession.user.id, 
+              initialSession.user.email
+            );
+            
+            if (mounted) {
+              setUserProfile(profile);
+              setUserRole(role);
+              setPermissions(userPermissions);
+              setError(null);
+            }
+          } catch (error) {
+            if (mounted) {
+              console.error('Error loading initial user data:', error);
+              setError('Failed to load user data');
+              setUserProfile(null);
+              setUserRole(null);
+              setPermissions([]);
+            }
+          }
+        }
+        
+        if (mounted) {
+          setLoading(false);
+          setIsAuthReady(true);
+        }
+      } catch (error) {
+        if (mounted) {
+          console.error('Error initializing auth:', error);
+          setLoading(false);
+          setIsAuthReady(true);
+        }
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -229,7 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user?.id) {
+        if (session?.user?.id && event !== 'TOKEN_REFRESHED') {
           setLoading(true);
           setIsAuthReady(false);
           
@@ -238,7 +291,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!mounted) return;
             
             try {
-              const { profile, role, permissions: userPermissions } = await fetchUserData(session.user.id, session.user.email);
+              const { profile, role, permissions: userPermissions } = await fetchUserData(
+                session.user.id, 
+                session.user.email
+              );
+              
               if (mounted) {
                 setUserProfile(profile);
                 setUserRole(role);
@@ -260,7 +317,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
           }, 0);
-        } else {
+        } else if (!session?.user) {
           setUserProfile(null);
           setUserRole(null);
           setPermissions([]);
@@ -271,40 +328,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
-      
-      console.log('Initial session:', session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user?.id) {
-        setLoading(true);
-        try {
-          const { profile, role, permissions: userPermissions } = await fetchUserData(session.user.id, session.user.email);
-          if (mounted) {
-            setUserProfile(profile);
-            setUserRole(role);
-            setPermissions(userPermissions);
-            setError(null);
-          }
-        } catch (error) {
-          if (mounted) {
-            console.error('Error loading initial user data:', error);
-            setError('Failed to load user data');
-            setUserProfile(null);
-            setUserRole(null);
-            setPermissions([]);
-          }
-        }
-      }
-      
-      if (mounted) {
-        setLoading(false);
-        setIsAuthReady(true);
-      }
-    });
+    // Initialize auth
+    initializeAuth();
 
     return () => {
       mounted = false;

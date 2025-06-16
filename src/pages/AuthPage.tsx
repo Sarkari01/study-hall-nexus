@@ -18,6 +18,7 @@ const AuthPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [hasAttemptedRedirect, setHasAttemptedRedirect] = useState(false);
   const { user, userRole, isAuthReady } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,17 +31,22 @@ const AuthPage = () => {
   };
 
   useEffect(() => {
-    // Only redirect if auth is ready and we have both user and role
-    if (isAuthReady && user && userRole) {
-      console.log('User authenticated, redirecting...', { userRole: userRole.name });
+    // Only redirect once when auth is ready and we have both user and role
+    if (isAuthReady && user && userRole && !hasAttemptedRedirect) {
+      console.log('User authenticated, attempting redirect...', { userRole: userRole.name });
+      setHasAttemptedRedirect(true);
       
       if (isValidRole(userRole.name)) {
         const targetRoute = getRoleRoute(userRole.name as ValidRole);
         const from = location.state?.from?.pathname || targetRoute;
-        navigate(from, { replace: true });
+        
+        // Small delay to ensure state is settled
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 100);
       }
     }
-  }, [user, userRole, isAuthReady, navigate, location.state]);
+  }, [user, userRole, isAuthReady, navigate, location.state, hasAttemptedRedirect]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,7 +157,7 @@ const AuthPage = () => {
   }
 
   // If user is already logged in but we don't have role yet, show loading
-  if (user && !userRole) {
+  if (user && !userRole && isAuthReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
