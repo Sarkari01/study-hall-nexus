@@ -17,7 +17,7 @@ interface Student {
   phone: string;
   total_bookings: number;
   total_spent: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'suspended';
   last_booking_date: string | null;
   created_at: string;
 }
@@ -37,7 +37,14 @@ const StudentsTable = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setStudents(data || []);
+      
+      // Type assertion to ensure status field matches our interface
+      const typedStudents = (data || []).map(student => ({
+        ...student,
+        status: student.status as 'active' | 'inactive' | 'suspended'
+      }));
+      
+      setStudents(typedStudents);
     } catch (error) {
       console.error('Error fetching students:', error);
       toast({
@@ -67,6 +74,8 @@ const StudentsTable = () => {
         return 'bg-green-100 text-green-800';
       case 'inactive':
         return 'bg-gray-100 text-gray-800';
+      case 'suspended':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
