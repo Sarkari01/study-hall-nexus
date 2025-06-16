@@ -9,16 +9,42 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, AlertCircle, BookOpen } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, userRole, isAuthReady } = useAuth();
+  const navigate = useNavigate();
 
-  // If user is already logged in, this will be handled by useAuthRedirect
-  if (user) {
-    return null;
+  // If auth is not ready yet, show loading
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is already logged in, redirect to their dashboard
+  if (user && userRole) {
+    const roleRoutes = {
+      admin: '/admin',
+      merchant: '/merchant',
+      student: '/student',
+      editor: '/editor',
+      telecaller: '/telecaller',
+      incharge: '/incharge'
+    };
+    const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes];
+    if (targetRoute) {
+      navigate(targetRoute, { replace: true });
+      return null;
+    }
   }
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {

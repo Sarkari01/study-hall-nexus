@@ -13,28 +13,24 @@ export const useAuthRedirect = () => {
 
     const currentPath = location.pathname;
     
-    // If user is not authenticated and not on auth page
-    if (!user && currentPath !== '/auth') {
+    // If user is not authenticated and not on auth page or home page
+    if (!user && currentPath !== '/auth' && currentPath !== '/') {
       navigate('/auth', { replace: true });
       return;
     }
 
     // If user is authenticated and on auth page, redirect to dashboard
-    if (user && currentPath === '/auth') {
-      if (userRole?.name) {
-        const roleRoutes = {
-          admin: '/admin',
-          merchant: '/merchant',
-          student: '/student',
-          editor: '/editor',
-          telecaller: '/telecaller',
-          incharge: '/incharge'
-        };
-        const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/';
-        navigate(targetRoute, { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
+    if (user && userRole && currentPath === '/auth') {
+      const roleRoutes = {
+        admin: '/admin',
+        merchant: '/merchant',
+        student: '/student',
+        editor: '/editor',
+        telecaller: '/telecaller',
+        incharge: '/incharge'
+      };
+      const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/';
+      navigate(targetRoute, { replace: true });
     }
   }, [user, userRole, loading, isAuthReady, navigate, location.pathname]);
 
