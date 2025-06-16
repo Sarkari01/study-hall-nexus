@@ -112,7 +112,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center mb-4">
             <Building2 className="h-8 w-8 text-blue-400" />
-            <span className="ml-2 text-xl font-bold">StudyHall Manager</span>
+            <span className="ml-2 text-xl font-bold">Sarkari Ninja</span>
           </div>
           <p className="text-gray-400">© 2024 Sarkari Ninja  All rights reserved.</p>
         </div>
