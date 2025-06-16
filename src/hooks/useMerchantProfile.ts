@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -170,20 +171,21 @@ export const useMerchantProfile = () => {
       loading: loading 
     });
     
+    // In development mode, just set loading to false and don't fetch from database
+    // This prevents infinite loading when there's no real authentication
     if (mockUser && mockUserProfile?.role === 'merchant') {
-      fetchMerchantProfile();
+      console.log('useMerchantProfile: Development mode - skipping database fetch');
+      setLoading(false);
+      setMerchantProfile(null); // Will be handled by the dashboard component
     } else if (mockUser && mockUserProfile && mockUserProfile.role !== 'merchant') {
       console.log('useMerchantProfile: User is not a merchant, role:', mockUserProfile.role);
       setError('Access denied: This account is not a merchant account');
       setLoading(false);
-    } else if (mockUser && !mockUserProfile) {
-      console.log('useMerchantProfile: User exists but profile is not loaded yet');
-      // Keep loading until userProfile is available
     } else {
       console.log('useMerchantProfile: No user available');
       setLoading(false);
     }
-  }, [mockUser, mockUserProfile]);
+  }, []); // Empty dependency array to prevent re-runs
 
   return {
     merchantProfile,
