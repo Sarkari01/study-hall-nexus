@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,9 +37,13 @@ export const useMerchantProfile = () => {
 
   const fetchMerchantProfile = async () => {
     if (!user?.id) {
+      console.log('useMerchantProfile: No user ID available');
       setLoading(false);
       return;
     }
+
+    console.log('useMerchantProfile: Fetching merchant profile for user:', user.id);
+    console.log('useMerchantProfile: User profile role:', userProfile?.role);
 
     try {
       setLoading(true);
@@ -53,15 +56,16 @@ export const useMerchantProfile = () => {
         .maybeSingle();
 
       if (fetchError) {
-        console.error('Error fetching merchant profile:', fetchError);
-        setError('Failed to load merchant profile');
+        console.error('useMerchantProfile: Error fetching merchant profile:', fetchError);
+        setError(`Failed to load merchant profile: ${fetchError.message}`);
         return;
       }
 
+      console.log('useMerchantProfile: Merchant profile data:', data);
       setMerchantProfile(data);
     } catch (err) {
-      console.error('Unexpected error:', err);
-      setError('An unexpected error occurred');
+      console.error('useMerchantProfile: Unexpected error:', err);
+      setError('An unexpected error occurred while loading merchant profile');
     } finally {
       setLoading(false);
     }
@@ -152,9 +156,23 @@ export const useMerchantProfile = () => {
   };
 
   useEffect(() => {
+    console.log('useMerchantProfile: useEffect triggered', { 
+      user: !!user, 
+      userProfileRole: userProfile?.role,
+      loading: loading 
+    });
+    
     if (user && userProfile?.role === 'merchant') {
       fetchMerchantProfile();
+    } else if (user && userProfile && userProfile.role !== 'merchant') {
+      console.log('useMerchantProfile: User is not a merchant, role:', userProfile.role);
+      setError('Access denied: This account is not a merchant account');
+      setLoading(false);
+    } else if (user && !userProfile) {
+      console.log('useMerchantProfile: User exists but profile is not loaded yet');
+      // Keep loading until userProfile is available
     } else {
+      console.log('useMerchantProfile: No user available');
       setLoading(false);
     }
   }, [user, userProfile]);

@@ -21,23 +21,36 @@ import TeamManagement from "@/components/merchant/TeamManagement";
 import DashboardOverview from "@/components/merchant/DashboardOverview";
 import StudyHallsManagement from "@/components/merchant/StudyHallsManagement";
 import { uuidToNumericId } from "@/utils/uuidUtils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const { toast } = useToast();
+  const { user, userProfile, loading: authLoading } = useAuth();
   
   // Use real data hooks
   const { merchantProfile, loading: profileLoading, error: profileError } = useMerchantProfile();
   const { studyHalls, loading: studyHallsLoading, createStudyHall, updateStudyHall } = useMerchantStudyHalls();
   const { bookings, loading: bookingsLoading } = useMerchantBookings();
 
-  // Loading state
-  if (profileLoading) {
+  console.log('MerchantDashboard: Render state', {
+    authLoading,
+    profileLoading,
+    profileError,
+    user: !!user,
+    userProfile: userProfile?.role,
+    merchantProfile: !!merchantProfile
+  });
+
+  // Loading state - wait for both auth and profile
+  if (authLoading || profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading merchant dashboard...</p>
+          <p className="text-gray-600">
+            {authLoading ? 'Loading authentication...' : 'Loading merchant dashboard...'}
+          </p>
         </div>
       </div>
     );
@@ -59,8 +72,26 @@ const MerchantDashboard = () => {
     );
   }
 
+  // Check if user has merchant role
+  if (userProfile && userProfile.role !== 'merchant') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-red-800 mb-2">Access Denied</h3>
+          <p className="text-red-700 mb-4">
+            This dashboard is only accessible to merchant accounts. Your current role is: {userProfile.role}
+          </p>
+          <Button onClick={() => window.location.href = '/'}>
+            Go Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // No merchant profile state
-  if (!merchantProfile) {
+  if (!merchantProfile && userProfile?.role === 'merchant') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
