@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, User, CreditCard, FileText, UserCheck, Phone, MapPin } from "lucide-react";
+import { Building2, User, CreditCard, FileText, UserCheck, Phone, MapPin, Mail, Lock } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 
 interface AddressData {
@@ -53,11 +53,14 @@ interface MerchantProfile {
   incharge_address?: AddressData;
   approval_status: 'pending' | 'approved' | 'rejected' | 'suspended';
   notes?: string;
+  email?: string;
   created_at: string;
   updated_at: string;
 }
 
 interface MerchantFormData {
+  email: string;
+  password: string;
   business_name: string;
   business_phone: string;
   full_name: string;
@@ -96,6 +99,8 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
   
   const form = useForm<MerchantFormData>({
     defaultValues: {
+      email: '',
+      password: '',
       business_name: '',
       business_phone: '',
       full_name: '',
@@ -207,6 +212,8 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
       
       // Reset form with proper type casting
       const formData: MerchantFormData = {
+        email: merchantData.email || '',
+        password: '', // Never populate password field
         business_name: merchantData.business_name || '',
         business_phone: merchantData.business_phone || '',
         full_name: merchantData.full_name || '',
@@ -257,55 +264,63 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
   const onSubmit = async (data: MerchantFormData) => {
     setLoading(true);
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast({
-          title: "Error",
-          description: "You must be logged in to perform this action",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Convert form data to Supabase-compatible format
-      const supabaseData = {
-        business_name: data.business_name,
-        business_phone: data.business_phone,
-        full_name: data.full_name,
-        contact_number: data.contact_number,
-        business_address: data.business_address as unknown as Json,
-        communication_address: data.communication_address as unknown as Json,
-        bank_account_details: data.bank_account_details as unknown as Json,
-        incharge_name: data.incharge_name,
-        incharge_designation: data.incharge_designation,
-        incharge_phone: data.incharge_phone,
-        incharge_email: data.incharge_email,
-        incharge_address: data.incharge_address as unknown as Json,
-        refundable_security_deposit: data.refundable_security_deposit,
-        approval_status: data.approval_status,
-        notes: data.notes
-      };
-
       if (mode === 'create') {
-        // Add user_id for new merchants to satisfy RLS policies
-        const insertData = {
-          ...supabaseData,
-          user_id: user.id
-        };
-
-        const { error } = await supabase
-          .from('merchant_profiles')
-          .insert(insertData);
+        // Use the new authentication function for creating merchants
+        const { data: result, error } = await supabase.rpc('create_merchant_with_auth', {
+          p_email: data.email,
+          p_password: data.password,
+          p_business_name: data.business_name,
+          p_business_phone: data.business_phone,
+          p_full_name: data.full_name,
+          p_contact_number: data.contact_number,
+          p_business_address: data.business_address as unknown as Json,
+          p_communication_address: data.communication_address as unknown as Json,
+          p_bank_account_details: data.bank_account_details as unknown as Json,
+          p_incharge_name: data.incharge_name,
+          p_incharge_designation: data.incharge_designation,
+          p_incharge_phone: data.incharge_phone,
+          p_incharge_email: data.incharge_email,
+          p_incharge_address: data.incharge_address as unknown as Json,
+          p_refundable_security_deposit: data.refundable_security_deposit,
+          p_approval_status: data.approval_status,
+          p_notes: data.notes
+        });
 
         if (error) throw error;
 
+        // Update the email in merchant_profiles
+        const { error: updateError } = await supabase
+          .from('merchant_profiles')
+          .update({ email: data.email })
+          .eq('id', result);
+
+        if (updateError) throw updateError;
+
         toast({
           title: "Success",
-          description: "Merchant profile created successfully",
+          description: "Merchant account created successfully with login credentials",
         });
       } else {
+        // Convert form data to Supabase-compatible format for updates
+        const supabaseData = {
+          business_name: data.business_name,
+          business_phone: data.business_phone,
+          full_name: data.full_name,
+          contact_number: data.contact_number,
+          business_address: data.business_address as unknown as Json,
+          communication_address: data.communication_address as unknown as Json,
+          bank_account_details: data.bank_account_details as unknown as Json,
+          incharge_name: data.incharge_name,
+          incharge_designation: data.incharge_designation,
+          incharge_phone: data.incharge_phone,
+          incharge_email: data.incharge_email,
+          incharge_address: data.incharge_address as unknown as Json,
+          refundable_security_deposit: data.refundable_security_deposit,
+          approval_status: data.approval_status,
+          notes: data.notes,
+          email: data.email
+        };
+
         const { error } = await supabase
           .from('merchant_profiles')
           .update(supabaseData)
@@ -390,6 +405,64 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {mode === 'create' && (
+                        <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <Mail className="h-4 w-4" />
+                                  Login Email *
+                                </FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="email" placeholder="merchant@example.com" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="password"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <Lock className="h-4 w-4" />
+                                  Login Password *
+                                </FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="password" placeholder="Enter secure password" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+
+                      {mode === 'edit' && (
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center gap-2">
+                                  <Mail className="h-4 w-4" />
+                                  Email Address
+                                </FormLabel>
+                                <FormControl>
+                                  <Input {...field} type="email" disabled={isViewMode} placeholder="merchant@example.com" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -786,7 +859,7 @@ const MerchantDetailsModal: React.FC<MerchantDetailsModalProps> = ({
                               Cancel
                             </Button>
                             <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
-                              {loading ? 'Saving...' : mode === 'create' ? 'Create Merchant' : 'Update Merchant'}
+                              {loading ? 'Saving...' : mode === 'create' ? 'Create Merchant Account' : 'Update Merchant'}
                             </Button>
                           </div>
                         )}

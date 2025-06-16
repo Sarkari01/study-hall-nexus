@@ -559,6 +559,7 @@ export type Database = {
           contact_number: string
           created_at: string | null
           created_by: string | null
+          email: string | null
           full_name: string
           id: string
           incharge_address: Json | null
@@ -588,6 +589,7 @@ export type Database = {
           contact_number: string
           created_at?: string | null
           created_by?: string | null
+          email?: string | null
           full_name: string
           id?: string
           incharge_address?: Json | null
@@ -617,6 +619,7 @@ export type Database = {
           contact_number?: string
           created_at?: string | null
           created_by?: string | null
+          email?: string | null
           full_name?: string
           id?: string
           incharge_address?: Json | null
@@ -1239,6 +1242,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_merchant_with_auth: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_business_name: string
+          p_business_phone: string
+          p_full_name: string
+          p_contact_number: string
+          p_business_address: Json
+          p_communication_address?: Json
+          p_bank_account_details?: Json
+          p_incharge_name?: string
+          p_incharge_designation?: string
+          p_incharge_phone?: string
+          p_incharge_email?: string
+          p_incharge_address?: Json
+          p_refundable_security_deposit?: number
+          p_approval_status?: string
+          p_notes?: string
+        }
+        Returns: string
+      }
       get_user_permissions: {
         Args: { user_id: string }
         Returns: {
