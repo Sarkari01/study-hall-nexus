@@ -45,6 +45,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useToast } from "@/hooks/use-toast";
 import SafeStudyHallsWrapper from "@/components/admin/SafeStudyHallsWrapper";
+import RoleManagementTab from "@/components/admin/RoleManagementTab";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -323,6 +324,8 @@ const AdminDashboard = () => {
               <RevenueReports reportType={activeTab} />
             </div>
           );
+        case "role-management":
+          return <RoleManagementTab />;
         default:
           return renderDashboardContent();
       }
