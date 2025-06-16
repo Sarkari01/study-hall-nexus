@@ -7,13 +7,41 @@ import QuickStats from '@/components/merchant/QuickStats';
 import StudyHallsManagement from '@/components/merchant/StudyHallsManagement';
 import MerchantBookings from '@/components/merchant/MerchantBookings';
 import MerchantProfile from '@/components/merchant/MerchantProfile';
+import { useMerchantStudyHalls } from '@/hooks/useMerchantStudyHalls';
+import { useToast } from '@/hooks/use-toast';
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { user, signOut } = useAuth();
+  const { studyHalls, loading, createStudyHall, updateStudyHall, deleteStudyHall } = useMerchantStudyHalls();
+  const { toast } = useToast();
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleCreateClick = () => {
+    // TODO: Open create study hall modal/form
+    toast({
+      title: "Create Study Hall",
+      description: "Study hall creation feature coming soon!",
+    });
+  };
+
+  const handleViewClick = (hall: any) => {
+    // TODO: Open view study hall modal
+    toast({
+      title: "View Study Hall",
+      description: `Viewing details for ${hall.name}`,
+    });
+  };
+
+  const handleEditClick = (hall: any) => {
+    // TODO: Open edit study hall modal/form
+    toast({
+      title: "Edit Study Hall",
+      description: `Editing ${hall.name}`,
+    });
   };
 
   return (
@@ -100,7 +128,14 @@ const MerchantDashboard = () => {
                 </div>
               </div>
             )}
-            {activeTab === 'study-halls' && <StudyHallsManagement />}
+            {activeTab === 'study-halls' && (
+              <StudyHallsManagement 
+                studyHalls={studyHalls}
+                onCreateClick={handleCreateClick}
+                onViewClick={handleViewClick}
+                onEditClick={handleEditClick}
+              />
+            )}
             {activeTab === 'bookings' && <MerchantBookings />}
             {activeTab === 'profile' && <MerchantProfile />}
           </div>
