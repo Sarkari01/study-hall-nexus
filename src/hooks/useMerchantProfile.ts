@@ -18,6 +18,17 @@ interface MerchantProfile {
   email?: string;
 }
 
+interface CreateMerchantProfileData {
+  business_name: string;
+  business_phone: string;
+  full_name: string;
+  contact_number: string;
+  business_address: any;
+  approval_status?: string;
+  verification_status?: string;
+  onboarding_completed?: boolean;
+}
+
 export const useMerchantProfile = () => {
   const { user, userProfile } = useAuth();
   const [merchantProfile, setMerchantProfile] = useState<MerchantProfile | null>(null);
@@ -56,19 +67,28 @@ export const useMerchantProfile = () => {
     }
   };
 
-  const createMerchantProfile = async (profileData: Partial<MerchantProfile>) => {
+  const createMerchantProfile = async (profileData: CreateMerchantProfileData) => {
     if (!user?.id) {
       throw new Error('User not authenticated');
     }
 
     try {
+      const insertData = {
+        user_id: user.id,
+        business_name: profileData.business_name,
+        business_phone: profileData.business_phone,
+        full_name: profileData.full_name,
+        contact_number: profileData.contact_number,
+        business_address: profileData.business_address || {},
+        approval_status: profileData.approval_status || 'pending',
+        verification_status: profileData.verification_status || 'unverified',
+        onboarding_completed: profileData.onboarding_completed || false,
+        email: user.email
+      };
+
       const { data, error: createError } = await supabase
         .from('merchant_profiles')
-        .insert({
-          user_id: user.id,
-          ...profileData,
-          email: user.email
-        })
+        .insert(insertData)
         .select()
         .single();
 
