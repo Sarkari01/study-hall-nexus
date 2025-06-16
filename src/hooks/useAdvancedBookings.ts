@@ -57,7 +57,14 @@ export const useAdvancedBookings = () => {
 
       if (error) throw error;
 
-      setBookings(data || []);
+      // Type cast the data to match our interface
+      const typedBookings = (data || []).map(booking => ({
+        ...booking,
+        status: booking.status as AdvancedBooking['status'],
+        payment_status: booking.payment_status as AdvancedBooking['payment_status']
+      }));
+
+      setBookings(typedBookings);
       setError(null);
     } catch (err) {
       console.error('Error fetching bookings:', err);
