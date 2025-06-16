@@ -9,17 +9,18 @@ export const useAuthRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // Don't do anything if auth is not ready or still loading
     if (!isAuthReady || loading) return;
 
     const currentPath = location.pathname;
     
-    // If user is not authenticated and not on auth page or home page
+    // If user is not authenticated and trying to access protected routes
     if (!user && currentPath !== '/auth' && currentPath !== '/') {
       navigate('/auth', { replace: true });
       return;
     }
 
-    // If user is authenticated and on auth page, redirect to dashboard
+    // Only redirect authenticated users away from auth page if they have a role
     if (user && userRole && currentPath === '/auth') {
       const roleRoutes = {
         admin: '/admin',

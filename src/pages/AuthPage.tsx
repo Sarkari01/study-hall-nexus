@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,23 +9,49 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, BookOpen } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
-import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 
 const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const { isAuthReady } = useAuth();
-  
-  // Use the auth redirect hook to handle redirects
-  useAuthRedirect();
+  const { user, userRole, loading: authLoading, isAuthReady } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle redirects for authenticated users
+  useEffect(() => {
+    if (!isAuthReady || authLoading) return;
+
+    if (user && userRole) {
+      const roleRoutes = {
+        admin: '/admin',
+        merchant: '/merchant',
+        student: '/student',
+        editor: '/editor',
+        telecaller: '/telecaller',
+        incharge: '/incharge'
+      };
+      const targetRoute = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/';
+      navigate(targetRoute, { replace: true });
+    }
+  }, [user, userRole, isAuthReady, authLoading, navigate]);
 
   // Show loading while auth is initializing
-  if (!isAuthReady) {
+  if (!isAuthReady || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <LoadingSpinner size="lg" text="Initializing..." />
+      </div>
+    );
+  }
+
+  // Don't render the form if user is authenticated (will redirect)
+  if (user && userRole) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <LoadingSpinner size="lg" text="Redirecting..." />
       </div>
     );
   }
