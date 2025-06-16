@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { CreditCard, Smartphone, Shield, ArrowLeft, Loader2, CheckCircle, XCircle, Clock, QrCode } from "lucide-react";
 import { useEkqrPayment } from "@/hooks/useEkqrPayment";
 import { useToast } from "@/hooks/use-toast";
+import QRCode from 'qrcode';
 
 interface EkqrPaymentProcessorProps {
   totalAmount: number;
@@ -40,7 +41,7 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
   const [selectedMethod, setSelectedMethod] = useState<'upi' | 'web' | 'qr'>('upi');
   const [orderData, setOrderData] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [qrCodeData, setQrCodeData] = useState<string>('');
+  const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
   const { toast } = useToast();
   
   const { processing, createOrder, startStatusPolling, stopStatusPolling, openUpiApp } = useEkqrPayment();
@@ -55,11 +56,28 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
     };
   }, [stopStatusPolling]);
 
-  const generateQRCode = (upiString: string) => {
-    // Generate UPI QR code data
-    const qrData = `upi://pay?${upiString}`;
-    setQrCodeData(qrData);
-    return qrData;
+  const generateQRCode = async (upiString: string) => {
+    try {
+      console.log('Generating QR code for UPI string:', upiString);
+      const qrDataURL = await QRCode.toDataURL(upiString, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      setQrCodeDataURL(qrDataURL);
+      return qrDataURL;
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      toast({
+        title: "QR Code Error",
+        description: "Failed to generate QR code. Please try another payment method.",
+        variant: "destructive"
+      });
+      return null;
+    }
   };
 
   const handlePayment = async () => {
@@ -97,9 +115,19 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
 
       // Generate QR code if QR method is selected
       if (selectedMethod === 'qr' && order.upiIntent) {
-        const upiString = Object.values(order.upiIntent)[0] as string;
-        if (upiString) {
-          generateQRCode(upiString);
+        // Get the first available UPI intent
+        const upiLinks = [
+          order.upiIntent.gpay_link,
+          order.upiIntent.phonepe_link,
+          order.upiIntent.paytm_link,
+          order.upiIntent.bhim_link
+        ].filter(Boolean);
+        
+        if (upiLinks.length > 0) {
+          // Extract UPI string from the intent link
+          const upiLink = upiLinks[0];
+          console.log('UPI link for QR:', upiLink);
+          await generateQRCode(upiLink);
         }
       }
 
@@ -208,12 +236,16 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
                 </Button>
               )}
 
-              {selectedMethod === 'qr' && qrCodeData && (
+              {selectedMethod === 'qr' && qrCodeDataURL && (
                 <div className="mb-4">
-                  <div className="w-64 h-64 mx-auto bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center">
-                    <QrCode className="h-32 w-32 text-gray-400" />
+                  <div className="w-64 h-64 mx-auto bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center p-4">
+                    <img 
+                      src={qrCodeDataURL} 
+                      alt="Payment QR Code" 
+                      className="w-full h-full object-contain"
+                    />
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">Scan with any UPI app</p>
+                  <p className="text-sm text-gray-500 mt-2">Scan with any UPI app to pay ₹{finalAmount}</p>
                 </div>
               )}
 
@@ -409,7 +441,6 @@ const EkqrPaymentProcessor: React.FC<EkqrPaymentProcessorProps> = ({
         </Alert>
       )}
 
-      {/* Action Buttons */}
       <div className="flex gap-4">
         {canGoBack && (
           <Button variant="outline" onClick={onPaymentCancel} className="flex-1">
