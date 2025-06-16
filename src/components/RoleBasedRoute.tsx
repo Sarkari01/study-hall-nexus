@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { isValidRole } from '@/utils/roleValidation';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
@@ -27,8 +28,11 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     );
   }
 
+  // Validate that allowed roles are actually valid system roles
+  const validAllowedRoles = allowedRoles.filter(role => isValidRole(role));
+  
   // Check if user has required role
-  const hasRequiredRole = userRole && allowedRoles.includes(userRole.name);
+  const hasRequiredRole = userRole && validAllowedRoles.includes(userRole.name);
   
   // Check if user has all required permissions
   const hasRequiredPermissions = requiredPermissions.every(permission => 

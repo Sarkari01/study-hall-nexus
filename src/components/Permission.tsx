@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { isValidRole } from '@/utils/roleValidation';
 
 interface PermissionProps {
   children: React.ReactNode;
@@ -22,8 +23,8 @@ const Permission: React.FC<PermissionProps> = ({
     return <>{fallback}</>;
   }
 
-  // Check role
-  if (role && !hasRole(role)) {
+  // Check role - validate it's one of our 6 retained roles
+  if (role && (!isValidRole(role) || !hasRole(role))) {
     return <>{fallback}</>;
   }
 

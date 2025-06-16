@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
+import { isValidRole } from '@/utils/roleValidation';
 import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
@@ -33,8 +34,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     return fallback ? <>{fallback}</> : null;
   }
 
-  // Check role requirement
-  if (requiredRole && userRole?.name !== requiredRole) {
+  // Check role requirement - validate it's one of our 6 retained roles
+  if (requiredRole && (!isValidRole(requiredRole) || userRole?.name !== requiredRole)) {
     return fallback ? <>{fallback}</> : (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

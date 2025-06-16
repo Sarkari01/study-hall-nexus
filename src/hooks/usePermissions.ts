@@ -1,11 +1,12 @@
 
 import { useAuth } from '@/contexts/AuthContext';
+import { isValidRole, canManageRole } from '@/utils/roleValidation';
 
 export const usePermissions = () => {
   const { permissions, hasPermission, hasRole, userRole } = useAuth();
 
   const can = {
-    // Admin permissions
+    // Admin permissions - full access
     viewAllUsers: () => hasPermission('admin.users.view'),
     createUsers: () => hasPermission('admin.users.create'),
     editUsers: () => hasPermission('admin.users.edit'),
@@ -53,6 +54,16 @@ export const usePermissions = () => {
     student: () => hasRole('student'),
   };
 
+  // Role management helpers using the validation utils
+  const roleManagement = {
+    canManageRole: (targetRole: string) => {
+      if (!userRole?.name) return false;
+      return canManageRole(userRole.name, targetRole);
+    },
+    isValidRole: (role: string) => isValidRole(role),
+    hasValidRole: () => userRole?.name ? isValidRole(userRole.name) : false
+  };
+
   return {
     permissions,
     hasPermission,
@@ -60,5 +71,6 @@ export const usePermissions = () => {
     userRole,
     can,
     is,
+    roleManagement,
   };
 };
