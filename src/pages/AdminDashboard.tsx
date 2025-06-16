@@ -49,7 +49,7 @@ const AdminDashboard = () => {
       case "ai-analytics":
         return <AIAnalyticsDashboard />;
       case "ai-chatbot":
-        return <AIChatbot />;
+        return <AIChatbot userType="admin" />;
       case "content-moderation":
         return <ContentModerator />;
       case "text-assistant":
