@@ -17,7 +17,7 @@ const AuthPage = () => {
   const [activeTab, setActiveTab] = useState("login");
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, userRole, loading: authLoading } = useAuth();
+  const { user, userRole, loading: authLoading, isAuthReady } = useAuth();
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -34,10 +34,12 @@ const AuthPage = () => {
     console.log('AuthPage: Checking auth state', { 
       authLoading, 
       user: !!user, 
-      userRole: userRole?.name 
+      userRole: userRole?.name,
+      isAuthReady
     });
     
-    if (!authLoading && user && userRole) {
+    // Only redirect when auth is ready and we have both user and role
+    if (isAuthReady && !authLoading && user && userRole) {
       const roleRoutes = {
         admin: '/admin',
         merchant: '/merchant',
@@ -49,9 +51,13 @@ const AuthPage = () => {
       
       const route = roleRoutes[userRole.name as keyof typeof roleRoutes] || '/dashboard';
       console.log('AuthPage: Redirecting to:', route);
-      navigate(route, { replace: true });
+      
+      // Use setTimeout to ensure the redirect happens after the current render cycle
+      setTimeout(() => {
+        navigate(route, { replace: true });
+      }, 100);
     }
-  }, [user, userRole, authLoading, navigate]);
+  }, [user, userRole, authLoading, isAuthReady, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +84,7 @@ const AuthPage = () => {
           description: "Successfully logged in!"
         });
         
-        // Let the useEffect handle the redirect after auth state updates
+        // The redirect will happen automatically via useEffect when auth state updates
         console.log('Login successful, waiting for auth state update...');
       }
     } catch (error) {
@@ -147,8 +153,17 @@ const AuthPage = () => {
     }
   };
 
-  // Show loading if auth is being checked
-  if (authLoading) {
+  // Show loading if auth is being checked and we don't know the auth state yet
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // If user is authenticated and has a role, don't show the auth page
+  if (user && userRole) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -286,6 +301,15 @@ const AuthPage = () => {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* Demo Accounts Info */}
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="text-sm font-semibold text-blue-800 mb-2">Demo Login Credentials</h3>
+          <div className="text-xs text-blue-700 space-y-1">
+            <div><strong>Super Admin:</strong> superadmin@demo.com / SuperAdmin123!</div>
+            <div><strong>Admin:</strong> admin@demo.com / Admin123!</div>
+          </div>
+        </div>
 
         <div className="text-center mt-6">
           <p className="text-sm text-gray-600">

@@ -18,9 +18,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredPermission,
   fallbackPath = "/auth" 
 }) => {
-  const { user, userProfile, userRole, loading, error, hasPermission, hasRole, refreshUser } = useAuth();
+  const { user, userProfile, userRole, loading, error, hasPermission, hasRole, refreshUser, isAuthReady } = useAuth();
 
-  if (loading) {
+  // Show loading while auth is initializing
+  if (!isAuthReady || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -31,10 +32,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // Redirect to auth if no user
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
+  // Handle auth errors
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -58,8 +61,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Wait for user profile to load
-  if (!userProfile) {
+  // Wait for user profile to load, but only if auth is ready
+  if (isAuthReady && !userProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">

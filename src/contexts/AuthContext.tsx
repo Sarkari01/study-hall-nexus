@@ -43,6 +43,7 @@ interface AuthContextType {
   hasPermission: (permission: string) => boolean;
   hasRole: (roleName: string) => boolean;
   refreshUser: () => Promise<void>;
+  isAuthReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,6 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   const createDefaultProfile = async (userId: string, userEmail: string) => {
     try {
@@ -219,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       setError(null);
+      setIsAuthReady(false);
       
       const profile = await fetchUserProfile(userId, userEmail);
       if (!profile) {
@@ -226,6 +229,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserProfile(null);
         setUserRole(null);
         setPermissions([]);
+        setIsAuthReady(true);
         return;
       }
 
@@ -246,6 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError('Failed to load user data');
     } finally {
       setLoading(false);
+      setIsAuthReady(true);
     }
   };
 
@@ -256,10 +261,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -271,12 +281,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setPermissions([]);
           setError(null);
           setLoading(false);
+          setIsAuthReady(true);
         }
       }
     );
 
     // Get initial session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
+      
       console.log('Initial session:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
@@ -285,10 +298,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await loadUserData(session.user.id, session.user.email);
       } else {
         setLoading(false);
+        setIsAuthReady(true);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
@@ -297,6 +314,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUserRole(null);
     setPermissions([]);
     setError(null);
+    setIsAuthReady(true);
   };
 
   const hasPermission = (permission: string): boolean => {
@@ -319,6 +337,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasPermission,
     hasRole,
     refreshUser,
+    isAuthReady,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
