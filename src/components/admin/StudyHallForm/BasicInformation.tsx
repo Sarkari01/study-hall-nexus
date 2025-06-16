@@ -1,12 +1,10 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Settings } from "lucide-react";
 import { StudyHallFormData } from "@/hooks/useStudyHallForm";
 
 interface BasicInformationProps {
@@ -15,7 +13,6 @@ interface BasicInformationProps {
   merchants: any[];
   loadingMerchants: boolean;
   isAdmin: boolean;
-  onLocationPickerOpen: () => void;
 }
 
 const BasicInformation: React.FC<BasicInformationProps> = ({
@@ -23,15 +20,8 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
   updateFormData,
   merchants,
   loadingMerchants,
-  isAdmin,
-  onLocationPickerOpen
+  isAdmin
 }) => {
-  const hasGoogleMapsKey = localStorage.getItem('google_maps_api_key');
-
-  const openDeveloperSettings = () => {
-    window.location.href = '/admin?tab=developer-management';
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -86,47 +76,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
         )}
 
         <div>
-          <Label htmlFor="location">Location with GPS *</Label>
-          <div className="space-y-2 mt-1">
-            <Textarea
-              id="location"
-              value={formData.location}
-              onChange={(e) => updateFormData({ location: e.target.value })}
-              placeholder="Enter complete address"
-              rows={2}
-            />
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <MapPin className="h-4 w-4" />
-              GPS: {formData.gpsLocation.lat.toFixed(6)}, {formData.gpsLocation.lng.toFixed(6)}
-            </div>
-            {hasGoogleMapsKey ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onLocationPickerOpen}
-                className="w-full"
-              >
-                🗺️ Select Location on Map
-              </Button>
-            ) : (
-              <div className="space-y-2">
-                <div className="text-sm text-orange-600 bg-orange-50 p-2 rounded border">
-                  Google Maps API key required for map selection
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={openDeveloperSettings}
-                  className="w-full flex items-center gap-2"
-                >
-                  <Settings className="h-4 w-4" />
-                  Configure Google Maps API
-                </Button>
-              </div>
-            )}
-          </div>
+          <Label htmlFor="location">Location Address *</Label>
+          <Textarea
+            id="location"
+            value={formData.location}
+            onChange={(e) => updateFormData({ location: e.target.value })}
+            placeholder="Enter complete address with city, state, and pincode"
+            className="mt-1"
+            rows={3}
+          />
         </div>
 
         <div>

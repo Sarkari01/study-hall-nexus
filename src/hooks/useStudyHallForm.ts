@@ -9,7 +9,6 @@ export interface StudyHallFormData {
   merchantId: string;
   merchantName: string;
   location: string;
-  gpsLocation: { lat: number; lng: number };
   rows: number;
   seatsPerRow: number;
   layout: Array<{ id: string; status: 'available' | 'occupied' | 'maintenance' | 'disabled' }>;
@@ -37,7 +36,6 @@ export const useStudyHallForm = ({ editData, isAdmin, currentMerchant }: UseStud
     merchantId: '',
     merchantName: '',
     location: '',
-    gpsLocation: { lat: 28.6315, lng: 77.2167 },
     rows: 6,
     seatsPerRow: 8,
     layout: [],
@@ -56,7 +54,6 @@ export const useStudyHallForm = ({ editData, isAdmin, currentMerchant }: UseStud
   const [loadingMerchants, setLoadingMerchants] = useState(false);
   const [newAmenity, setNewAmenity] = useState('');
   const [showQRCode, setShowQRCode] = useState(false);
-  const [showLocationPicker, setShowLocationPicker] = useState(false);
   const { toast } = useToast();
 
   // Fetch merchants from Supabase
@@ -157,8 +154,6 @@ export const useStudyHallForm = ({ editData, isAdmin, currentMerchant }: UseStud
     setNewAmenity,
     showQRCode,
     setShowQRCode,
-    showLocationPicker,
-    setShowLocationPicker,
     handleLayoutChange,
     handleSeatStatusChange,
     updateFormData,

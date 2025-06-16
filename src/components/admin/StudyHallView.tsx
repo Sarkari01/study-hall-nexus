@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -215,9 +214,6 @@ const StudyHallView: React.FC<StudyHallViewProps> = ({
                       Location
                     </p>
                     <p className="text-lg">{studyHall.location}</p>
-                    <p className="text-xs text-gray-500">
-                      GPS: {studyHall.gpsLocation.lat.toFixed(6)}, {studyHall.gpsLocation.lng.toFixed(6)}
-                    </p>
                   </div>
 
                   <div>

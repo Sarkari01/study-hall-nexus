@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useStudyHallForm, StudyHallFormData } from "@/hooks/useStudyHallForm";
 import SeatLayoutDesigner from './SeatLayoutDesigner';
 import QRCodeDisplay from './QRCodeDisplay';
-import GoogleMapsLocationPicker from './GoogleMapsLocationPicker';
 import BasicInformation from './StudyHallForm/BasicInformation';
 import PricingSection from './StudyHallForm/PricingSection';
 import AmenitiesSection from './StudyHallForm/AmenitiesSection';
@@ -39,25 +38,11 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
     setNewAmenity,
     showQRCode,
     setShowQRCode,
-    showLocationPicker,
-    setShowLocationPicker,
     handleLayoutChange,
     handleSeatStatusChange,
     updateFormData,
     toast
   } = useStudyHallForm({ editData, isAdmin, currentMerchant });
-
-  const handleLocationSelect = (locationData: { lat: number; lng: number; address: string }) => {
-    updateFormData({
-      location: locationData.address,
-      gpsLocation: { lat: locationData.lat, lng: locationData.lng }
-    });
-    setShowLocationPicker(false);
-    toast({
-      title: "Location Updated",
-      description: "Study hall location has been updated successfully",
-    });
-  };
 
   const handleSubmit = () => {
     if (!formData.name || !formData.location || !formData.pricePerDay) {
@@ -110,7 +95,6 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
               merchants={merchants}
               loadingMerchants={loadingMerchants}
               isAdmin={isAdmin}
-              onLocationPickerOpen={() => setShowLocationPicker(true)}
             />
 
             <PricingSection
@@ -163,28 +147,6 @@ const StudyHallForm: React.FC<StudyHallFormProps> = ({
             {editData ? 'Update Study Hall' : 'Create Study Hall'}
           </Button>
         </div>
-
-        {/* Google Maps Location Picker Modal */}
-        <Dialog open={showLocationPicker} onOpenChange={setShowLocationPicker}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Select Study Hall Location</DialogTitle>
-            </DialogHeader>
-            <GoogleMapsLocationPicker
-              initialLocation={{
-                lat: formData.gpsLocation.lat,
-                lng: formData.gpsLocation.lng,
-                address: formData.location
-              }}
-              onLocationSelect={handleLocationSelect}
-            />
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => setShowLocationPicker(false)}>
-                Cancel
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
 
         {/* QR Code Modal */}
         {showQRCode && formData.qrCode && (
