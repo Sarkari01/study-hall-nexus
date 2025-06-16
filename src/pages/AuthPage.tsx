@@ -40,6 +40,8 @@ const AuthPage = () => {
         const targetRoute = getRoleRoute(userRole.name as ValidRole);
         const from = location.state?.from?.pathname || targetRoute;
         
+        console.log(`Redirecting ${userRole.name} to ${from}`);
+        
         // Small delay to ensure state is settled
         setTimeout(() => {
           navigate(from, { replace: true });
@@ -81,6 +83,10 @@ const AuthPage = () => {
           title: "Success",
           description: "Successfully signed in!",
         });
+        
+        // Clear form
+        setEmail('');
+        setPassword('');
       }
     } catch (error: any) {
       console.error('Unexpected sign in error:', error);
@@ -135,6 +141,10 @@ const AuthPage = () => {
         // Switch to sign in tab
         const signInTab = document.querySelector('[data-value="signin"]') as HTMLElement;
         signInTab?.click();
+        
+        // Clear form
+        setEmail('');
+        setPassword('');
       }
     } catch (error: any) {
       console.error('Sign up error:', error);

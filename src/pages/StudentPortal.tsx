@@ -2,10 +2,21 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from '@/contexts/AuthContext';
-import { Building2, BookOpen, User, Calendar } from 'lucide-react';
+import { Building2, BookOpen, User, Calendar, Loader2 } from 'lucide-react';
 
 const StudentPortal = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, loading, isAuthReady } = useAuth();
+
+  if (!isAuthReady || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

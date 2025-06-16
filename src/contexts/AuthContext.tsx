@@ -99,9 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fetchUserPermissions = async (roleId: string) => {
+  const fetchUserPermissions = async (roleId: string): Promise<Permission[]> => {
     try {
-      const { data: rolePermissions } = await supabase
+      console.log('Fetching permissions for role ID:', roleId);
+      
+      const { data: rolePermissions, error } = await supabase
         .from('role_permissions')
         .select(`
           permission_id,
@@ -114,13 +116,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         `)
         .eq('role_id', roleId);
 
+      if (error) {
+        console.error('Error fetching permissions:', error);
+        return [];
+      }
+
       if (rolePermissions) {
-        return rolePermissions.map(rp => ({
+        const perms = rolePermissions.map(rp => ({
           name: rp.permissions.name,
           description: rp.permissions.description,
           module: rp.permissions.module,
           action: rp.permissions.action
         }));
+        console.log('Fetched permissions:', perms);
+        return perms;
       }
       return [];
     } catch (error) {
@@ -152,36 +161,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { profile: null, role: null, permissions: [] };
       }
 
+      console.log('Profile found:', profile);
+
       // Fetch user role using custom_role_id
       let roleData = null;
       let userPermissions: Permission[] = [];
       
       if (profile.custom_role_id) {
         console.log('Fetching role with ID:', profile.custom_role_id);
-        const { data: customRole } = await supabase
+        const { data: customRole, error: roleError } = await supabase
           .from('custom_roles')
           .select('*')
           .eq('id', profile.custom_role_id)
           .single();
         
-        if (customRole) {
+        if (customRole && !roleError) {
           console.log('Found custom role:', customRole);
           roleData = customRole;
           userPermissions = await fetchUserPermissions(customRole.id);
+        } else {
+          console.log('Role fetch error or no role found:', roleError);
         }
       }
 
       // Fallback to role string if no custom role found
       if (!roleData && profile.role) {
         console.log('Fallback to role string:', profile.role);
-        const { data: systemRole } = await supabase
+        const { data: systemRole, error: systemRoleError } = await supabase
           .from('custom_roles')
           .select('*')
           .eq('name', profile.role)
           .eq('is_system_role', true)
           .single();
 
-        if (systemRole) {
+        if (systemRole && !systemRoleError) {
           console.log('Found system role:', systemRole);
           roleData = systemRole;
           userPermissions = await fetchUserPermissions(systemRole.id);
@@ -191,10 +204,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .from('user_profiles')
             .update({ custom_role_id: systemRole.id })
             .eq('id', profile.id);
+        } else {
+          console.log('System role fetch error:', systemRoleError);
         }
       }
 
-      console.log('User data loaded:', { profile, role: roleData, permissions: userPermissions });
+      console.log('Final user data:', { profile, role: roleData, permissions: userPermissions });
       return { profile, role: roleData, permissions: userPermissions };
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -225,17 +240,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
+        
         // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
         if (!mounted) return;
         
-        console.log('Initial session:', initialSession?.user?.id);
+        console.log('Initial session user ID:', initialSession?.user?.id);
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
         
         if (initialSession?.user?.id) {
-          setLoading(true);
           try {
             const { profile, role, permissions: userPermissions } = await fetchUserData(
               initialSession.user.id, 
