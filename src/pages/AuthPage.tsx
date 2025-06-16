@@ -19,21 +19,20 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hasAttemptedRedirect, setHasAttemptedRedirect] = useState(false);
-  const { user, userRole, isAuthReady } = useAuth();
+  const { user, userRole, isAuthReady, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
-  // Quick login function for admin
   const quickAdminLogin = () => {
     setEmail('admin@sarkari-ninja.com');
     setPassword('Admin123!@#');
   };
 
   useEffect(() => {
-    // Only redirect once when auth is ready and we have both user and role
-    if (isAuthReady && user && userRole && !hasAttemptedRedirect) {
-      console.log('User authenticated, attempting redirect...', { userRole: userRole.name });
+    // Only redirect if we have a complete auth state (user + role) and haven't already redirected
+    if (isAuthReady && user && userRole && !hasAttemptedRedirect && !authLoading) {
+      console.log('User authenticated with role, attempting redirect...', { userRole: userRole.name });
       setHasAttemptedRedirect(true);
       
       if (isValidRole(userRole.name)) {
@@ -42,13 +41,12 @@ const AuthPage = () => {
         
         console.log(`Redirecting ${userRole.name} to ${from}`);
         
-        // Small delay to ensure state is settled
         setTimeout(() => {
           navigate(from, { replace: true });
         }, 100);
       }
     }
-  }, [user, userRole, isAuthReady, navigate, location.state, hasAttemptedRedirect]);
+  }, [user, userRole, isAuthReady, authLoading, navigate, location.state, hasAttemptedRedirect]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +82,6 @@ const AuthPage = () => {
           description: "Successfully signed in!",
         });
         
-        // Clear form
         setEmail('');
         setPassword('');
       }
@@ -138,11 +135,9 @@ const AuthPage = () => {
           description: "Your account has been created successfully! You can now sign in.",
         });
         
-        // Switch to sign in tab
         const signInTab = document.querySelector('[data-value="signin"]') as HTMLElement;
         signInTab?.click();
         
-        // Clear form
         setEmail('');
         setPassword('');
       }
@@ -166,8 +161,8 @@ const AuthPage = () => {
     );
   }
 
-  // If user is already logged in but we don't have role yet, show loading
-  if (user && !userRole && isAuthReady) {
+  // Show loading while user profile is being loaded after authentication
+  if (user && authLoading && isAuthReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -181,7 +176,6 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Building2 className="h-12 w-12 text-blue-600" />
@@ -256,7 +250,6 @@ const AuthPage = () => {
                   </Button>
                 </form>
 
-                {/* Admin Quick Login */}
                 <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center gap-2">
                     <User className="h-4 w-4" />

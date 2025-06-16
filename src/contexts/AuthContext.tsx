@@ -70,7 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Creating default profile for user:', userId);
       
-      // Get the student role (default role for new users)
       const { data: studentRole } = await supabase
         .from('custom_roles')
         .select('id')
@@ -142,7 +141,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Fetching user data for:', userId);
       
-      // Fetch user profile
       let { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
@@ -150,7 +148,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (profileError?.code === 'PGRST116') {
-        // No profile found, create default one
         profile = await createDefaultProfile(userId, userEmail || '');
       } else if (profileError) {
         throw profileError;
@@ -163,7 +160,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('Profile found:', profile);
 
-      // Fetch user role using custom_role_id
       let roleData = null;
       let userPermissions: Permission[] = [];
       
@@ -184,7 +180,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // Fallback to role string if no custom role found
       if (!roleData && profile.role) {
         console.log('Fallback to role string:', profile.role);
         const { data: systemRole, error: systemRoleError } = await supabase
@@ -199,7 +194,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           roleData = systemRole;
           userPermissions = await fetchUserPermissions(systemRole.id);
           
-          // Update profile with the role ID
           await supabase
             .from('user_profiles')
             .update({ custom_role_id: systemRole.id })
@@ -242,7 +236,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         console.log('Initializing auth...');
         
-        // Get initial session
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
         if (!mounted) return;
@@ -284,11 +277,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error initializing auth:', error);
           setLoading(false);
           setIsAuthReady(true);
+          setError('Failed to initialize authentication');
         }
       }
     };
 
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -302,7 +295,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLoading(true);
           setIsAuthReady(false);
           
-          // Use setTimeout to prevent blocking the auth state change
           setTimeout(async () => {
             if (!mounted) return;
             
@@ -332,7 +324,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setIsAuthReady(true);
               }
             }
-          }, 0);
+          }, 100);
         } else if (!session?.user) {
           setUserProfile(null);
           setUserRole(null);
@@ -344,7 +336,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Initialize auth
     initializeAuth();
 
     return () => {
