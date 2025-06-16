@@ -62,11 +62,15 @@ serve(async (req) => {
       throw new Error(ekqrResponse.msg || 'Failed to create payment order')
     }
 
+    // For temporary booking IDs (starting with "temp_"), set booking_id to null
+    // The actual booking will be created after successful payment
+    const bookingId = bookingData.bookingId?.startsWith('temp_') ? null : bookingData.bookingId
+
     // Store payment transaction in database
     const { error: dbError } = await supabase
       .from('payment_transactions')
       .insert({
-        booking_id: isSubscription ? null : bookingData.bookingId,
+        booking_id: bookingId,
         amount: parseFloat(paymentData.amount),
         payment_method: 'ekqr',
         payment_status: 'pending',
@@ -76,6 +80,7 @@ serve(async (req) => {
           ekqr_order_id: ekqrResponse.data.order_id,
           payment_url: ekqrResponse.data.payment_url,
           upi_intent: ekqrResponse.data.upi_intent,
+          temp_booking_id: bookingData.bookingId,
           created_at: new Date().toISOString()
         }
       })
