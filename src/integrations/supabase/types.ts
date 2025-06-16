@@ -636,6 +636,50 @@ export type Database = {
         }
         Relationships: []
       }
+      merchant_subscriptions: {
+        Row: {
+          auto_renew: boolean | null
+          created_at: string
+          end_date: string
+          id: string
+          merchant_id: string
+          plan_id: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auto_renew?: boolean | null
+          created_at?: string
+          end_date: string
+          id?: string
+          merchant_id: string
+          plan_id: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auto_renew?: boolean | null
+          created_at?: string
+          end_date?: string
+          id?: string
+          merchant_id?: string
+          plan_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_logs: {
         Row: {
           created_at: string | null
@@ -878,6 +922,119 @@ export type Database = {
           total_bookings?: number | null
           total_revenue?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      subscription_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          gateway_transaction_id: string | null
+          id: string
+          invoice_url: string | null
+          payment_date: string
+          payment_gateway: string | null
+          payment_method: string | null
+          status: string
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          gateway_transaction_id?: string | null
+          id?: string
+          invoice_url?: string | null
+          payment_date?: string
+          payment_gateway?: string | null
+          payment_method?: string | null
+          status?: string
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          gateway_transaction_id?: string | null
+          id?: string
+          invoice_url?: string | null
+          payment_date?: string
+          payment_gateway?: string | null
+          payment_method?: string | null
+          status?: string
+          subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_plans: {
+        Row: {
+          auto_renew_enabled: boolean | null
+          billing_period: string
+          created_at: string
+          description: string | null
+          features: Json | null
+          has_analytics: boolean | null
+          has_chat_support: boolean | null
+          id: string
+          is_active: boolean | null
+          is_trial: boolean | null
+          max_cabins: number | null
+          max_study_halls: number | null
+          name: string
+          price: number
+          trial_days: number | null
+          updated_at: string
+          validity_days: number
+        }
+        Insert: {
+          auto_renew_enabled?: boolean | null
+          billing_period: string
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          has_analytics?: boolean | null
+          has_chat_support?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          is_trial?: boolean | null
+          max_cabins?: number | null
+          max_study_halls?: number | null
+          name: string
+          price: number
+          trial_days?: number | null
+          updated_at?: string
+          validity_days: number
+        }
+        Update: {
+          auto_renew_enabled?: boolean | null
+          billing_period?: string
+          created_at?: string
+          description?: string | null
+          features?: Json | null
+          has_analytics?: boolean | null
+          has_chat_support?: boolean | null
+          id?: string
+          is_active?: boolean | null
+          is_trial?: boolean | null
+          max_cabins?: number | null
+          max_study_halls?: number | null
+          name?: string
+          price?: number
+          trial_days?: number | null
+          updated_at?: string
+          validity_days?: number
         }
         Relationships: []
       }
