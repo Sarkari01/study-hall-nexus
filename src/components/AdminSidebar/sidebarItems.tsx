@@ -1,15 +1,23 @@
 
+import React from 'react';
 import { 
   LayoutDashboard, 
   Users, 
-  Building, 
+  Building2, 
   BookOpen, 
-  CreditCard, 
   Settings, 
-  BarChart3, 
+  BarChart3,
   Shield,
-  User
-} from "lucide-react";
+  UserCheck,
+  Bot,
+  MessageSquare,
+  Heart,
+  Code,
+  Brain,
+  Wand2,
+  MessageCircle,
+  Globe
+} from 'lucide-react';
 
 export interface AdminSidebarItem {
   id: string;
@@ -21,56 +29,107 @@ export interface AdminSidebarItem {
 
 export const sidebarItems: AdminSidebarItem[] = [
   {
-    id: "dashboard",
-    label: "Dashboard",
-    icon: <LayoutDashboard className="h-5 w-5" />
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: <LayoutDashboard className="h-5 w-5" />,
   },
   {
-    id: "admin-details",
-    label: "Admin Details",
-    icon: <User className="h-5 w-5" />
+    id: 'admin-details',
+    label: 'Admin Details',
+    icon: <UserCheck className="h-5 w-5" />,
   },
   {
-    id: "users",
-    label: "User Management",
+    id: 'user-management',
+    label: 'User Management',
     icon: <Users className="h-5 w-5" />,
     hasSubmenu: true,
     submenu: [
       {
-        id: "students",
-        label: "Students",
-        icon: <Users className="h-4 w-4" />
+        id: 'students',
+        label: 'Students',
+        icon: <Users className="h-4 w-4" />,
       },
       {
-        id: "role-management",
-        label: "Role Management",
-        icon: <Shield className="h-4 w-4" />
-      }
-    ]
+        id: 'merchants',
+        label: 'Merchants',
+        icon: <Building2 className="h-4 w-4" />,
+      },
+      {
+        id: 'role-management',
+        label: 'Role Management',
+        icon: <Shield className="h-4 w-4" />,
+      },
+    ],
   },
   {
-    id: "merchants",
-    label: "Merchants",
-    icon: <Building className="h-5 w-5" />
+    id: 'study-halls',
+    label: 'Study Halls',
+    icon: <Building2 className="h-5 w-5" />,
   },
   {
-    id: "study-halls",
-    label: "Study Halls",
-    icon: <BookOpen className="h-5 w-5" />
+    id: 'bookings',
+    label: 'Bookings',
+    icon: <BookOpen className="h-5 w-5" />,
   },
   {
-    id: "bookings",
-    label: "Bookings",
-    icon: <CreditCard className="h-5 w-5" />
+    id: 'ai-features',
+    label: 'AI Features',
+    icon: <Bot className="h-5 w-5" />,
+    hasSubmenu: true,
+    submenu: [
+      {
+        id: 'ai-analytics',
+        label: 'AI Analytics',
+        icon: <Brain className="h-4 w-4" />,
+      },
+      {
+        id: 'ai-chatbot',
+        label: 'AI Chatbot',
+        icon: <MessageSquare className="h-4 w-4" />,
+      },
+      {
+        id: 'content-moderation',
+        label: 'Content Moderation',
+        icon: <Shield className="h-4 w-4" />,
+      },
+      {
+        id: 'text-assistant',
+        label: 'Text Assistant',
+        icon: <Wand2 className="h-4 w-4" />,
+      },
+    ],
   },
   {
-    id: "analytics",
-    label: "Analytics",
-    icon: <BarChart3 className="h-5 w-5" />
+    id: 'communication',
+    label: 'Communication',
+    icon: <MessageCircle className="h-5 w-5" />,
+    hasSubmenu: true,
+    submenu: [
+      {
+        id: 'chat-system',
+        label: 'Chat System',
+        icon: <MessageSquare className="h-4 w-4" />,
+      },
+      {
+        id: 'community',
+        label: 'Community',
+        icon: <Heart className="h-4 w-4" />,
+      },
+    ],
   },
   {
-    id: "settings",
-    label: "Settings",
-    icon: <Settings className="h-5 w-5" />
-  }
+    id: 'developer-management',
+    label: 'Developer Tools',
+    icon: <Code className="h-5 w-5" />,
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: <BarChart3 className="h-5 w-5" />,
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: <Settings className="h-5 w-5" />,
+  },
 ];
