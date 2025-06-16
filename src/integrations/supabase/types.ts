@@ -57,6 +57,35 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_seats: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          seat_id: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          seat_id: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          seat_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_booking_seats_booking"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_date: string
@@ -722,6 +751,53 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_transactions: {
+        Row: {
+          amount: number
+          booking_id: string | null
+          created_at: string
+          currency: string | null
+          gateway_response: Json | null
+          gateway_transaction_id: string | null
+          id: string
+          payment_method: string
+          payment_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string | null
+          gateway_response?: Json | null
+          gateway_transaction_id?: string | null
+          id?: string
+          payment_method: string
+          payment_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string | null
+          created_at?: string
+          currency?: string | null
+          gateway_response?: Json | null
+          gateway_transaction_id?: string | null
+          id?: string
+          payment_method?: string
+          payment_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_payment_transactions_booking"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           action: string
@@ -879,6 +955,50 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seat_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          is_available: boolean
+          row_number: number
+          seat_id: string
+          seat_number: number
+          seat_type: string | null
+          study_hall_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          row_number: number
+          seat_id: string
+          seat_number: number
+          seat_type?: string | null
+          study_hall_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_available?: boolean
+          row_number?: number
+          seat_id?: string
+          seat_number?: number
+          seat_type?: string | null
+          study_hall_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_seat_layouts_study_hall"
+            columns: ["study_hall_id"]
+            isOneToOne: false
+            referencedRelation: "study_halls"
             referencedColumns: ["id"]
           },
         ]
