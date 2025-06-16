@@ -21,48 +21,28 @@ import TeamManagement from "@/components/merchant/TeamManagement";
 import DashboardOverview from "@/components/merchant/DashboardOverview";
 import StudyHallsManagement from "@/components/merchant/StudyHallsManagement";
 import { uuidToNumericId } from "@/utils/uuidUtils";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MerchantDashboard = () => {
-  // All useState hooks must be declared at the top, before any conditional logic
   const [activeTab, setActiveTab] = useState("overview");
-  const [showDevelopmentMode, setShowDevelopmentMode] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
   const [editingStudyHall, setEditingStudyHall] = useState<any>(null);
   
   const { toast } = useToast();
+  const { userProfile } = useAuth();
   
-  // Mock user data for development mode
-  const mockUser = {
-    id: 'demo-user-id',
-    email: 'demo@merchant.com'
-  };
-  
-  const mockUserProfile = {
-    id: 'demo-profile-id',
-    user_id: 'demo-user-id',
-    full_name: 'Demo Merchant',
-    role: 'merchant',
-    custom_role_id: null,
-    merchant_id: 'demo-merchant-id',
-    study_hall_id: null,
-    phone: '+91 98765 43210',
-    avatar_url: null,
-    bio: 'Demo merchant account for testing'
-  };
-  
-  // Use real data hooks (these should handle missing auth gracefully)
+  // Use real data hooks
   const { merchantProfile, loading: profileLoading, error: profileError } = useMerchantProfile();
   const { studyHalls, loading: studyHallsLoading, createStudyHall, updateStudyHall } = useMerchantStudyHalls();
   const { bookings, loading: bookingsLoading } = useMerchantBookings();
 
-  console.log('MerchantDashboard: Development mode - using mock auth data', {
+  console.log('MerchantDashboard: Auth context data', {
+    userProfile: !!userProfile,
+    merchantProfile: !!merchantProfile,
     profileLoading,
-    profileError,
-    mockUser: !!mockUser,
-    userProfile: mockUserProfile.role,
-    merchantProfile: !!merchantProfile
+    profileError
   });
 
   // Loading state - wait for profile to load
@@ -93,18 +73,18 @@ const MerchantDashboard = () => {
     );
   }
 
-  // For development mode, show merchant profile setup if no real profile exists and user hasn't continued
-  if (!merchantProfile && mockUserProfile.role === 'merchant' && showDevelopmentMode) {
+  // If no merchant profile, show onboarding prompt
+  if (!merchantProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
           <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Development Mode</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Complete Your Merchant Profile</h3>
           <p className="text-gray-600 mb-4">
-            Merchant dashboard loaded in development mode. Real merchant profile will be loaded when authentication is enabled.
+            Please complete your merchant profile to access the dashboard features.
           </p>
-          <Button onClick={() => setShowDevelopmentMode(false)}>
-            Continue to Dashboard
+          <Button onClick={() => setActiveTab('profile')}>
+            Complete Profile
           </Button>
         </div>
       </div>
@@ -207,21 +187,14 @@ const MerchantDashboard = () => {
     }
   };
 
-  // Use merchantProfile if available, otherwise use mock data for display
-  const displayProfile = merchantProfile || {
-    full_name: 'Demo Merchant',
-    business_name: 'Demo Business',
-    id: 'demo-merchant-id'
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-50">
         <MerchantSidebar 
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          merchantName={displayProfile.full_name || 'Demo Merchant'}
-          businessName={displayProfile.business_name || 'Demo Business'}
+          merchantName={merchantProfile.full_name}
+          businessName={merchantProfile.business_name}
         />
         <SidebarInset>
           <div className="flex flex-col min-h-screen">
@@ -243,7 +216,7 @@ const MerchantDashboard = () => {
                       {activeTab === 'profile' && 'Business Profile'}
                       {activeTab === 'settings' && 'Account Settings'}
                     </h1>
-                    <p className="text-gray-600">Welcome back, {displayProfile.full_name}</p>
+                    <p className="text-gray-600">Welcome back, {merchantProfile.full_name}</p>
                   </div>
                 </div>
               </div>
@@ -264,9 +237,9 @@ const MerchantDashboard = () => {
           editData={editingStudyHall}
           isAdmin={false}
           currentMerchant={{
-            id: uuidToNumericId(displayProfile.id || 'demo-id'),
-            name: displayProfile.full_name || 'Demo Merchant',
-            businessName: displayProfile.business_name || 'Demo Business'
+            id: uuidToNumericId(merchantProfile.id),
+            name: merchantProfile.full_name,
+            businessName: merchantProfile.business_name
           }}
         />
 
