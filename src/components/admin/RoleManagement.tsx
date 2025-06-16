@@ -51,8 +51,7 @@ const RoleManagement = () => {
           id,
           user_id,
           full_name,
-          role,
-          custom_roles!inner(name)
+          role
         `);
 
       if (error) throw error;
@@ -62,14 +61,14 @@ const RoleManagement = () => {
       
       if (authError) throw authError;
 
-      // Combine the data
-      const combinedUsers: UserWithRole[] = profiles.map(profile => {
+      // Combine the data safely
+      const combinedUsers: UserWithRole[] = (profiles || []).map(profile => {
         const authUser = authUsers.users.find(u => u.id === profile.user_id);
         return {
-          id: profile.user_id,
+          id: profile.user_id || '',
           email: authUser?.email || 'Unknown',
           full_name: profile.full_name || 'Unknown User',
-          role: profile.custom_roles?.name as ValidRole || null,
+          role: profile.role as ValidRole || null,
           created_at: authUser?.created_at || '',
           last_sign_in_at: authUser?.last_sign_in_at || ''
         };
@@ -119,22 +118,11 @@ const RoleManagement = () => {
     }
 
     try {
-      // Get the role ID with proper typing
-      const { data: roleData, error: roleError } = await supabase
-        .from('custom_roles')
-        .select('id')
-        .eq('name', newRole)
-        .single();
-
-      if (roleError) throw roleError;
-      if (!roleData) throw new Error('Role not found');
-
       // Update user profile with new role
       const { error: updateError } = await supabase
         .from('user_profiles')
         .update({ 
-          role: newRole,
-          custom_role_id: roleData.id 
+          role: newRole
         })
         .eq('user_id', selectedUser.id);
 
