@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, Calendar, TrendingUp, Building2, MapPin, Star, Eye, Plus, UserPlus, Edit } from "lucide-react";
-import StudyHallForm from "@/components/admin/StudyHallForm";
-import StudyHallView from "@/components/admin/StudyHallView";
+import { Users, DollarSign, Calendar, TrendingUp, Building2, MapPin, Star, Eye, Plus, UserPlus, Edit, AlertCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import MerchantSidebar from "@/components/MerchantSidebar";
+import { useMerchantProfile } from "@/hooks/useMerchantProfile";
+import { useMerchantStudyHalls } from "@/hooks/useMerchantStudyHalls";
+import { useMerchantBookings } from "@/hooks/useMerchantBookings";
+import StudyHallForm from "@/components/admin/StudyHallForm";
+import StudyHallView from "@/components/admin/StudyHallView";
 import CommunityFeed from "@/components/community/CommunityFeed";
 import ChatSystem from "@/components/chat/ChatSystem";
 import MerchantAnalytics from "@/components/merchant/MerchantAnalytics";
@@ -22,54 +24,56 @@ import TeamManagement from "@/components/merchant/TeamManagement";
 
 const MerchantDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isViewOpen, setIsViewOpen] = useState(false);
-  const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
-  const [editingStudyHall, setEditingStudyHall] = useState<any>(null);
-  
-  const [studyHalls, setStudyHalls] = useState([
-    {
-      id: 1,
-      name: "Premium Study Room A",
-      location: "Connaught Place, New Delhi",
-      gpsLocation: { lat: 28.6315, lng: 77.2167 },
-      capacity: 48,
-      rows: 6,
-      seatsPerRow: 8,
-      layout: Array.from({ length: 48 }, (_, i) => {
-        const row = Math.floor(i / 8);
-        const seat = (i % 8) + 1;
-        return {
-          id: `${String.fromCharCode(65 + row)}${seat}`,
-          status: Math.random() > 0.7 ? 'occupied' : 'available' as const
-        };
-      }),
-      pricePerDay: 50,
-      pricePerWeek: 300,
-      pricePerMonth: 1000,
-      amenities: ["AC", "Wi-Fi", "Parking"],
-      status: 'active',
-      rating: 4.5,
-      totalBookings: 156,
-      description: "Premium study room with modern amenities",
-      images: ["/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png"],
-      mainImage: "/lovable-uploads/2ba034ed-e0e3-4064-8603-66f1efc45a52.png",
-      qrCode: `${window.location.origin}/book/1`,
-      merchantId: 1,
-      merchantName: "Sneha Patel"
-    }
-  ]);
-
   const { toast } = useToast();
+  
+  // Use real data hooks
+  const { merchantProfile, loading: profileLoading, error: profileError } = useMerchantProfile();
+  const { studyHalls, loading: studyHallsLoading, createStudyHall, updateStudyHall } = useMerchantStudyHalls();
+  const { bookings, loading: bookingsLoading } = useMerchantBookings();
 
-  const currentMerchant = {
-    id: 1,
-    name: "Sneha Patel",
-    businessName: "StudySpace Pro",
-    email: "sneha@studyspace.com",
-    phone: "+91 98765 43210",
-    location: "New Delhi"
-  };
+  // Loading state
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading merchant dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (profileError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-red-800 mb-2">Error Loading Dashboard</h3>
+          <p className="text-red-700 mb-4">{profileError}</p>
+          <Button onClick={() => window.location.reload()}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // No merchant profile state
+  if (!merchantProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-6">
+          <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Merchant Profile Required</h3>
+          <p className="text-gray-600 mb-4">Please complete your merchant profile to access the dashboard.</p>
+          <Button onClick={() => setActiveTab("profile")}>
+            Complete Profile
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const stats = [
     {
@@ -81,71 +85,26 @@ const MerchantDashboard = () => {
     },
     {
       title: "Total Bookings",
-      value: studyHalls.reduce((sum, hall) => sum + hall.totalBookings, 0).toString(),
+      value: bookings.length.toString(),
       change: "+12% from last month",
       icon: <Calendar className="h-5 w-5" />,
       color: "text-green-600"
     },
     {
       title: "Monthly Revenue",
-      value: "₹45,680",
+      value: `₹${bookings.reduce((sum, booking) => sum + (booking.final_amount || 0), 0).toLocaleString()}`,
       change: "+8.5% from last month",
       icon: <DollarSign className="h-5 w-5" />,
       color: "text-purple-600"
     },
     {
       title: "Average Rating",
-      value: (studyHalls.reduce((sum, hall) => sum + hall.rating, 0) / studyHalls.length).toFixed(1),
+      value: studyHalls.length > 0 ? (studyHalls.reduce((sum, hall) => sum + hall.rating, 0) / studyHalls.length).toFixed(1) : "0.0",
       change: "+0.2 from last month",
       icon: <Star className="h-5 w-5" />,
       color: "text-yellow-600"
     }
   ];
-
-  const handleAddStudyHall = (data: any) => {
-    const newStudyHall = {
-      ...data,
-      id: Date.now(),
-      merchantId: currentMerchant.id,
-      merchantName: currentMerchant.name,
-      rating: 0,
-      totalBookings: 0,
-      qrCode: data.qrCode || `${window.location.origin}/book/${Date.now()}`
-    };
-    setStudyHalls(prev => [...prev, newStudyHall]);
-    setEditingStudyHall(null);
-    toast({
-      title: "Success",
-      description: "Study hall created successfully",
-    });
-  };
-
-  const handleEditStudyHall = (data: any) => {
-    if (!editingStudyHall) return;
-    setStudyHalls(prev => prev.map(hall => 
-      hall.id === editingStudyHall.id ? { ...hall, ...data } : hall
-    ));
-    setEditingStudyHall(null);
-    toast({
-      title: "Success",
-      description: "Study hall updated successfully",
-    });
-  };
-
-  const openViewModal = (hall: any) => {
-    setSelectedStudyHall(hall);
-    setIsViewOpen(true);
-  };
-
-  const openEditModal = (hall: any) => {
-    setEditingStudyHall(hall);
-    setIsFormOpen(true);
-  };
-
-  const closeFormModal = () => {
-    setIsFormOpen(false);
-    setEditingStudyHall(null);
-  };
 
   const renderDashboardContent = () => {
     return (
@@ -182,7 +141,7 @@ const MerchantDashboard = () => {
               <Button 
                 variant="outline" 
                 className="h-20 flex-col"
-                onClick={() => setIsFormOpen(true)}
+                onClick={() => setActiveTab("study-halls")}
               >
                 <Plus className="h-6 w-6 mb-2" />
                 Add Study Hall
@@ -222,67 +181,99 @@ const MerchantDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {studyHalls.slice(0, 3).map((hall) => (
-                <Card key={hall.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      {hall.mainImage && (
-                        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                          <img
-                            src={hall.mainImage}
-                            alt={hall.name}
-                            className="w-full h-full object-cover"
-                          />
+            {studyHallsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span>Loading study halls...</span>
+              </div>
+            ) : studyHalls.length === 0 ? (
+              <div className="text-center py-8">
+                <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Study Halls Yet</h3>
+                <p className="text-gray-600 mb-4">Create your first study hall to start accepting bookings</p>
+                <Button onClick={() => setActiveTab("study-halls")}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Study Hall
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {studyHalls.slice(0, 3).map((hall) => (
+                  <Card key={hall.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="font-medium text-lg">{hall.name}</h3>
+                          <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
+                            <MapPin className="h-4 w-4" />
+                            <span>{hall.location}</span>
+                          </div>
                         </div>
-                      )}
-                      <div>
-                        <h3 className="font-medium text-lg">{hall.name}</h3>
-                        <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>{hall.location}</span>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-1">
+                            <Users className="h-4 w-4 text-gray-400" />
+                            <span>{hall.capacity} seats</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                            <span>{hall.rating}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg font-bold text-green-600">₹{hall.price_per_day}/day</span>
+                          <Badge variant={hall.status === 'active' ? "default" : "secondary"}>
+                            {hall.status}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-gray-400" />
-                          <span>{hall.capacity} seats</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                          <span>{hall.rating}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-green-600">₹{hall.pricePerDay}/day</span>
-                        <Button size="sm" variant="outline" onClick={() => openViewModal(hall)}>
-                          <Eye className="h-4 w-4 mr-1" />
-                          View
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {studyHalls.length === 0 && (
-                <Card className="col-span-full">
-                  <CardContent className="p-8 text-center">
-                    <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Study Halls Yet</h3>
-                    <p className="text-gray-600 mb-4">Create your first study hall to start accepting bookings</p>
-                    <Button onClick={() => setIsFormOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Study Hall
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     );
+  };
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedStudyHall, setSelectedStudyHall] = useState<any>(null);
+  const [editingStudyHall, setEditingStudyHall] = useState<any>(null);
+  
+  const handleAddStudyHall = (data: any) => {
+    createStudyHall(data);
+    setEditingStudyHall(null);
+    toast({
+      title: "Success",
+      description: "Study hall created successfully",
+    });
+  };
+
+  const handleEditStudyHall = (data: any) => {
+    if (!editingStudyHall) return;
+    updateStudyHall(editingStudyHall.id, data);
+    setEditingStudyHall(null);
+    toast({
+      title: "Success",
+      description: "Study hall updated successfully",
+    });
+  };
+
+  const openViewModal = (hall: any) => {
+    setSelectedStudyHall(hall);
+    setIsViewOpen(true);
+  };
+
+  const openEditModal = (hall: any) => {
+    setEditingStudyHall(hall);
+    setIsFormOpen(true);
+  };
+
+  const closeFormModal = () => {
+    setIsFormOpen(false);
+    setEditingStudyHall(null);
   };
 
   const renderTabContent = () => {
@@ -304,15 +295,6 @@ const MerchantDashboard = () => {
               {studyHalls.map((hall) => (
                 <Card key={hall.id} className="hover:shadow-lg transition-shadow">
                   <CardContent className="p-0">
-                    {hall.mainImage && (
-                      <div className="aspect-video bg-gray-100 overflow-hidden rounded-t-lg">
-                        <img
-                          src={hall.mainImage}
-                          alt={hall.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
                     <div className="p-6 space-y-4">
                       <div className="flex items-start justify-between">
                         <div>
@@ -337,7 +319,7 @@ const MerchantDashboard = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>{hall.totalBookings} bookings</span>
+                          <span>{hall.total_bookings} bookings</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Star className="h-4 w-4 text-yellow-400 fill-current" />
@@ -345,21 +327,8 @@ const MerchantDashboard = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-gray-400" />
-                          <span>₹{hall.pricePerDay}/day</span>
+                          <span>₹{hall.price_per_day}/day</span>
                         </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1">
-                        {hall.amenities.slice(0, 3).map(amenity => (
-                          <Badge key={amenity} variant="outline" className="text-xs">
-                            {amenity}
-                          </Badge>
-                        ))}
-                        {hall.amenities.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{hall.amenities.length - 3} more
-                          </Badge>
-                        )}
                       </div>
 
                       <div className="flex gap-2">
@@ -429,8 +398,8 @@ const MerchantDashboard = () => {
         <MerchantSidebar 
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          merchantName={currentMerchant.name}
-          businessName={currentMerchant.businessName}
+          merchantName={merchantProfile.full_name}
+          businessName={merchantProfile.business_name}
         />
         <SidebarInset>
           <div className="flex flex-col min-h-screen">
@@ -452,31 +421,21 @@ const MerchantDashboard = () => {
                       {activeTab === 'profile' && 'Business Profile'}
                       {activeTab === 'settings' && 'Account Settings'}
                     </h1>
-                    <p className="text-gray-600">Welcome back, {currentMerchant.name}</p>
+                    <p className="text-gray-600">Welcome back, {merchantProfile.full_name}</p>
                   </div>
-                </div>
-                
-                {/* Quick Action Buttons */}
-                <div className="flex items-center space-x-3">
-                  {activeTab === 'overview' && (
-                    <Button onClick={() => setIsFormOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Study Hall
-                    </Button>
-                  )}
-                  {activeTab === 'team' && (
-                    <Button className="bg-blue-600 hover:bg-blue-700">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Invite Member
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>
 
             {/* Main Content */}
             <div className="flex-1 p-6">
-              {renderTabContent()}
+              {activeTab === "overview" ? renderDashboardContent() : (
+                <div className="text-center py-12">
+                  <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Feature Coming Soon</h3>
+                  <p className="text-gray-600">This section is under development</p>
+                </div>
+              )}
             </div>
           </div>
         </SidebarInset>
@@ -488,7 +447,7 @@ const MerchantDashboard = () => {
           onSubmit={editingStudyHall ? handleEditStudyHall : handleAddStudyHall}
           editData={editingStudyHall}
           isAdmin={false}
-          currentMerchant={currentMerchant}
+          currentMerchant={merchantProfile}
         />
 
         {/* Study Hall View Modal */}

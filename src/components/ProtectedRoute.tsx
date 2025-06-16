@@ -3,7 +3,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -24,8 +24,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your account...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading your account...</p>
         </div>
       </div>
     );
@@ -58,21 +58,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // Wait for user profile to load
   if (!userProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <h3 className="text-lg font-medium text-yellow-800 mb-2">Account Setup Required</h3>
-            <p className="text-yellow-700 mb-4">Your account is being set up. Please try refreshing the page.</p>
-            <Button 
-              onClick={refreshUser} 
-              className="bg-yellow-600 text-white hover:bg-yellow-700"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Setting up your profile...</p>
         </div>
       </div>
     );
@@ -80,11 +72,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check role requirement
   if (requiredRole && !hasRole(requiredRole)) {
+    console.log('Role check failed:', { requiredRole, userRole: userRole?.name, hasRole: hasRole(requiredRole) });
     return <Navigate to={fallbackPath} replace />;
   }
 
   // Check permission requirement
   if (requiredPermission && !hasPermission(requiredPermission)) {
+    console.log('Permission check failed:', { requiredPermission, hasPermission: hasPermission(requiredPermission) });
     return <Navigate to={fallbackPath} replace />;
   }
 
