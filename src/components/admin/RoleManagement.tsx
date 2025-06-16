@@ -13,6 +13,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { VALID_ROLES, ValidRole, getRoleDisplayName, canManageRole, ROLE_HIERARCHY } from "@/utils/roleValidation";
 import { usePermissions } from "@/hooks/usePermissions";
 
+interface UserProfile {
+  id: string;
+  user_id: string;
+  full_name: string;
+  role: string | null;
+}
+
 interface UserWithRole {
   id: string;
   email: string;
@@ -52,7 +59,7 @@ const RoleManagement = () => {
           user_id,
           full_name,
           role
-        `);
+        `) as { data: UserProfile[] | null; error: any };
 
       if (error) throw error;
 
