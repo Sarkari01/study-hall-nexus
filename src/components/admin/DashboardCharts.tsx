@@ -6,7 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import { useDashboardCharts } from "@/hooks/useDashboardCharts";
 import { RefreshCw, AlertCircle } from "lucide-react";
-import ErrorBoundary from "./ErrorBoundary";
+import ErrorBoundary from "../ErrorBoundary";
 
 const ChartFallback = ({ title, onRetry }: { title: string; onRetry?: () => void }) => (
   <Card>
@@ -86,7 +86,7 @@ const DashboardCharts = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Revenue Trend Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="Revenue Trend" onRetry={refetch} />}>
+      <ErrorBoundary fallback={({ resetError }) => <ChartFallback title="Revenue Trend" onRetry={resetError} />}>
         <Card>
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
@@ -106,7 +106,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* Bookings Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="Bookings Overview" onRetry={refetch} />}>
+      <ErrorBoundary fallback={({ resetError }) => <ChartFallback title="Bookings Overview" onRetry={resetError} />}>
         <Card>
           <CardHeader>
             <CardTitle>Bookings Overview</CardTitle>
@@ -126,7 +126,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* Study Halls Performance */}
-      <ErrorBoundary fallback={<ChartFallback title="Study Halls Performance" onRetry={refetch} />}>
+      <ErrorBoundary fallback={({ resetError }) => <ChartFallback title="Study Halls Performance" onRetry={resetError} />}>
         <Card>
           <CardHeader>
             <CardTitle>Study Halls Performance</CardTitle>
@@ -147,7 +147,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* User Growth Chart */}
-      <ErrorBoundary fallback={<ChartFallback title="User Growth" onRetry={refetch} />}>
+      <ErrorBoundary fallback={({ resetError }) => <ChartFallback title="User Growth" onRetry={resetError} />}>
         <Card>
           <CardHeader>
             <CardTitle>User Growth</CardTitle>
