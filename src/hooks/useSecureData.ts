@@ -55,7 +55,8 @@ export const useSecureData = <T extends Record<string, any>>(
       setLoading(true);
       setError(null);
 
-      const { data: result, error: dbError } = await supabase
+      // Use type assertion to handle dynamic table access
+      const { data: result, error: dbError } = await (supabase as any)
         .from(options.table)
         .insert([inputData])
         .select()
@@ -63,7 +64,7 @@ export const useSecureData = <T extends Record<string, any>>(
 
       if (dbError) throw dbError;
 
-      const typedResult = result as unknown as T;
+      const typedResult = result as T;
       setData(prev => [typedResult, ...prev]);
 
       if (options.auditResource && typedResult) {
@@ -105,7 +106,8 @@ export const useSecureData = <T extends Record<string, any>>(
       setLoading(true);
       setError(null);
 
-      let query = supabase.from(options.table).select('*');
+      // Use type assertion to handle dynamic table access
+      let query = (supabase as any).from(options.table).select('*');
 
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
@@ -120,7 +122,7 @@ export const useSecureData = <T extends Record<string, any>>(
 
       if (dbError) throw dbError;
 
-      const typedResult = (result || []) as unknown as T[];
+      const typedResult = (result || []) as T[];
       setData(typedResult);
       return typedResult;
     } catch (err: any) {
@@ -153,13 +155,13 @@ export const useSecureData = <T extends Record<string, any>>(
       setError(null);
 
       // Get current record for audit
-      const { data: currentRecord } = await supabase
+      const { data: currentRecord } = await (supabase as any)
         .from(options.table)
         .select('*')
         .eq('id', id)
         .single();
 
-      const { data: result, error: dbError } = await supabase
+      const { data: result, error: dbError } = await (supabase as any)
         .from(options.table)
         .update(updates)
         .eq('id', id)
@@ -218,13 +220,13 @@ export const useSecureData = <T extends Record<string, any>>(
       setError(null);
 
       // Get current record for audit
-      const { data: currentRecord } = await supabase
+      const { data: currentRecord } = await (supabase as any)
         .from(options.table)
         .select('*')
         .eq('id', id)
         .single();
 
-      const { error: dbError } = await supabase
+      const { error: dbError } = await (supabase as any)
         .from(options.table)
         .delete()
         .eq('id', id);
