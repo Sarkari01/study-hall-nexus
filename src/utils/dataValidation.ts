@@ -29,11 +29,11 @@ export class DataValidator<T extends Record<string, any>> {
 
   validate(data: Partial<T>): ValidationResult {
     const errors: Record<string, string[]> = {};
-    const sanitizedData: Partial<T> = { ...data };
+    const sanitizedData: Record<string, any> = { ...data };
 
     for (const rule of this.rules) {
       const field = rule.field as string;
-      const value = data[field];
+      const value = (data as any)[field];
       const fieldErrors: string[] = [];
 
       // Check required fields

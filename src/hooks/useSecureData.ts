@@ -56,20 +56,21 @@ export const useSecureData = <T extends Record<string, any>>(
       setError(null);
 
       const { data: result, error: dbError } = await supabase
-        .from(options.table as any)
+        .from(options.table)
         .insert([inputData])
         .select()
         .single();
 
       if (dbError) throw dbError;
 
-      setData(prev => [result as T, ...prev]);
+      const typedResult = result as unknown as T;
+      setData(prev => [typedResult, ...prev]);
 
-      if (options.auditResource) {
+      if (options.auditResource && typedResult) {
         await logAction({
           action: 'CREATE',
           resource_type: options.auditResource,
-          resource_id: result.id,
+          resource_id: (typedResult as any).id,
           new_values: inputData,
           severity: 'medium'
         });
@@ -80,7 +81,7 @@ export const useSecureData = <T extends Record<string, any>>(
         description: `${options.auditResource || 'Record'} created successfully`,
       });
 
-      return result as T;
+      return typedResult;
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to create record';
       setError(errorMessage);
@@ -104,7 +105,7 @@ export const useSecureData = <T extends Record<string, any>>(
       setLoading(true);
       setError(null);
 
-      let query = supabase.from(options.table as any).select('*');
+      let query = supabase.from(options.table).select('*');
 
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
@@ -119,7 +120,7 @@ export const useSecureData = <T extends Record<string, any>>(
 
       if (dbError) throw dbError;
 
-      const typedResult = (result || []) as T[];
+      const typedResult = (result || []) as unknown as T[];
       setData(typedResult);
       return typedResult;
     } catch (err: any) {
@@ -153,13 +154,13 @@ export const useSecureData = <T extends Record<string, any>>(
 
       // Get current record for audit
       const { data: currentRecord } = await supabase
-        .from(options.table as any)
+        .from(options.table)
         .select('*')
         .eq('id', id)
         .single();
 
       const { data: result, error: dbError } = await supabase
-        .from(options.table as any)
+        .from(options.table)
         .update(updates)
         .eq('id', id)
         .select()
@@ -168,7 +169,7 @@ export const useSecureData = <T extends Record<string, any>>(
       if (dbError) throw dbError;
 
       setData(prev => prev.map(item => 
-        item.id === id ? { ...item, ...updates } : item
+        (item as any).id === id ? { ...item, ...updates } : item
       ));
 
       if (options.auditResource) {
@@ -218,19 +219,19 @@ export const useSecureData = <T extends Record<string, any>>(
 
       // Get current record for audit
       const { data: currentRecord } = await supabase
-        .from(options.table as any)
+        .from(options.table)
         .select('*')
         .eq('id', id)
         .single();
 
       const { error: dbError } = await supabase
-        .from(options.table as any)
+        .from(options.table)
         .delete()
         .eq('id', id);
 
       if (dbError) throw dbError;
 
-      setData(prev => prev.filter(item => item.id !== id));
+      setData(prev => prev.filter(item => (item as any).id !== id));
 
       if (options.auditResource) {
         await logAction({
