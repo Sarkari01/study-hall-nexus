@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
+import AuthenticationGuard from "@/components/auth/AuthenticationGuard";
+import RoleGuard from "@/components/auth/RoleGuard";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentPortal from "./pages/StudentPortal";
 import MerchantDashboard from "./pages/MerchantDashboard";
@@ -19,6 +22,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
     },
   },
 });
@@ -38,58 +42,87 @@ const App = () => (
               {/* Redirect root to admin */}
               <Route path="/" element={<Navigate to="/admin" replace />} />
               
-              {/* Admin dashboard route */}
+              {/* Protected Admin route */}
               <Route 
                 path="/admin" 
                 element={
-                  <ErrorBoundary>
-                    <AdminDashboard />
-                  </ErrorBoundary>
+                  <AuthenticationGuard>
+                    <RoleGuard requiredRole="admin">
+                      <ErrorBoundary>
+                        <AdminDashboard />
+                      </ErrorBoundary>
+                    </RoleGuard>
+                  </AuthenticationGuard>
                 } 
               />
               
+              {/* Protected Student route */}
               <Route 
                 path="/student" 
                 element={
-                  <ErrorBoundary>
-                    <StudentPortal />
-                  </ErrorBoundary>
+                  <AuthenticationGuard>
+                    <RoleGuard requiredRole="student">
+                      <ErrorBoundary>
+                        <StudentPortal />
+                      </ErrorBoundary>
+                    </RoleGuard>
+                  </AuthenticationGuard>
                 } 
               />
               
+              {/* Protected Merchant route */}
               <Route 
                 path="/merchant" 
                 element={
-                  <ErrorBoundary>
-                    <MerchantDashboard />
-                  </ErrorBoundary>
+                  <AuthenticationGuard>
+                    <RoleGuard requiredRole="merchant">
+                      <ErrorBoundary>
+                        <MerchantDashboard />
+                      </ErrorBoundary>
+                    </RoleGuard>
+                  </AuthenticationGuard>
                 } 
               />
               
+              {/* Protected Editor route */}
               <Route 
                 path="/editor" 
                 element={
-                  <ErrorBoundary>
-                    <EditorDashboard />
-                  </ErrorBoundary>
+                  <AuthenticationGuard>
+                    <RoleGuard requiredRole="editor">
+                      <ErrorBoundary>
+                        <EditorDashboard />
+                      </ErrorBoundary>
+                    </RoleGuard>
+                  </AuthenticationGuard>
                 } 
               />
               
+              {/* Protected Telecaller route */}
               <Route 
                 path="/telecaller" 
                 element={
-                  <ErrorBoundary>
-                    <TelecallerDashboard />
-                  </ErrorBoundary>
+                  <AuthenticationGuard>
+                    <RoleGuard requiredRole="telecaller">
+                      <ErrorBoundary>
+                        <TelecallerDashboard />
+                      </ErrorBoundary>
+                    </RoleGuard>
+                  </AuthenticationGuard>
                 } 
               />
               
+              {/* Protected Incharge route */}
               <Route 
                 path="/incharge" 
                 element={
-                  <ErrorBoundary>
-                    <InchargeDashboard />
-                  </ErrorBoundary>
+                  <AuthenticationGuard>
+                    <RoleGuard requiredRole="incharge">
+                      <ErrorBoundary>
+                        <InchargeDashboard />
+                      </ErrorBoundary>
+                    </RoleGuard>
+                  </AuthenticationGuard>
                 } 
               />
               
