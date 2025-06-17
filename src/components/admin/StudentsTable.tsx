@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Eye, Edit, Trash2, Filter, Download } from "lucide-react";
+import { Search, Plus, Eye, Edit, Trash2, Download } from "lucide-react";
 import { useStudents } from "@/hooks/useStudents";
 import StudentDetailsModal from "./StudentDetailsModal";
 import AddStudentModal from "./AddStudentModal";
@@ -23,6 +23,7 @@ const StudentsTable = () => {
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.phone.includes(searchTerm) ||
                          student.student_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -42,8 +43,12 @@ const StudentsTable = () => {
     setIsDetailsModalOpen(true);
   };
 
-  const handleStatusChange = async (studentId: string, newStatus: string) => {
-    await updateStudent(studentId, { status: newStatus as 'active' | 'inactive' | 'suspended' });
+  const handleUpdateStatus = async (studentId: string, newStatus: 'active' | 'inactive' | 'suspended') => {
+    await updateStudent(studentId, { status: newStatus });
+  };
+
+  const handleStudentAdded = () => {
+    fetchStudents();
   };
 
   if (loading) {
@@ -85,7 +90,10 @@ const StudentsTable = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Students Management</CardTitle>
-              <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
+              <Button 
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center gap-2"
+              >
                 <Plus className="h-4 w-4" />
                 Add Student
               </Button>
@@ -97,7 +105,7 @@ const StudentsTable = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search by name, email, or ID..."
+                  placeholder="Search by name, email, phone, or ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -133,6 +141,7 @@ const StudentsTable = () => {
                     <TableHead>Total Spent</TableHead>
                     <TableHead>Bookings</TableHead>
                     <TableHead>Last Booking</TableHead>
+                    <TableHead>Joined</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -144,21 +153,9 @@ const StudentsTable = () => {
                       <TableCell>{student.email}</TableCell>
                       <TableCell>{student.phone}</TableCell>
                       <TableCell>
-                        <Select
-                          value={student.status}
-                          onValueChange={(value) => handleStatusChange(student.id, value)}
-                        >
-                          <SelectTrigger className="w-32">
-                            <Badge className={getStatusColor(student.status)}>
-                              {student.status}
-                            </Badge>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                            <SelectItem value="suspended">Suspended</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Badge className={getStatusColor(student.status)}>
+                          {student.status}
+                        </Badge>
                       </TableCell>
                       <TableCell>₹{student.total_spent.toLocaleString()}</TableCell>
                       <TableCell>{student.total_bookings}</TableCell>
@@ -167,6 +164,9 @@ const StudentsTable = () => {
                           ? new Date(student.last_booking_date).toLocaleDateString()
                           : 'Never'
                         }
+                      </TableCell>
+                      <TableCell>
+                        {new Date(student.created_at).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ const StudentsTable = () => {
         <AddStudentModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onStudentAdded={fetchStudents}
+          onStudentAdded={handleStudentAdded}
         />
       </div>
     </ErrorBoundary>

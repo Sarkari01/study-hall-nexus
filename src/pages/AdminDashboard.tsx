@@ -1,126 +1,216 @@
 
 import React, { useState } from 'react';
-import AdminSidebar from '@/components/AdminSidebar';
-import DashboardOverview from '@/components/admin/DashboardOverview';
-import StudentsTable from '@/components/admin/StudentsTable';
-import MerchantsTable from '@/components/admin/MerchantsTable';
-import StudyHallsTable from '@/components/admin/StudyHallsTable';
-import BookingsTable from '@/components/admin/BookingsTable';
-import RoleManagementTab from '@/components/admin/RoleManagementTab';
-import AdminDetailsTab from '@/components/admin/AdminDetailsTab';
-import AIAnalyticsDashboard from '@/components/ai/AIAnalyticsDashboard';
-import AIChatbot from '@/components/ai/AIChatbot';
-import ContentModerator from '@/components/ai/ContentModerator';
-import SmartTextAssistant from '@/components/ai/SmartTextAssistant';
-import ChatSystem from '@/components/chat/ChatSystem';
-import CommunityFeed from '@/components/community/CommunityFeed';
-import DeveloperManagement from '@/components/admin/DeveloperManagement';
-import PaymentHistoryTable from '@/components/admin/PaymentHistoryTable';
-import TransactionsTable from '@/components/admin/TransactionsTable';
-import SettleNowTable from '@/components/admin/SettleNowTable';
-import LocationsTable from '@/components/admin/LocationsTable';
-import LeadsTable from '@/components/admin/LeadsTable';
-import BannerManager from '@/components/banners/BannerManager';
-import SubscriptionManagement from '@/components/admin/SubscriptionManagement';
-import PromotionsRewards from '@/components/admin/PromotionsRewards';
-import PushNotifications from '@/components/admin/PushNotifications';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Users, 
+  Building2, 
+  Calendar, 
+  DollarSign, 
+  Settings, 
+  UserCheck,
+  LogOut,
+  BarChart3,
+  FileText,
+  Bell,
+  Shield
+} from "lucide-react";
+import AuthGuard from "@/components/auth/AuthGuard";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import DashboardOverview from "@/components/admin/DashboardOverview";
+import StudentsTable from "@/components/admin/StudentsTable";
+import MerchantsTable from "@/components/admin/MerchantsTable";
+import BookingsTable from "@/components/admin/BookingsTable";
+import StudyHallsTable from "@/components/admin/StudyHallsTable";
+import RoleManagementTab from "@/components/admin/RoleManagementTab";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const AdminDashboard = () => {
-  const [activeItem, setActiveItem] = useState('dashboard');
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState("overview");
+  const { user, userRole, signOut } = useAuth();
+  const { toast } = useToast();
 
-  const handleItemClick = (itemId: string) => {
-    setActiveItem(itemId);
-  };
-
-  const handleToggleExpand = (itemId: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
-    );
-  };
-
-  const renderContent = () => {
-    switch (activeItem) {
-      case "dashboard":
-        return <DashboardOverview />;
-      case "admin-details":
-        return <AdminDetailsTab />;
-      case "students":
-        return <StudentsTable />;
-      case "role-management":
-        return <RoleManagementTab />;
-      case "merchants":
-        return <MerchantsTable />;
-      case "study-halls":
-        return <StudyHallsTable />;
-      case "bookings":
-        return <BookingsTable />;
-      case "subscription-management":
-        return <SubscriptionManagement />;
-      case "promotions-rewards":
-        return <PromotionsRewards />;
-      case "push-notifications":
-        return <PushNotifications />;
-      case "payments":
-        return <PaymentHistoryTable />;
-      case "transactions":
-        return <TransactionsTable />;
-      case "settle-now":
-        return <SettleNowTable />;
-      case "locations":
-        return <LocationsTable />;
-      case "leads":
-        return <LeadsTable />;
-      case "banner-management":
-        return <BannerManager />;
-      case "ai-analytics":
-        return <AIAnalyticsDashboard />;
-      case "ai-chatbot":
-        return <AIChatbot userType="admin" />;
-      case "content-moderation":
-        return <ContentModerator />;
-      case "text-assistant":
-        return <SmartTextAssistant />;
-      case "chat-system":
-        return <ChatSystem />;
-      case "community":
-        return <CommunityFeed />;
-      case "developer-management":
-        return <DeveloperManagement />;
-      case "analytics":
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Analytics Dashboard</h2>
-            <p className="text-gray-600">Advanced analytics coming soon...</p>
-          </div>
-        );
-      case "settings":
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">System Settings</h2>
-            <p className="text-gray-600">System configuration coming soon...</p>
-          </div>
-        );
-      default:
-        return <DashboardOverview />;
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  return (
-    <div className="flex h-screen bg-gray-100">
-      <AdminSidebar
-        activeItem={activeItem}
-        onItemClick={handleItemClick}
-        expandedItems={expandedItems}
-        onToggleExpand={handleToggleExpand}
-      />
+  const tabItems = [
+    { value: "overview", label: "Overview", icon: BarChart3 },
+    { value: "students", label: "Students", icon: Users },
+    { value: "merchants", label: "Merchants", icon: Building2 },
+    { value: "bookings", label: "Bookings", icon: Calendar },
+    { value: "study-halls", label: "Study Halls", icon: Building2 },
+    { value: "roles", label: "Role Management", icon: Shield },
+    { value: "reports", label: "Reports", icon: FileText },
+    { value: "settings", label: "Settings", icon: Settings },
+  ];
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">
-          {renderContent()}
-        </div>
-      </main>
-    </div>
+  return (
+    <AuthGuard requiredRole="admin">
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+                <Badge variant="outline" className="ml-3">
+                  {userRole?.name || 'admin'}
+                </Badge>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Button variant="outline" size="sm">
+                  <Bell className="h-4 w-4 mr-2" />
+                  Notifications
+                </Button>
+                <div className="flex items-center space-x-2">
+                  <UserCheck className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm text-gray-700">{user?.email}</span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+              {tabItems.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+
+            <ErrorBoundary>
+              <TabsContent value="overview" className="space-y-6">
+                <DashboardOverview />
+              </TabsContent>
+
+              <TabsContent value="students" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Students Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <StudentsTable />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="merchants" className="space-y-6">
+                <MerchantsTable />
+              </TabsContent>
+
+              <TabsContent value="bookings" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Bookings Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <BookingsTable />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="study-halls" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      Study Halls Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <StudyHallsTable />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="roles" className="space-y-6">
+                <RoleManagementTab />
+              </TabsContent>
+
+              <TabsContent value="reports" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Reports & Analytics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Reports Coming Soon</h3>
+                      <p className="text-gray-500">Advanced reporting and analytics features will be available here.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="settings" className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      System Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Settings Panel</h3>
+                      <p className="text-gray-500">System configuration and settings will be available here.</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </ErrorBoundary>
+          </Tabs>
+        </main>
+      </div>
+    </AuthGuard>
   );
 };
 
