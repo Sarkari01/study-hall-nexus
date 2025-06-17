@@ -99,6 +99,35 @@ export const useBookings = () => {
     }
   };
 
+  const updateBooking = async (bookingId: string, updates: Partial<Booking>) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update(updates)
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      setBookings(prev => prev.map(booking => 
+        booking.id === bookingId 
+          ? { ...booking, ...updates }
+          : booking
+      ));
+
+      toast({
+        title: "Success",
+        description: "Booking updated successfully",
+      });
+    } catch (err) {
+      console.error('Error updating booking:', err);
+      toast({
+        title: "Error",
+        description: "Failed to update booking",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
   }, []);
@@ -108,6 +137,7 @@ export const useBookings = () => {
     loading,
     error,
     fetchBookings,
-    updateBookingStatus
+    updateBookingStatus,
+    updateBooking
   };
 };

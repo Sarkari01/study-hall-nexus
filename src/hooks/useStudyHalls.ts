@@ -136,6 +136,43 @@ export const useStudyHalls = () => {
     }
   };
 
+  const createStudyHall = async (hallData: Omit<StudyHall, 'id' | 'created_at' | 'updated_at' | 'rating' | 'total_bookings' | 'total_revenue'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('study_halls')
+        .insert([hallData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const typedStudyHall: StudyHall = {
+        ...data,
+        status: data.status as 'draft' | 'active' | 'inactive' | 'maintenance'
+      };
+
+      if (isMountedRef.current) {
+        addStudyHall(typedStudyHall);
+        toast({
+          title: "Success",
+          description: "Study hall created successfully",
+        });
+      }
+
+      return typedStudyHall;
+    } catch (err) {
+      console.error('Error creating study hall:', err);
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to create study hall",
+          variant: "destructive",
+        });
+      }
+      throw err;
+    }
+  };
+
   useEffect(() => {
     isMountedRef.current = true;
     fetchStudyHalls();
@@ -152,6 +189,7 @@ export const useStudyHalls = () => {
     fetchStudyHalls,
     deleteStudyHall,
     updateStudyHall,
-    addStudyHall
+    addStudyHall,
+    createStudyHall
   };
 };
