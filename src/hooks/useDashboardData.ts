@@ -4,6 +4,7 @@ import { useDashboardStats } from './useDashboardStats';
 import { useDashboardCharts } from './useDashboardCharts';
 import { useRecentActivities } from './useRecentActivities';
 import { useToast } from './use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useDashboardData = () => {
   const [globalLoading, setGlobalLoading] = useState(true);
@@ -55,6 +56,39 @@ export const useDashboardData = () => {
 
     return () => clearInterval(interval);
   }, [refreshAll, isLoading]);
+
+  // Real-time subscriptions
+  useEffect(() => {
+    const bookingsChannel = supabase
+      .channel('dashboard-bookings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        statsQuery.refetch();
+        chartsQuery.refetch();
+        activitiesQuery.refetch();
+      })
+      .subscribe();
+
+    const studentsChannel = supabase
+      .channel('dashboard-students')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
+        statsQuery.refetch();
+      })
+      .subscribe();
+
+    const merchantsChannel = supabase
+      .channel('dashboard-merchants')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'merchant_profiles' }, () => {
+        statsQuery.refetch();
+        activitiesQuery.refetch();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(bookingsChannel);
+      supabase.removeChannel(studentsChannel);
+      supabase.removeChannel(merchantsChannel);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isLoading) {
