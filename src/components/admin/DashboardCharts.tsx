@@ -86,7 +86,7 @@ const DashboardCharts = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Revenue Trend Chart */}
-      <ErrorBoundary fallback={({ resetError }) => <ChartFallback title="Revenue Trend" onRetry={resetError} />}>
+      <ErrorBoundary>
         <Card>
           <CardHeader>
             <CardTitle>Revenue Trend</CardTitle>
@@ -106,7 +106,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* Bookings Chart */}
-      <ErrorBoundary fallback={({ resetError }) => <ChartFallback title="Bookings Overview" onRetry={resetError} />}>
+      <ErrorBoundary>
         <Card>
           <CardHeader>
             <CardTitle>Bookings Overview</CardTitle>
@@ -126,7 +126,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* Study Halls Performance */}
-      <ErrorBoundary fallback={({ resetError }) => <ChartFallback title="Study Halls Performance" onRetry={resetError} />}>
+      <ErrorBoundary>
         <Card>
           <CardHeader>
             <CardTitle>Study Halls Performance</CardTitle>
@@ -147,7 +147,7 @@ const DashboardCharts = () => {
       </ErrorBoundary>
 
       {/* User Growth Chart */}
-      <ErrorBoundary fallback={({ resetError }) => <ChartFallback title="User Growth" onRetry={resetError} />}>
+      <ErrorBoundary>
         <Card>
           <CardHeader>
             <CardTitle>User Growth</CardTitle>
