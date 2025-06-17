@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,7 @@ import EditorDashboard from "./pages/EditorDashboard";
 import TelecallerDashboard from "./pages/TelecallerDashboard";
 import InchargeDashboard from "./pages/InchargeDashboard";
 import NotFound from "./pages/NotFound";
+import AuthPage from "./pages/AuthPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +32,9 @@ const App = () => (
         <AuthProvider>
           <BrowserRouter>
             <Routes>
+              {/* Auth route */}
+              <Route path="/auth" element={<AuthPage />} />
+              
               {/* Redirect root to admin */}
               <Route path="/" element={<Navigate to="/admin" replace />} />
               

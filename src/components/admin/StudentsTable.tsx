@@ -1,303 +1,137 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Search, 
-  Eye, 
-  Ban, 
-  CheckCircle, 
-  XCircle, 
-  Calendar,
-  Users,
-  CreditCard,
-  UserPlus
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Search, Plus, Eye, Edit, Trash2, Filter, Download } from "lucide-react";
 import { useStudents } from "@/hooks/useStudents";
 import StudentDetailsModal from "./StudentDetailsModal";
 import AddStudentModal from "./AddStudentModal";
-import ExportButtons from "@/components/shared/ExportButtons";
-
-// Convert database Student type to UI Student type
-interface UIStudent {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  bookingsCount: number;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  lastBooking?: string;
-  totalSpent?: string;
-  averageSessionDuration?: string;
-  preferredStudyHalls?: string[];
-}
+import ErrorBoundary from "./ErrorBoundary";
 
 const StudentsTable = () => {
-  const { students: dbStudents, loading, updateStudent, deleteStudent, addStudent } = useStudents();
+  const { students, loading, error, fetchStudents, updateStudent } = useStudents();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [bookingFilter, setBookingFilter] = useState<string>('all');
-  const [selectedStudent, setSelectedStudent] = useState<UIStudent | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const { toast } = useToast();
 
-  // Convert database students to UI format
-  const students = useMemo(() => {
-    return dbStudents.map(student => ({
-      id: parseInt(student.id.split('-')[0] || '0', 16) % 100000, // Generate a simple number ID for UI
-      name: student.full_name,
-      email: student.email,
-      phone: student.phone,
-      bookingsCount: student.total_bookings,
-      status: student.status as 'active' | 'inactive',
-      createdAt: student.created_at,
-      lastBooking: student.last_booking_date,
-      totalSpent: `₹${student.total_spent}`,
-      averageSessionDuration: student.average_session_duration,
-      preferredStudyHalls: student.preferred_study_halls
-    }));
-  }, [dbStudents]);
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         student.student_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-  const toggleStudentStatus = async (studentId: number, currentStatus: string) => {
-    try {
-      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-      const dbStudent = dbStudents.find(s => parseInt(s.id.split('-')[0] || '0', 16) % 100000 === studentId);
-      
-      if (dbStudent) {
-        await updateStudent(dbStudent.id, { status: newStatus as 'active' | 'inactive' | 'suspended' });
-        toast({
-          title: "Success",
-          description: `Student account ${newStatus === 'active' ? 'enabled' : 'disabled'}`,
-        });
-      }
-    } catch (error) {
-      console.error('Error updating student status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update student status",
-        variant: "destructive",
-      });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'suspended': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleViewStudent = (student: UIStudent) => {
+  const handleViewDetails = (student: any) => {
     setSelectedStudent(student);
     setIsDetailsModalOpen(true);
   };
 
-  const handleAddStudent = (newDBStudent: any) => {
-    // Convert database student to UI format and add to list
-    const newUIStudent: UIStudent = {
-      id: parseInt(newDBStudent.id.split('-')[0] || '0', 16) % 100000,
-      name: newDBStudent.full_name,
-      email: newDBStudent.email,
-      phone: newDBStudent.phone,
-      bookingsCount: newDBStudent.total_bookings,
-      status: newDBStudent.status,
-      createdAt: newDBStudent.created_at,
-      lastBooking: newDBStudent.last_booking_date,
-      totalSpent: `₹${newDBStudent.total_spent}`,
-      averageSessionDuration: newDBStudent.average_session_duration,
-      preferredStudyHalls: newDBStudent.preferred_study_halls
-    };
-    
-    addStudent(newDBStudent);
+  const handleStatusChange = async (studentId: string, newStatus: string) => {
+    await updateStudent(studentId, { status: newStatus as 'active' | 'inactive' | 'suspended' });
   };
 
-  // Memoized filtered students for better performance
-  const filteredStudents = useMemo(() => {
-    return students.filter(student => {
-      const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           student.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
-      
-      let matchesBookings = true;
-      if (bookingFilter === 'high') {
-        matchesBookings = student.bookingsCount >= 10;
-      } else if (bookingFilter === 'medium') {
-        matchesBookings = student.bookingsCount >= 5 && student.bookingsCount < 10;
-      } else if (bookingFilter === 'low') {
-        matchesBookings = student.bookingsCount > 0 && student.bookingsCount < 5;
-      } else if (bookingFilter === 'none') {
-        matchesBookings = student.bookingsCount === 0;
-      }
-      
-      return matchesSearch && matchesStatus && matchesBookings;
-    });
-  }, [students, searchTerm, statusFilter, bookingFilter]);
-
-  // Calculate statistics
-  const statistics = useMemo(() => {
-    const totalStudents = students.length;
-    const activeStudents = students.filter(s => s.status === 'active').length;
-    const totalBookings = students.reduce((sum, s) => sum + s.bookingsCount, 0);
-    const totalRevenue = students.reduce((sum, s) => {
-      const amount = parseFloat(s.totalSpent?.replace('₹', '').replace(',', '') || '0');
-      return sum + amount;
-    }, 0);
-
-    return { totalStudents, activeStudents, totalBookings, totalRevenue };
-  }, [students]);
-
-  // Prepare data for export
-  const exportData = useMemo(() => {
-    return filteredStudents.map(student => ({
-      'Student ID': student.id,
-      'Name': student.name,
-      'Email': student.email,
-      'Phone': student.phone,
-      'Bookings': student.bookingsCount,
-      'Total Spent': student.totalSpent,
-      'Average Session Duration': student.averageSessionDuration,
-      'Status': student.status,
-      'Member Since': student.createdAt,
-      'Last Booking': student.lastBooking || 'Never',
-      'Preferred Study Halls': student.preferredStudyHalls?.join(', ') || 'None'
-    }));
-  }, [filteredStudents]);
-
-  const exportColumns = [
-    'Student ID', 'Name', 'Email', 'Phone', 'Bookings', 'Total Spent',
-    'Average Session Duration', 'Status', 'Member Since', 'Last Booking', 'Preferred Study Halls'
-  ];
-
-  return (
-    <div className="space-y-6">
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Students</p>
-                <p className="text-2xl font-bold">{statistics.totalStudents}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Active Students</p>
-                <p className="text-2xl font-bold">{statistics.activeStudents}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Calendar className="h-8 w-8 text-orange-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Bookings</p>
-                <p className="text-2xl font-bold">{statistics.totalBookings}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <CreditCard className="h-8 w-8 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold">₹{statistics.totalRevenue.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Enhanced Filters and Actions */}
+  if (loading) {
+    return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-12 bg-gray-200 rounded"></div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center text-red-600">
+            <p>{error}</p>
+            <Button onClick={fetchStudents} className="mt-2">
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Students Management</CardTitle>
+              <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Student
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Search by name or email..."
+                  placeholder="Search by name, email, or ID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
             </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Students</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
 
-            <Select value={bookingFilter} onValueChange={setBookingFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filter by bookings" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Booking Levels</SelectItem>
-                <SelectItem value="high">High Activity (10+)</SelectItem>
-                <SelectItem value="medium">Medium Activity (5-9)</SelectItem>
-                <SelectItem value="low">Low Activity (1-4)</SelectItem>
-                <SelectItem value="none">No Bookings</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button onClick={() => setIsAddModalOpen(true)} className="whitespace-nowrap">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Student
-            </Button>
-
-            <ExportButtons
-              data={exportData}
-              filename="students"
-              title="Students Report"
-              columns={exportColumns}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Students Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Students ({filteredStudents.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
+            {/* Students Table */}
+            <div className="border rounded-lg overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Student ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Bookings</TableHead>
-                    <TableHead>Total Spent</TableHead>
-                    <TableHead>Avg. Session</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Total Spent</TableHead>
+                    <TableHead>Bookings</TableHead>
                     <TableHead>Last Booking</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -305,57 +139,49 @@ const StudentsTable = () => {
                 <TableBody>
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id}>
-                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell className="font-medium">{student.student_id}</TableCell>
+                      <TableCell>{student.full_name}</TableCell>
                       <TableCell>{student.email}</TableCell>
                       <TableCell>{student.phone}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{student.bookingsCount}</Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">{student.totalSpent}</TableCell>
-                      <TableCell>{student.averageSessionDuration}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={student.status === 'active' ? 'default' : 'destructive'}
+                        <Select
+                          value={student.status}
+                          onValueChange={(value) => handleStatusChange(student.id, value)}
                         >
-                          {student.status === 'active' ? (
-                            <>
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Active
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Inactive
-                            </>
-                          )}
-                        </Badge>
+                          <SelectTrigger className="w-32">
+                            <Badge className={getStatusColor(student.status)}>
+                              {student.status}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="suspended">Suspended</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </TableCell>
-                      <TableCell>{student.lastBooking || 'Never'}</TableCell>
+                      <TableCell>₹{student.total_spent.toLocaleString()}</TableCell>
+                      <TableCell>{student.total_bookings}</TableCell>
                       <TableCell>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
+                        {student.last_booking_date 
+                          ? new Date(student.last_booking_date).toLocaleDateString()
+                          : 'Never'
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
                             size="sm"
-                            onClick={() => handleViewStudent(student)}
+                            variant="outline"
+                            onClick={() => handleViewDetails(student)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant={student.status === 'active' ? 'destructive' : 'default'}
-                            size="sm"
-                            onClick={() => toggleStudentStatus(student.id, student.status)}
-                          >
-                            {student.status === 'active' ? (
-                              <>
-                                <Ban className="h-4 w-4 mr-1" />
-                                Disable
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-1" />
-                                Enable
-                              </>
-                            )}
+                          <Button size="sm" variant="outline">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-red-600">
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -364,24 +190,32 @@ const StudentsTable = () => {
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Student Details Modal */}
-      <StudentDetailsModal
-        student={selectedStudent}
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-      />
+            {filteredStudents.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No students found matching your criteria.
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Add Student Modal */}
-      <AddStudentModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onStudentAdded={handleAddStudent}
-      />
-    </div>
+        {/* Modals */}
+        <StudentDetailsModal
+          student={selectedStudent}
+          isOpen={isDetailsModalOpen}
+          onClose={() => {
+            setIsDetailsModalOpen(false);
+            setSelectedStudent(null);
+          }}
+        />
+
+        <AddStudentModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onStudentAdded={fetchStudents}
+        />
+      </div>
+    </ErrorBoundary>
   );
 };
 

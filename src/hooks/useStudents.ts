@@ -1,7 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Student {
   id: string;
@@ -9,13 +10,14 @@ interface Student {
   full_name: string;
   email: string;
   phone: string;
-  total_bookings: number;
   status: 'active' | 'inactive' | 'suspended';
-  created_at: string;
-  last_booking_date?: string;
   total_spent: number;
+  total_bookings: number;
   average_session_duration: string;
+  last_booking_date: string | null;
   preferred_study_halls: string[];
+  created_at: string;
+  updated_at: string;
 }
 
 export const useStudents = () => {
@@ -23,64 +25,90 @@ export const useStudents = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, userRole, isAuthReady } = useAuth();
+  const isMountedRef = useRef(true);
 
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      setError(null);
+      
+      console.log('useStudents: Starting fetch, user:', user?.id, 'role:', userRole?.name);
+      
+      // Check authentication
+      if (!user || !isAuthReady) {
+        console.log('useStudents: User not authenticated or auth not ready');
+        if (isMountedRef.current) {
+          setStudents([]);
+          setError('Authentication required');
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Check admin role
+      if (userRole?.name !== 'admin') {
+        console.log('useStudents: User does not have admin role:', userRole?.name);
+        if (isMountedRef.current) {
+          setStudents([]);
+          setError('Admin access required');
+          setLoading(false);
+        }
+        return;
+      }
+      
+      const { data: studentsData, error: studentsError } = await supabase
         .from('students')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('useStudents: Students response:', { data: studentsData, error: studentsError });
 
-      // Type assertion to ensure status field matches our interface
-      const typedStudents = (data || []).map(student => ({
+      if (studentsError) {
+        console.error('useStudents: Error fetching students:', studentsError);
+        throw studentsError;
+      }
+
+      // Type assertion to ensure proper typing
+      const typedStudents = (studentsData || []).map(student => ({
         ...student,
         status: student.status as 'active' | 'inactive' | 'suspended'
       }));
 
-      setStudents(typedStudents);
-      setError(null);
+      console.log('useStudents: Final processed students:', typedStudents);
+
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setStudents(typedStudents);
+        setError(null);
+        
+        toast({
+          title: "Success",
+          description: `Loaded ${typedStudents.length} students`,
+        });
+      }
     } catch (err) {
-      console.error('Error fetching students:', err);
-      setError('Failed to fetch students');
-      toast({
-        title: "Error",
-        description: "Failed to fetch students",
-        variant: "destructive",
-      });
+      console.error('useStudents: Error in fetchStudents:', err);
+      if (isMountedRef.current) {
+        setError('Failed to fetch students');
+        setStudents([]);
+        toast({
+          title: "Error",
+          description: "Failed to fetch students. Please check your permissions.",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteStudent = async (studentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('students')
-        .delete()
-        .eq('id', studentId);
-
-      if (error) throw error;
-
-      setStudents(prev => prev.filter(student => student.id !== studentId));
-      toast({
-        title: "Success",
-        description: "Student deleted successfully",
-      });
-    } catch (err) {
-      console.error('Error deleting student:', err);
-      toast({
-        title: "Error",
-        description: "Failed to delete student",
-        variant: "destructive",
-      });
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   const updateStudent = async (studentId: string, updates: Partial<Student>) => {
     try {
+      console.log('useStudents: Updating student:', studentId, updates);
+      
       const { error } = await supabase
         .from('students')
         .update(updates)
@@ -88,37 +116,48 @@ export const useStudents = () => {
 
       if (error) throw error;
 
-      setStudents(prev => prev.map(student => 
-        student.id === studentId 
-          ? { ...student, ...updates }
-          : student
-      ));
+      if (isMountedRef.current) {
+        setStudents(prev => prev.map(student => 
+          student.id === studentId 
+            ? { ...student, ...updates }
+            : student
+        ));
 
-      toast({
-        title: "Success",
-        description: "Student updated successfully",
-      });
+        toast({
+          title: "Success",
+          description: "Student updated successfully",
+        });
+      }
     } catch (err) {
-      console.error('Error updating student:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update student",
-        variant: "destructive",
-      });
+      console.error('useStudents: Error updating student:', err);
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to update student",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    isMountedRef.current = true;
+    
+    // Only fetch when auth is ready
+    if (isAuthReady) {
+      fetchStudents();
+    }
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [user, userRole, isAuthReady]);
 
   return {
     students,
     loading,
     error,
     fetchStudents,
-    deleteStudent,
-    updateStudent,
-    addStudent: (student: Student) => setStudents(prev => [student, ...prev])
+    updateStudent
   };
 };
