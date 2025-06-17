@@ -6,15 +6,48 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface Merchant {
   id: string;
+  user_id?: string;
   full_name: string;
   business_name: string;
   business_phone: string;
   contact_number: string;
+  email?: string;
   approval_status: 'pending' | 'approved' | 'rejected';
+  verification_status: 'unverified' | 'verified' | 'rejected';
+  onboarding_completed: boolean;
   created_at: string;
+  updated_at: string;
   business_address: any;
+  communication_address?: any;
+  bank_account_details?: any;
+  incharge_name?: string;
+  incharge_designation?: string;
+  incharge_phone?: string;
+  incharge_email?: string;
+  incharge_address?: any;
+  refundable_security_deposit?: number;
+  notes?: string;
   total_revenue?: number;
   total_study_halls?: number;
+}
+
+interface CreateMerchantData {
+  full_name: string;
+  business_name: string;
+  business_phone: string;
+  contact_number: string;
+  email: string;
+  business_address: any;
+  communication_address?: any;
+  bank_account_details?: any;
+  incharge_name?: string;
+  incharge_designation?: string;
+  incharge_phone?: string;
+  incharge_email?: string;
+  incharge_address?: any;
+  refundable_security_deposit?: number;
+  approval_status?: 'pending' | 'approved' | 'rejected';
+  notes?: string;
 }
 
 export const useMerchants = () => {
@@ -32,7 +65,6 @@ export const useMerchants = () => {
       
       console.log('useMerchants: Starting fetch, user:', user?.id, 'role:', userRole?.name);
       
-      // Check authentication
       if (!user || !isAuthReady) {
         console.log('useMerchants: User not authenticated or auth not ready');
         if (isMountedRef.current) {
@@ -43,7 +75,6 @@ export const useMerchants = () => {
         return;
       }
 
-      // Check admin role
       if (userRole?.name !== 'admin') {
         console.log('useMerchants: User does not have admin role:', userRole?.name);
         if (isMountedRef.current) {
@@ -54,7 +85,6 @@ export const useMerchants = () => {
         return;
       }
       
-      // Fetch merchants first
       const { data: merchantsData, error: merchantsError } = await supabase
         .from('merchant_profiles')
         .select('*')
@@ -67,17 +97,14 @@ export const useMerchants = () => {
         throw merchantsError;
       }
 
-      // Fetch study halls separately to get revenue data
       const { data: studyHalls, error: studyHallsError } = await supabase
         .from('study_halls')
         .select('merchant_id, total_revenue, id');
 
       if (studyHallsError) {
         console.error('useMerchants: Error fetching study halls:', studyHallsError);
-        // Don't throw error for study halls, just log it
       }
 
-      // Combine the data
       const typedMerchants = (merchantsData || []).map(merchant => {
         const merchantStudyHalls = studyHalls?.filter(hall => hall.merchant_id === merchant.id) || [];
         const totalRevenue = merchantStudyHalls.reduce((sum: number, hall: any) => sum + (hall.total_revenue || 0), 0);
@@ -86,6 +113,7 @@ export const useMerchants = () => {
         return {
           ...merchant,
           approval_status: merchant.approval_status as 'pending' | 'approved' | 'rejected',
+          verification_status: merchant.verification_status as 'unverified' | 'verified' | 'rejected',
           total_revenue: totalRevenue,
           total_study_halls: totalStudyHalls
         };
@@ -93,7 +121,6 @@ export const useMerchants = () => {
 
       console.log('useMerchants: Final processed merchants:', typedMerchants);
 
-      // Only update state if component is still mounted
       if (isMountedRef.current) {
         setMerchants(typedMerchants);
         setError(null);
@@ -118,6 +145,54 @@ export const useMerchants = () => {
       if (isMountedRef.current) {
         setLoading(false);
       }
+    }
+  };
+
+  const createMerchant = async (merchantData: CreateMerchantData) => {
+    try {
+      console.log('useMerchants: Creating merchant:', merchantData);
+      
+      const { data, error } = await supabase
+        .from('merchant_profiles')
+        .insert([{
+          ...merchantData,
+          onboarding_completed: false,
+          verification_status: 'unverified',
+          approval_status: merchantData.approval_status || 'pending'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newMerchant: Merchant = {
+        ...data,
+        approval_status: data.approval_status as 'pending' | 'approved' | 'rejected',
+        verification_status: data.verification_status as 'unverified' | 'verified' | 'rejected',
+        total_revenue: 0,
+        total_study_halls: 0
+      };
+
+      if (isMountedRef.current) {
+        setMerchants(prev => [newMerchant, ...prev]);
+
+        toast({
+          title: "Success",
+          description: "Merchant created successfully",
+        });
+      }
+
+      return newMerchant;
+    } catch (err) {
+      console.error('useMerchants: Error creating merchant:', err);
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to create merchant",
+          variant: "destructive",
+        });
+      }
+      throw err;
     }
   };
 
@@ -156,10 +231,40 @@ export const useMerchants = () => {
     }
   };
 
+  const deleteMerchant = async (merchantId: string) => {
+    try {
+      console.log('useMerchants: Deleting merchant:', merchantId);
+      
+      const { error } = await supabase
+        .from('merchant_profiles')
+        .delete()
+        .eq('id', merchantId);
+
+      if (error) throw error;
+
+      if (isMountedRef.current) {
+        setMerchants(prev => prev.filter(merchant => merchant.id !== merchantId));
+
+        toast({
+          title: "Success",
+          description: "Merchant deleted successfully",
+        });
+      }
+    } catch (err) {
+      console.error('useMerchants: Error deleting merchant:', err);
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to delete merchant",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     isMountedRef.current = true;
     
-    // Only fetch when auth is ready
     if (isAuthReady) {
       fetchMerchants();
     }
@@ -174,6 +279,8 @@ export const useMerchants = () => {
     loading,
     error,
     fetchMerchants,
-    updateMerchant
+    createMerchant,
+    updateMerchant,
+    deleteMerchant
   };
 };

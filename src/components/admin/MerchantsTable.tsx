@@ -9,14 +9,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus, Eye, Edit, Trash2, Download } from "lucide-react";
 import { useMerchants } from "@/hooks/useMerchants";
 import MerchantDetailsModal from "./MerchantDetailsModal";
+import AddMerchantModal from "./AddMerchantModal";
+import EditMerchantModal from "./EditMerchantModal";
 import ErrorBoundary from "./ErrorBoundary";
+import { useToast } from "@/hooks/use-toast";
 
 const MerchantsTable = () => {
-  const { merchants, loading, error, fetchMerchants, updateMerchant } = useMerchants();
+  const { merchants, loading, error, fetchMerchants, createMerchant, updateMerchant, deleteMerchant } = useMerchants();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedMerchant, setSelectedMerchant] = useState<any>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const filteredMerchants = merchants.filter(merchant => {
     const matchesSearch = merchant.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,10 +46,74 @@ const MerchantsTable = () => {
     setIsDetailsModalOpen(true);
   };
 
+  const handleEditMerchant = (merchant: any) => {
+    setSelectedMerchant(merchant);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteMerchant = async (merchant: any) => {
+    if (window.confirm(`Are you sure you want to delete ${merchant.business_name}? This action cannot be undone.`)) {
+      try {
+        await deleteMerchant(merchant.id);
+      } catch (error) {
+        console.error('Error deleting merchant:', error);
+      }
+    }
+  };
+
   const handleUpdateStatus = async (merchantId: string, status: 'approved' | 'rejected') => {
-    await updateMerchant(merchantId, { approval_status: status });
-    setIsDetailsModalOpen(false);
-    setSelectedMerchant(null);
+    try {
+      await updateMerchant(merchantId, { approval_status: status });
+      setIsDetailsModalOpen(false);
+      setSelectedMerchant(null);
+    } catch (error) {
+      console.error('Error updating merchant status:', error);
+    }
+  };
+
+  const handleCreateMerchant = async (merchantData: any) => {
+    try {
+      await createMerchant(merchantData);
+    } catch (error) {
+      console.error('Error creating merchant:', error);
+    }
+  };
+
+  const handleUpdateMerchant = async (merchantId: string, updates: any) => {
+    try {
+      await updateMerchant(merchantId, updates);
+    } catch (error) {
+      console.error('Error updating merchant:', error);
+    }
+  };
+
+  const exportMerchants = () => {
+    const csvContent = [
+      ['Business Name', 'Owner', 'Business Phone', 'Contact', 'Status', 'Study Halls', 'Revenue', 'Joined'],
+      ...filteredMerchants.map(merchant => [
+        merchant.business_name,
+        merchant.full_name,
+        merchant.business_phone,
+        merchant.contact_number,
+        merchant.approval_status,
+        merchant.total_study_halls || 0,
+        merchant.total_revenue || 0,
+        new Date(merchant.created_at).toLocaleDateString()
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'merchants.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export Successful",
+      description: "Merchants data has been exported to CSV",
+    });
   };
 
   if (loading) {
@@ -85,7 +155,7 @@ const MerchantsTable = () => {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Merchants Management</CardTitle>
-              <Button className="flex items-center gap-2">
+              <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />
                 Add Merchant
               </Button>
@@ -114,7 +184,7 @@ const MerchantsTable = () => {
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" onClick={exportMerchants} className="flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 Export
               </Button>
@@ -159,13 +229,25 @@ const MerchantsTable = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleViewDetails(merchant)}
+                            title="View Details"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditMerchant(merchant)}
+                            title="Edit Merchant"
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline" className="text-red-600">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => handleDeleteMerchant(merchant)}
+                            title="Delete Merchant"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -184,7 +266,7 @@ const MerchantsTable = () => {
           </CardContent>
         </Card>
 
-        {/* Details Modal */}
+        {/* Modals */}
         <MerchantDetailsModal
           merchant={selectedMerchant}
           isOpen={isDetailsModalOpen}
@@ -193,6 +275,22 @@ const MerchantsTable = () => {
             setSelectedMerchant(null);
           }}
           onUpdateStatus={handleUpdateStatus}
+        />
+
+        <AddMerchantModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSubmit={handleCreateMerchant}
+        />
+
+        <EditMerchantModal
+          merchant={selectedMerchant}
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedMerchant(null);
+          }}
+          onSubmit={handleUpdateMerchant}
         />
       </div>
     </ErrorBoundary>
