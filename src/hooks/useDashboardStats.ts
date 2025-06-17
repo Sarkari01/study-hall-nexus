@@ -5,26 +5,28 @@ import { useToast } from "@/hooks/use-toast";
 
 interface DashboardStats {
   totalStudents: number;
-  activeStudyHalls: number;
+  totalMerchants: number;
   totalBookings: number;
   totalRevenue: number;
-  studentsChange: number;
-  studyHallsChange: number;
-  bookingsChange: number;
-  revenueChange: number;
+  activeStudents: number;
+  activeStudyHalls: number;
+  pendingBookings: number;
+  completedBookings: number;
 }
 
+const defaultStats: DashboardStats = {
+  totalStudents: 0,
+  totalMerchants: 0,
+  totalBookings: 0,
+  totalRevenue: 0,
+  activeStudents: 0,
+  activeStudyHalls: 0,
+  pendingBookings: 0,
+  completedBookings: 0,
+};
+
 export const useDashboardStats = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalStudents: 0,
-    activeStudyHalls: 0,
-    totalBookings: 0,
-    totalRevenue: 0,
-    studentsChange: 0,
-    studyHallsChange: 0,
-    bookingsChange: 0,
-    revenueChange: 0
-  });
+  const [stats, setStats] = useState<DashboardStats>(defaultStats);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -34,64 +36,86 @@ export const useDashboardStats = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch students data
-      const { data: studentsData } = await supabase
-        .from('students')
-        .select('status, total_spent');
+      // Initialize stats with defaults
+      let calculatedStats = { ...defaultStats };
 
-      // Fetch study halls data
-      const { data: studyHallsData } = await supabase
-        .from('study_halls')
-        .select('status, total_revenue');
+      try {
+        // Fetch students data with error handling
+        const { data: students, error: studentsError } = await supabase
+          .from('students')
+          .select('status, total_spent');
 
-      // Fetch bookings data
-      const { data: bookingsData } = await supabase
-        .from('bookings')
-        .select('status, final_amount');
+        if (studentsError) {
+          console.warn('Students fetch error:', studentsError);
+        } else if (students) {
+          calculatedStats.totalStudents = students.length;
+          calculatedStats.activeStudents = students.filter(s => s.status === 'active').length;
+        }
+      } catch (error) {
+        console.warn('Error fetching students:', error);
+      }
 
-      // Fetch merchant profiles data
-      const { data: merchantsData } = await supabase
-        .from('merchant_profiles')
-        .select('approval_status');
+      try {
+        // Fetch study halls data with error handling
+        const { data: studyHalls, error: studyHallsError } = await supabase
+          .from('study_halls')
+          .select('status, total_revenue');
 
-      // Calculate stats
-      const totalStudents = studentsData?.filter(s => s.status === 'active').length || 0;
-      const activeStudyHalls = studyHallsData?.filter(h => h.status === 'active').length || 0;
-      const totalBookings = bookingsData?.length || 0;
-      const totalRevenue = studyHallsData?.reduce((sum, hall) => sum + (hall.total_revenue || 0), 0) || 0;
+        if (studyHallsError) {
+          console.warn('Study halls fetch error:', studyHallsError);
+        } else if (studyHalls) {
+          calculatedStats.activeStudyHalls = studyHalls.filter(h => h.status === 'active').length;
+        }
+      } catch (error) {
+        console.warn('Error fetching study halls:', error);
+      }
 
-      // For now, we'll use mock percentage changes since we don't have historical data
-      const studentsChange = Math.floor(Math.random() * 20) - 5; // Random between -5 and 15
-      const studyHallsChange = Math.floor(Math.random() * 15) - 2; // Random between -2 and 13
-      const bookingsChange = Math.floor(Math.random() * 25) - 5; // Random between -5 and 20
-      const revenueChange = Math.floor(Math.random() * 30) - 10; // Random between -10 and 20
+      try {
+        // Fetch bookings data with error handling
+        const { data: bookings, error: bookingsError } = await supabase
+          .from('bookings')
+          .select('status, final_amount');
 
-      setStats({
-        totalStudents,
-        activeStudyHalls,
-        totalBookings,
-        totalRevenue,
-        studentsChange,
-        studyHallsChange,
-        bookingsChange,
-        revenueChange
-      });
+        if (bookingsError) {
+          console.warn('Bookings fetch error:', bookingsError);
+        } else if (bookings) {
+          calculatedStats.totalBookings = bookings.length;
+          calculatedStats.pendingBookings = bookings.filter(b => b.status === 'pending').length;
+          calculatedStats.completedBookings = bookings.filter(b => b.status === 'completed').length;
+          calculatedStats.totalRevenue = bookings.reduce((sum, booking) => sum + (booking.final_amount || 0), 0);
+        }
+      } catch (error) {
+        console.warn('Error fetching bookings:', error);
+      }
 
-    } catch (err) {
-      console.error('Error fetching dashboard stats:', err);
+      try {
+        // Fetch merchant profiles data with error handling
+        const { data: merchants, error: merchantsError } = await supabase
+          .from('merchant_profiles')
+          .select('approval_status');
+
+        if (merchantsError) {
+          console.warn('Merchants fetch error:', merchantsError);
+        } else if (merchants) {
+          calculatedStats.totalMerchants = merchants.length;
+        }
+      } catch (error) {
+        console.warn('Error fetching merchants:', error);
+      }
+
+      setStats(calculatedStats);
+      console.log('Dashboard stats loaded successfully:', calculatedStats);
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
       setError('Failed to fetch dashboard statistics');
       toast({
-        title: "Error",
-        description: "Failed to fetch dashboard statistics",
-        variant: "destructive",
+        title: "Warning",
+        description: "Some dashboard statistics could not be loaded. Using default values.",
+        variant: "default",
       });
     } finally {
       setLoading(false);
     }
-  };
-
-  const refetch = async () => {
-    await fetchStats();
   };
 
   useEffect(() => {
@@ -102,6 +126,6 @@ export const useDashboardStats = () => {
     stats,
     loading,
     error,
-    refetch
+    refetch: fetchStats,
   };
 };

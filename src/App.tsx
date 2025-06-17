@@ -6,14 +6,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentPortal from "./pages/StudentPortal";
 import MerchantDashboard from "./pages/MerchantDashboard";
 import EditorDashboard from "./pages/EditorDashboard";
 import TelecallerDashboard from "./pages/TelecallerDashboard";
 import InchargeDashboard from "./pages/InchargeDashboard";
-import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -34,76 +32,61 @@ const App = () => (
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              {/* Authentication route */}
-              <Route path="/auth" element={<AuthPage />} />
+              {/* Redirect root to admin */}
+              <Route path="/" element={<Navigate to="/admin" replace />} />
               
-              {/* Redirect root to auth */}
-              <Route path="/" element={<Navigate to="/auth" replace />} />
-              
-              {/* Protected role-based routes */}
+              {/* Admin dashboard route */}
               <Route 
                 path="/admin" 
                 element={
-                  <ProtectedRoute requiredRole="admin">
-                    <ErrorBoundary>
-                      <AdminDashboard />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary>
+                    <AdminDashboard />
+                  </ErrorBoundary>
                 } 
               />
               
               <Route 
                 path="/student" 
                 element={
-                  <ProtectedRoute requiredRole="student">
-                    <ErrorBoundary>
-                      <StudentPortal />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary>
+                    <StudentPortal />
+                  </ErrorBoundary>
                 } 
               />
               
               <Route 
                 path="/merchant" 
                 element={
-                  <ProtectedRoute requiredRole="merchant">
-                    <ErrorBoundary>
-                      <MerchantDashboard />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary>
+                    <MerchantDashboard />
+                  </ErrorBoundary>
                 } 
               />
               
               <Route 
                 path="/editor" 
                 element={
-                  <ProtectedRoute requiredRole="editor">
-                    <ErrorBoundary>
-                      <EditorDashboard />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary>
+                    <EditorDashboard />
+                  </ErrorBoundary>
                 } 
               />
               
               <Route 
                 path="/telecaller" 
                 element={
-                  <ProtectedRoute requiredRole="telecaller">
-                    <ErrorBoundary>
-                      <TelecallerDashboard />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary>
+                    <TelecallerDashboard />
+                  </ErrorBoundary>
                 } 
               />
               
               <Route 
                 path="/incharge" 
                 element={
-                  <ProtectedRoute requiredRole="incharge">
-                    <ErrorBoundary>
-                      <InchargeDashboard />
-                    </ErrorBoundary>
-                  </ProtectedRoute>
+                  <ErrorBoundary>
+                    <InchargeDashboard />
+                  </ErrorBoundary>
                 } 
               />
               
