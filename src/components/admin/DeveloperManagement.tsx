@@ -137,7 +137,7 @@ const DeveloperManagement = () => {
     {
       id: '5',
       name: 'DeepSeek API',
-      key: 'sk-528c2a6b0f984e7f88d3b62bb54f5e5a',
+      key: 'sk-fd0b5d3781bd4c60888fcf01e489cb07',
       description: 'AI-powered analytics, chatbot, content moderation, and insights',
       status: 'active',
       lastUsed: new Date().toISOString().split('T')[0],
@@ -167,7 +167,15 @@ const DeveloperManagement = () => {
     // Store DeepSeek API key
     const deepseekKey = apiKeys.find(key => key.provider === 'DeepSeek' && key.status === 'active');
     if (deepseekKey) {
+      console.log('Storing DeepSeek API key in localStorage:', deepseekKey.key.substring(0, 10) + '...');
       localStorage.setItem('deepseek_api_key', deepseekKey.key);
+      
+      // Trigger a storage event to notify other components
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'deepseek_api_key',
+        newValue: deepseekKey.key,
+        storageArea: localStorage
+      }));
     }
   }, [apiKeys]);
 
@@ -303,7 +311,7 @@ const DeveloperManagement = () => {
 
     toast({
       title: "Success",
-      description: "API key has been updated successfully",
+      description: "API key has been updated successfully. The AI services will use the new key automatically.",
     });
   };
 

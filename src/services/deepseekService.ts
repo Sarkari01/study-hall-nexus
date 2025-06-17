@@ -1,4 +1,3 @@
-
 export interface DeepSeekMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -22,6 +21,7 @@ export class DeepSeekService {
 
   async validateApiKey(): Promise<boolean> {
     try {
+      console.log('Validating DeepSeek API key...');
       const response = await fetch(`${this.baseURL}/models`, {
         method: 'GET',
         headers: {
@@ -29,7 +29,27 @@ export class DeepSeekService {
           'Content-Type': 'application/json',
         },
       });
-      return response.ok;
+      
+      console.log('API key validation response status:', response.status);
+      
+      if (response.status === 401) {
+        console.error('API key validation failed: Unauthorized');
+        return false;
+      }
+      
+      if (response.status === 403) {
+        console.error('API key validation failed: Forbidden');
+        return false;
+      }
+      
+      if (!response.ok) {
+        console.error('API key validation failed:', response.status, response.statusText);
+        return false;
+      }
+      
+      const data = await response.json();
+      console.log('API key validation successful:', data);
+      return true;
     } catch (error) {
       console.error('API key validation error:', error);
       return false;
@@ -41,11 +61,8 @@ export class DeepSeekService {
       throw new Error('DeepSeek API key is not configured. Please set your API key in Developer Management.');
     }
 
-    // Validate API key first
-    const isValidKey = await this.validateApiKey();
-    if (!isValidKey) {
-      throw new Error('Invalid DeepSeek API key. Please check your API key in Developer Management settings.');
-    }
+    console.log('Making chat request to DeepSeek API...');
+    console.log('API Key (masked):', this.apiKey.substring(0, 10) + '...');
 
     try {
       const response = await fetch(`${this.baseURL}/chat/completions`, {
@@ -62,7 +79,12 @@ export class DeepSeekService {
         }),
       });
 
+      console.log('Chat API response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Chat API error response:', errorText);
+        
         if (response.status === 401) {
           throw new Error('Invalid DeepSeek API key. Please check your API key in Developer Management settings.');
         } else if (response.status === 429) {
@@ -70,11 +92,12 @@ export class DeepSeekService {
         } else if (response.status >= 500) {
           throw new Error('DeepSeek API service is temporarily unavailable. Please try again later.');
         } else {
-          throw new Error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+          throw new Error(`DeepSeek API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
       }
 
       const data: DeepSeekResponse = await response.json();
+      console.log('Chat API response data:', data);
       
       if (!data.choices || data.choices.length === 0) {
         throw new Error('No response received from DeepSeek API');

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Send, Bot, User, Loader2, AlertCircle, Settings } from 'lucide-react';
+import { Send, Bot, User, Loader2, AlertCircle, Settings, RefreshCw } from 'lucide-react';
 import { DeepSeekService, DeepSeekMessage } from '@/services/deepseekService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,6 +36,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
   const [deepSeekService, setDeepSeekService] = useState<DeepSeekService | null>(null);
   const [apiKeyError, setApiKeyError] = useState<string>('');
   const [isValidatingKey, setIsValidatingKey] = useState(false);
+  const [currentApiKey, setCurrentApiKey] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -43,43 +44,78 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
     const initializeDeepSeek = async () => {
       try {
         setIsValidatingKey(true);
+        console.log('Initializing DeepSeek service...');
         
-        // Use the provided API key: sk-528c2a6b0f984e7f88d3b62bb54f5e5a
-        const defaultApiKey = 'sk-528c2a6b0f984e7f88d3b62bb54f5e5a';
-        const finalApiKey = apiKey || localStorage.getItem('deepseek_api_key') || defaultApiKey;
+        // Priority order for API keys:
+        // 1. Provided apiKey prop
+        // 2. localStorage from Developer Management
+        // 3. Default fallback key
+        const storedApiKey = localStorage.getItem('deepseek_api_key');
+        const fallbackApiKey = 'sk-fd0b5d3781bd4c60888fcf01e489cb07'; // User's provided key
+        
+        const finalApiKey = apiKey || storedApiKey || fallbackApiKey;
+        
+        console.log('Using API key source:', 
+          apiKey ? 'prop' : 
+          storedApiKey ? 'localStorage' : 
+          'fallback'
+        );
+        console.log('API key (masked):', finalApiKey ? finalApiKey.substring(0, 10) + '...' : 'None');
         
         if (finalApiKey && finalApiKey.trim() !== '') {
-          // Store the API key
+          setCurrentApiKey(finalApiKey);
+          
+          // Store the API key for future use
           localStorage.setItem('deepseek_api_key', finalApiKey);
           
           const service = new DeepSeekService(finalApiKey);
           
           // Validate the API key
+          console.log('Validating API key...');
           const isValid = await service.validateApiKey();
           
           if (isValid) {
             setDeepSeekService(service);
             setApiKeyError('');
             console.log('DeepSeek API key validated successfully');
+            
+            toast({
+              title: "AI Assistant Ready",
+              description: "DeepSeek API is configured and ready to use.",
+            });
           } else {
             setDeepSeekService(null);
-            setApiKeyError('Invalid DeepSeek API key. Please check your API key configuration.');
+            setApiKeyError(`Invalid DeepSeek API key: ${finalApiKey.substring(0, 10)}... Please check your API key configuration.`);
+            console.error('API key validation failed');
+            
+            toast({
+              title: "API Key Invalid",
+              description: "The DeepSeek API key is invalid. Please check your configuration.",
+              variant: "destructive"
+            });
           }
         } else {
           setDeepSeekService(null);
           setApiKeyError('DeepSeek API key not configured');
+          console.error('No API key available');
         }
       } catch (error) {
         console.error('Error initializing DeepSeek:', error);
         setDeepSeekService(null);
-        setApiKeyError('Failed to initialize DeepSeek service');
+        setApiKeyError(`Failed to initialize DeepSeek service: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        
+        toast({
+          title: "Initialization Failed",
+          description: "Failed to initialize AI service. Please check your configuration.",
+          variant: "destructive"
+        });
       } finally {
         setIsValidatingKey(false);
       }
     };
 
     initializeDeepSeek();
-  }, [apiKey]);
+  }, [apiKey, toast]);
 
   useEffect(() => {
     scrollToBottom();
@@ -109,6 +145,33 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
         return `${basePrompt} You are helping an admin user with platform management.`;
       default:
         return basePrompt;
+    }
+  };
+
+  const retryConnection = async () => {
+    if (currentApiKey) {
+      setApiKeyError('');
+      setIsValidatingKey(true);
+      
+      try {
+        const service = new DeepSeekService(currentApiKey);
+        const isValid = await service.validateApiKey();
+        
+        if (isValid) {
+          setDeepSeekService(service);
+          setApiKeyError('');
+          toast({
+            title: "Connection Restored",
+            description: "AI Assistant is now ready to use.",
+          });
+        } else {
+          setApiKeyError('API key validation failed. Please check your key.');
+        }
+      } catch (error) {
+        setApiKeyError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setIsValidatingKey(false);
+      }
     }
   };
 
@@ -145,6 +208,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
         { role: 'user', content: inputMessage }
       ];
 
+      console.log('Sending chat request...');
       const response = await deepSeekService.chat(conversationMessages);
 
       const assistantMessage: ChatMessage = {
@@ -155,6 +219,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      console.log('Chat response received successfully');
     } catch (error) {
       console.error('AI Chat error:', error);
       
@@ -212,15 +277,37 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ apiKey, userType, className }) =>
           <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <AlertCircle className="h-4 w-4 text-yellow-600" />
             <span className="text-sm text-yellow-800 flex-1">{apiKeyError}</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={openDeveloperSettings}
-              className="flex items-center gap-1"
-            >
-              <Settings className="h-3 w-3" />
-              Configure
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={retryConnection}
+                disabled={isValidatingKey}
+                className="flex items-center gap-1"
+              >
+                <RefreshCw className={`h-3 w-3 ${isValidatingKey ? 'animate-spin' : ''}`} />
+                Retry
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={openDeveloperSettings}
+                className="flex items-center gap-1"
+              >
+                <Settings className="h-3 w-3" />
+                Configure
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Current API Key Info */}
+        {deepSeekService && currentApiKey && (
+          <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+            <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+            <span className="text-sm text-green-800">
+              Connected with API key: {currentApiKey.substring(0, 10)}...
+            </span>
           </div>
         )}
 
