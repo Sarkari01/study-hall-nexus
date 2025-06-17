@@ -35,15 +35,17 @@ export const useMerchants = () => {
     validateData: validateMerchantData
   });
 
-  // Transform merchants data to add missing fields
-  const transformedMerchants = (secureDataHook.data || []).map(merchant => ({
-    ...merchant,
-    total_study_halls: merchant.total_study_halls || Math.floor(Math.random() * 3) + 1,
-    total_revenue: merchant.total_revenue || (merchant.approval_status === 'approved' ? Math.floor(Math.random() * 400000) + 100000 : 0)
-  }));
+  console.log('useMerchants: Raw data from useSecureData:', secureDataHook.data);
+  console.log('useMerchants: Loading state:', secureDataHook.loading);
+  console.log('useMerchants: Error state:', secureDataHook.error);
+
+  // Use the actual data without transformation for now
+  const merchants = secureDataHook.data || [];
+
+  console.log('useMerchants: Final merchants data:', merchants);
 
   return {
-    merchants: transformedMerchants,
+    merchants: merchants,
     loading: secureDataHook.loading,
     error: secureDataHook.error,
     createMerchant: secureDataHook.create,

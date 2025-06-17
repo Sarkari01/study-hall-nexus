@@ -1,13 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Eye, Edit, Trash2, Download } from "lucide-react";
+import { Search, Plus, Eye, Edit, Trash2, Download, AlertTriangle } from "lucide-react";
 import { useMerchants } from "@/hooks/useMerchants";
+import { useAuth } from '@/contexts/AuthContext';
 import MerchantDetailsModal from "./MerchantDetailsModal";
 import AddMerchantModal from "./AddMerchantModal";
 import EditMerchantModal from "./EditMerchantModal";
@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const MerchantsTable = () => {
   const { merchants, loading, error, fetchMerchants, createMerchant, updateMerchant, deleteMerchant } = useMerchants();
+  const { user, userRole, isAuthReady } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -23,6 +24,25 @@ const MerchantsTable = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('MerchantsTable: Component mounted/updated');
+    console.log('MerchantsTable: isAuthReady:', isAuthReady);
+    console.log('MerchantsTable: user:', user);
+    console.log('MerchantsTable: userRole:', userRole);
+    console.log('MerchantsTable: merchants:', merchants);
+    console.log('MerchantsTable: loading:', loading);
+    console.log('MerchantsTable: error:', error);
+  }, [isAuthReady, user, userRole, merchants, loading, error]);
+
+  // Trigger fetch when auth is ready
+  useEffect(() => {
+    if (isAuthReady && user && userRole?.name === 'admin') {
+      console.log('MerchantsTable: Triggering fetchMerchants');
+      fetchMerchants();
+    }
+  }, [isAuthReady, user, userRole, fetchMerchants]);
 
   const filteredMerchants = merchants.filter(merchant => {
     const matchesSearch = merchant.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -116,7 +136,7 @@ const MerchantsTable = () => {
     });
   };
 
-  if (loading) {
+  if (!isAuthReady || loading) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -133,13 +153,43 @@ const MerchantsTable = () => {
     );
   }
 
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Authentication Required</h3>
+            <p className="text-gray-600">Please log in to access merchant data.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (userRole?.name !== 'admin') {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Access Denied</h3>
+            <p className="text-gray-600">Admin privileges required to view merchant data.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (error) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="text-center text-red-600">
-            <p>{error}</p>
-            <Button onClick={fetchMerchants} className="mt-2">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Merchants</h3>
+            <p className="mb-4">{error}</p>
+            <Button onClick={fetchMerchants}>
               Retry
             </Button>
           </div>
@@ -162,6 +212,16 @@ const MerchantsTable = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Debug Info */}
+            <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
+              <strong>Debug Info:</strong><br />
+              Total merchants: {merchants.length}<br />
+              Filtered merchants: {filteredMerchants.length}<br />
+              Auth ready: {isAuthReady ? 'Yes' : 'No'}<br />
+              User role: {userRole?.name || 'None'}<br />
+              Error: {error || 'None'}
+            </div>
+
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-1">
@@ -258,7 +318,19 @@ const MerchantsTable = () => {
               </Table>
             </div>
 
-            {filteredMerchants.length === 0 && (
+            {filteredMerchants.length === 0 && merchants.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <div className="mb-4">
+                  <strong>No merchants found in database.</strong>
+                </div>
+                <p>The test data from the migration should be available.</p>
+                <Button onClick={fetchMerchants} className="mt-2">
+                  Refresh Data
+                </Button>
+              </div>
+            )}
+
+            {filteredMerchants.length === 0 && merchants.length > 0 && (
               <div className="text-center py-8 text-gray-500">
                 No merchants found matching your criteria.
               </div>
