@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Building2, User, Lock, Mail } from "lucide-react";
+import { Loader2, Building2, Lock, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isValidRole, getRoleRoute, ValidRole } from '@/utils/roleValidation';
 
@@ -23,11 +22,6 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-
-  const quickAdminLogin = () => {
-    setEmail('admin@sarkari-ninja.com');
-    setPassword('Admin123!@#');
-  };
 
   useEffect(() => {
     // Only attempt redirect once when conditions are met
@@ -174,10 +168,10 @@ const AuthPage = () => {
   // Show loading while auth is initializing
   if (!isAuthReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Initializing...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
+          <p className="text-green-700">Initializing...</p>
         </div>
       </div>
     );
@@ -186,77 +180,90 @@ const AuthPage = () => {
   // Show loading while user profile is being loaded after authentication
   if (user && (authLoading || !redirectAttempted) && isAuthReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading user profile...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-green-600" />
+          <p className="text-green-700">Loading user profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Building2 className="h-12 w-12 text-blue-600" />
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="bg-green-600 p-3 rounded-2xl shadow-lg">
+              <Building2 className="h-8 w-8 text-white" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Sarkari Ninja</h1>
-              <p className="text-sm text-gray-600">Advanced Management System</p>
+              <h1 className="text-3xl font-bold text-green-900">Sarkari Ninja</h1>
+              <p className="text-sm text-green-700">Advanced Management System</p>
             </div>
           </div>
         </div>
 
-        <Card className="shadow-xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Welcome</CardTitle>
-            <p className="text-sm text-muted-foreground text-center">
+        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="space-y-1 pb-6">
+            <CardTitle className="text-2xl text-center text-green-900">Welcome Back</CardTitle>
+            <p className="text-sm text-green-600 text-center">
               Sign in to your account or create a new one
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-6">
             <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin" data-value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-green-50">
+                <TabsTrigger 
+                  value="signin" 
+                  data-value="signin"
+                  className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                >
+                  Sign In
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="signup"
+                  className="data-[state=active]:bg-green-600 data-[state=active]:text-white"
+                >
+                  Sign Up
+                </TabsTrigger>
               </TabsList>
 
               {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert variant="destructive" className="border-red-200 bg-red-50">
+                  <AlertDescription className="text-red-700">{error}</AlertDescription>
                 </Alert>
               )}
 
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signin-email">Email</Label>
+                    <Label htmlFor="signin-email" className="text-green-800">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-green-500" />
                       <Input
                         id="signin-email"
                         type="email"
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 border-green-200 focus:border-green-500 focus:ring-green-500"
                         disabled={loading}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signin-password">Password</Label>
+                    <Label htmlFor="signin-password" className="text-green-800">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-green-500" />
                       <Input
                         id="signin-password"
                         type="password"
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 border-green-200 focus:border-green-500 focus:ring-green-500"
                         disabled={loading}
                       />
                     </div>
@@ -264,68 +271,44 @@ const AuthPage = () => {
 
                   <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 shadow-lg" 
                     disabled={loading}
                   >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign In
                   </Button>
                 </form>
-
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Admin Access
-                  </h4>
-                  <p className="text-xs text-blue-700 mb-3">
-                    Use these credentials to access the admin dashboard:
-                  </p>
-                  <div className="space-y-1 text-xs text-blue-800 mb-3">
-                    <p><strong>Email:</strong> admin@sarkari-ninja.com</p>
-                    <p><strong>Password:</strong> Admin123!@#</p>
-                  </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={quickAdminLogin}
-                    className="w-full text-blue-700 border-blue-300 hover:bg-blue-100"
-                    disabled={loading}
-                  >
-                    Quick Admin Login
-                  </Button>
-                </div>
               </TabsContent>
 
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label htmlFor="signup-email" className="text-green-800">Email</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-green-500" />
                       <Input
                         id="signup-email"
                         type="email"
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 border-green-200 focus:border-green-500 focus:ring-green-500"
                         disabled={loading}
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
+                    <Label htmlFor="signup-password" className="text-green-800">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-green-500" />
                       <Input
                         id="signup-password"
                         type="password"
                         placeholder="Create a password (min. 6 characters)"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 border-green-200 focus:border-green-500 focus:ring-green-500"
                         disabled={loading}
                       />
                     </div>
@@ -333,7 +316,7 @@ const AuthPage = () => {
 
                   <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 shadow-lg" 
                     disabled={loading}
                   >
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -341,7 +324,7 @@ const AuthPage = () => {
                   </Button>
                 </form>
 
-                <p className="text-xs text-gray-600 mt-4 text-center">
+                <p className="text-xs text-green-600 mt-4 text-center">
                   New accounts are created with student role by default.
                 </p>
               </TabsContent>
@@ -349,7 +332,7 @@ const AuthPage = () => {
           </CardContent>
         </Card>
 
-        <p className="text-center text-sm text-gray-600 mt-6">
+        <p className="text-center text-sm text-green-700 mt-6">
           By signing in, you agree to our Terms of Service and Privacy Policy.
         </p>
       </div>
