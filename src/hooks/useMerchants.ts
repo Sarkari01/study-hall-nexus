@@ -23,8 +23,13 @@ interface Merchant {
 }
 
 const validateMerchantData = (data: any): boolean => {
-  const result = validateMerchant(data);
-  return result.isValid;
+  try {
+    const result = validateMerchant(data);
+    return result.isValid;
+  } catch (error) {
+    console.error('Merchant validation error:', error);
+    return false;
+  }
 };
 
 export const useMerchants = () => {
@@ -39,10 +44,11 @@ export const useMerchants = () => {
   console.log('useMerchants: Loading state:', secureDataHook.loading);
   console.log('useMerchants: Error state:', secureDataHook.error);
 
-  // Use the actual data without transformation for now
-  const merchants = secureDataHook.data || [];
+  // Ensure we always return an array
+  const merchants = Array.isArray(secureDataHook.data) ? secureDataHook.data : [];
 
   console.log('useMerchants: Final merchants data:', merchants);
+  console.log('useMerchants: Final merchants count:', merchants.length);
 
   return {
     merchants: merchants,

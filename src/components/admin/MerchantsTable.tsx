@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,11 +33,12 @@ const MerchantsTable = () => {
     console.log('MerchantsTable: user:', user);
     console.log('MerchantsTable: userRole:', userRole);
     console.log('MerchantsTable: merchants:', merchants);
+    console.log('MerchantsTable: merchants.length:', merchants?.length);
     console.log('MerchantsTable: loading:', loading);
     console.log('MerchantsTable: error:', error);
   }, [isAuthReady, user, userRole, merchants, loading, error]);
 
-  // Trigger fetch when auth is ready
+  // Trigger fetch when auth is ready and user is admin
   useEffect(() => {
     if (isAuthReady && user && userRole?.name === 'admin') {
       console.log('MerchantsTable: Triggering fetchMerchants');
@@ -44,13 +46,32 @@ const MerchantsTable = () => {
     }
   }, [isAuthReady, user, userRole, fetchMerchants]);
 
-  const filteredMerchants = merchants.filter(merchant => {
-    const matchesSearch = merchant.business_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         merchant.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         merchant.business_phone.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || merchant.approval_status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Filter merchants with better error handling
+  const filteredMerchants = React.useMemo(() => {
+    if (!Array.isArray(merchants)) {
+      console.log('MerchantsTable: merchants is not an array:', merchants);
+      return [];
+    }
+
+    const filtered = merchants.filter(merchant => {
+      if (!merchant) return false;
+      
+      // Search filter
+      const searchMatch = searchTerm === '' || 
+        (merchant.business_name && merchant.business_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (merchant.full_name && merchant.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (merchant.business_phone && merchant.business_phone.includes(searchTerm));
+      
+      // Status filter
+      const statusMatch = statusFilter === 'all' || merchant.approval_status === statusFilter;
+      
+      return searchMatch && statusMatch;
+    });
+
+    console.log('MerchantsTable: filteredMerchants:', filtered);
+    console.log('MerchantsTable: filteredMerchants.length:', filtered.length);
+    return filtered;
+  }, [merchants, searchTerm, statusFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -75,8 +96,17 @@ const MerchantsTable = () => {
     if (window.confirm(`Are you sure you want to delete ${merchant.business_name}? This action cannot be undone.`)) {
       try {
         await deleteMerchant(merchant.id);
+        toast({
+          title: "Merchant Deleted",
+          description: `${merchant.business_name} has been deleted successfully.`,
+        });
       } catch (error) {
         console.error('Error deleting merchant:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete merchant. Please try again.",
+          variant: "destructive",
+        });
       }
     }
   };
@@ -86,24 +116,51 @@ const MerchantsTable = () => {
       await updateMerchant(merchantId, { approval_status: status });
       setIsDetailsModalOpen(false);
       setSelectedMerchant(null);
+      toast({
+        title: "Status Updated",
+        description: `Merchant status has been updated to ${status}.`,
+      });
     } catch (error) {
       console.error('Error updating merchant status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update merchant status. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCreateMerchant = async (merchantData: any) => {
     try {
       await createMerchant(merchantData);
+      toast({
+        title: "Merchant Created",
+        description: "New merchant has been created successfully.",
+      });
     } catch (error) {
       console.error('Error creating merchant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create merchant. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleUpdateMerchant = async (merchantId: string, updates: any) => {
     try {
       await updateMerchant(merchantId, updates);
+      toast({
+        title: "Merchant Updated",
+        description: "Merchant has been updated successfully.",
+      });
     } catch (error) {
       console.error('Error updating merchant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update merchant. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -111,14 +168,14 @@ const MerchantsTable = () => {
     const csvContent = [
       ['Business Name', 'Owner', 'Business Phone', 'Contact', 'Status', 'Study Halls', 'Revenue', 'Joined'],
       ...filteredMerchants.map(merchant => [
-        merchant.business_name,
-        merchant.full_name,
-        merchant.business_phone,
-        merchant.contact_number,
-        merchant.approval_status,
+        merchant.business_name || '',
+        merchant.full_name || '',
+        merchant.business_phone || '',
+        merchant.contact_number || '',
+        merchant.approval_status || '',
         merchant.total_study_halls || 0,
         merchant.total_revenue || 0,
-        new Date(merchant.created_at).toLocaleDateString()
+        merchant.created_at ? new Date(merchant.created_at).toLocaleDateString() : ''
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -136,7 +193,8 @@ const MerchantsTable = () => {
     });
   };
 
-  if (!isAuthReady || loading) {
+  // Show loading state only when actually loading and no data
+  if (loading && (!merchants || merchants.length === 0)) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -147,6 +205,20 @@ const MerchantsTable = () => {
                 <div key={i} className="h-12 bg-gray-200 rounded"></div>
               ))}
             </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Check authentication
+  if (!isAuthReady) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+            <p className="text-gray-600">Checking authentication...</p>
           </div>
         </CardContent>
       </Card>
@@ -212,14 +284,17 @@ const MerchantsTable = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Debug Info */}
+            {/* Debug Info - Remove this in production */}
             <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
               <strong>Debug Info:</strong><br />
-              Total merchants: {merchants.length}<br />
+              Total merchants: {merchants?.length || 0}<br />
               Filtered merchants: {filteredMerchants.length}<br />
               Auth ready: {isAuthReady ? 'Yes' : 'No'}<br />
               User role: {userRole?.name || 'None'}<br />
-              Error: {error || 'None'}
+              Loading: {loading ? 'Yes' : 'No'}<br />
+              Error: {error || 'None'}<br />
+              Search term: "{searchTerm}"<br />
+              Status filter: {statusFilter}
             </div>
 
             {/* Filters */}
@@ -251,88 +326,103 @@ const MerchantsTable = () => {
             </div>
 
             {/* Merchants Table */}
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Business Name</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Business Phone</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Study Halls</TableHead>
-                    <TableHead>Revenue</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMerchants.map((merchant) => (
-                    <TableRow key={merchant.id}>
-                      <TableCell className="font-medium">{merchant.business_name}</TableCell>
-                      <TableCell>{merchant.full_name}</TableCell>
-                      <TableCell>{merchant.business_phone}</TableCell>
-                      <TableCell>{merchant.contact_number}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(merchant.approval_status)}>
-                          {merchant.approval_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{merchant.total_study_halls || 0}</TableCell>
-                      <TableCell>₹{(merchant.total_revenue || 0).toLocaleString()}</TableCell>
-                      <TableCell>
-                        {new Date(merchant.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDetails(merchant)}
-                            title="View Details"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => handleEditMerchant(merchant)}
-                            title="Edit Merchant"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => handleDeleteMerchant(merchant)}
-                            title="Delete Merchant"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            {filteredMerchants.length > 0 ? (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Business Name</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Business Phone</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Study Halls</TableHead>
+                      <TableHead>Revenue</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {filteredMerchants.length === 0 && merchants.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <div className="mb-4">
-                  <strong>No merchants found in database.</strong>
-                </div>
-                <p>The test data from the migration should be available.</p>
-                <Button onClick={fetchMerchants} className="mt-2">
-                  Refresh Data
-                </Button>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMerchants.map((merchant) => (
+                      <TableRow key={merchant.id}>
+                        <TableCell className="font-medium">{merchant.business_name || 'N/A'}</TableCell>
+                        <TableCell>{merchant.full_name || 'N/A'}</TableCell>
+                        <TableCell>{merchant.business_phone || 'N/A'}</TableCell>
+                        <TableCell>{merchant.contact_number || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(merchant.approval_status || 'pending')}>
+                            {merchant.approval_status || 'pending'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{merchant.total_study_halls || 0}</TableCell>
+                        <TableCell>₹{(merchant.total_revenue || 0).toLocaleString()}</TableCell>
+                        <TableCell>
+                          {merchant.created_at ? new Date(merchant.created_at).toLocaleDateString() : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleViewDetails(merchant)}
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleEditMerchant(merchant)}
+                              title="Edit Merchant"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleDeleteMerchant(merchant)}
+                              title="Delete Merchant"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-
-            {filteredMerchants.length === 0 && merchants.length > 0 && (
+            ) : (
               <div className="text-center py-8 text-gray-500">
-                No merchants found matching your criteria.
+                {merchants && merchants.length > 0 ? (
+                  <div>
+                    <div className="mb-4">
+                      <strong>No merchants found matching your criteria.</strong>
+                    </div>
+                    <p>Try adjusting your search or filter settings.</p>
+                    <Button 
+                      onClick={() => {
+                        setSearchTerm('');
+                        setStatusFilter('all');
+                      }} 
+                      className="mt-2"
+                      variant="outline"
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="mb-4">
+                      <strong>No merchants found in database.</strong>
+                    </div>
+                    <p>Click "Add Merchant" to create the first merchant.</p>
+                    <Button onClick={fetchMerchants} className="mt-2" variant="outline">
+                      Refresh Data
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
