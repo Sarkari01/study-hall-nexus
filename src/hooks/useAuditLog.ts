@@ -55,8 +55,9 @@ export const useAuditLog = (): UseAuditLogReturn => {
         session_id: generateSessionId()
       };
 
+      // Use generic query since audit_logs might not be in types yet
       const { error } = await supabase
-        .from('audit_logs')
+        .from('audit_logs' as any)
         .insert([auditEntry]);
 
       if (error) throw error;
@@ -81,7 +82,7 @@ export const useAuditLog = (): UseAuditLogReturn => {
       setLoading(true);
       
       let query = supabase
-        .from('audit_logs')
+        .from('audit_logs' as any)
         .select('*')
         .order('timestamp', { ascending: false });
 
@@ -105,7 +106,7 @@ export const useAuditLog = (): UseAuditLogReturn => {
 
       if (error) throw error;
 
-      return data || [];
+      return (data || []) as AuditLogEntry[];
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);
       toast({

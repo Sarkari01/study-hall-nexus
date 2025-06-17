@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          context: Json | null
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          new_values: Json | null
+          old_values: Json | null
+          resource_id: string | null
+          resource_type: string
+          session_id: string | null
+          severity: string
+          timestamp: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          session_id?: string | null
+          severity: string
+          timestamp?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_values?: Json | null
+          old_values?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          session_id?: string | null
+          severity?: string
+          timestamp?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       banners: {
         Row: {
           created_at: string

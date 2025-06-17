@@ -56,14 +56,14 @@ export const useSecureData = <T extends Record<string, any>>(
       setError(null);
 
       const { data: result, error: dbError } = await supabase
-        .from(options.table)
+        .from(options.table as any)
         .insert([inputData])
         .select()
         .single();
 
       if (dbError) throw dbError;
 
-      setData(prev => [result, ...prev]);
+      setData(prev => [result as T, ...prev]);
 
       if (options.auditResource) {
         await logAction({
@@ -80,7 +80,7 @@ export const useSecureData = <T extends Record<string, any>>(
         description: `${options.auditResource || 'Record'} created successfully`,
       });
 
-      return result;
+      return result as T;
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to create record';
       setError(errorMessage);
@@ -104,7 +104,7 @@ export const useSecureData = <T extends Record<string, any>>(
       setLoading(true);
       setError(null);
 
-      let query = supabase.from(options.table).select('*');
+      let query = supabase.from(options.table as any).select('*');
 
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
@@ -119,8 +119,9 @@ export const useSecureData = <T extends Record<string, any>>(
 
       if (dbError) throw dbError;
 
-      setData(result || []);
-      return result || [];
+      const typedResult = (result || []) as T[];
+      setData(typedResult);
+      return typedResult;
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to fetch records';
       setError(errorMessage);
@@ -152,13 +153,13 @@ export const useSecureData = <T extends Record<string, any>>(
 
       // Get current record for audit
       const { data: currentRecord } = await supabase
-        .from(options.table)
+        .from(options.table as any)
         .select('*')
         .eq('id', id)
         .single();
 
       const { data: result, error: dbError } = await supabase
-        .from(options.table)
+        .from(options.table as any)
         .update(updates)
         .eq('id', id)
         .select()
@@ -217,13 +218,13 @@ export const useSecureData = <T extends Record<string, any>>(
 
       // Get current record for audit
       const { data: currentRecord } = await supabase
-        .from(options.table)
+        .from(options.table as any)
         .select('*')
         .eq('id', id)
         .single();
 
       const { error: dbError } = await supabase
-        .from(options.table)
+        .from(options.table as any)
         .delete()
         .eq('id', id);
 
