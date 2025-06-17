@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDashboardStats } from './useDashboardStats';
 import { useDashboardCharts } from './useDashboardCharts';
 import { useRecentActivities } from './useRecentActivities';
@@ -10,6 +10,8 @@ export const useDashboardData = () => {
   const [globalLoading, setGlobalLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const { toast } = useToast();
+  const subscriptionsRef = useRef<any[]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const statsQuery = useDashboardStats();
   const chartsQuery = useDashboardCharts();
@@ -48,19 +50,33 @@ export const useDashboardData = () => {
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    intervalRef.current = setInterval(() => {
       if (!isLoading) {
         refreshAll();
       }
     }, 5 * 60 * 1000); // 5 minutes
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [refreshAll, isLoading]);
 
-  // Real-time subscriptions
+  // Real-time subscriptions with proper cleanup
   useEffect(() => {
+    // Clean up existing subscriptions
+    subscriptionsRef.current.forEach(channel => {
+      supabase.removeChannel(channel);
+    });
+    subscriptionsRef.current = [];
+
     const bookingsChannel = supabase
-      .channel('dashboard-bookings')
+      .channel(`dashboard-bookings-${Math.random()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
         statsQuery.refetch();
         chartsQuery.refetch();
@@ -69,26 +85,29 @@ export const useDashboardData = () => {
       .subscribe();
 
     const studentsChannel = supabase
-      .channel('dashboard-students')
+      .channel(`dashboard-students-${Math.random()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => {
         statsQuery.refetch();
       })
       .subscribe();
 
     const merchantsChannel = supabase
-      .channel('dashboard-merchants')
+      .channel(`dashboard-merchants-${Math.random()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'merchant_profiles' }, () => {
         statsQuery.refetch();
         activitiesQuery.refetch();
       })
       .subscribe();
 
+    subscriptionsRef.current = [bookingsChannel, studentsChannel, merchantsChannel];
+
     return () => {
-      supabase.removeChannel(bookingsChannel);
-      supabase.removeChannel(studentsChannel);
-      supabase.removeChannel(merchantsChannel);
+      subscriptionsRef.current.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
+      subscriptionsRef.current = [];
     };
-  }, []);
+  }, []); // Empty dependency array to prevent re-subscription
 
   useEffect(() => {
     if (!isLoading) {
