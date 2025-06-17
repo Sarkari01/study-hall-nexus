@@ -1,13 +1,10 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: ReactNode;
-  fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface State {
@@ -25,51 +22,38 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error caught by boundary:', error, errorInfo);
-    this.props.onError?.(error, errorInfo);
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
-
-  private handleRetry = () => {
-    this.setState({ hasError: false, error: undefined });
-  };
 
   public render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
-
       return (
-        <Card className="border-red-200">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-red-600">
-              <AlertTriangle className="h-5 w-5" />
-              <span>Something went wrong</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="min-h-96 flex items-center justify-center">
+          <div className="text-center p-6">
+            <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Something went wrong
+            </h2>
             <p className="text-gray-600 mb-4">
-              An error occurred while rendering this component. Please try refreshing or contact support if the problem persists.
+              An error occurred while rendering this component.
             </p>
             {this.state.error && (
-              <details className="mb-4">
-                <summary className="cursor-pointer text-sm text-gray-500">Error details</summary>
-                <pre className="text-xs text-red-600 mt-2 bg-red-50 p-2 rounded overflow-auto">
+              <details className="text-left bg-gray-50 p-3 rounded mb-4">
+                <summary className="cursor-pointer font-medium">Error details</summary>
+                <pre className="text-sm mt-2 overflow-auto">
                   {this.state.error.message}
                 </pre>
               </details>
             )}
-            <div className="flex space-x-2">
-              <Button onClick={this.handleRetry} variant="outline" size="sm">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Try Again
-              </Button>
-              <Button onClick={() => window.location.reload()} variant="default" size="sm">
-                Refresh Page
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            <Button
+              onClick={() => this.setState({ hasError: false })}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Try again
+            </Button>
+          </div>
+        </div>
       );
     }
 
