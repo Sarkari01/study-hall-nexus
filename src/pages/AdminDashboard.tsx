@@ -107,7 +107,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <AdminSidebar
         activeItem={activeItem}
         onItemClick={handleItemClick}
@@ -116,7 +116,7 @@ const AdminDashboard = () => {
       />
 
       <main className="flex-1 overflow-auto">
-        <div className="p-8">
+        <div className="p-8 bg-white/50 backdrop-blur-sm min-h-full">
           {renderContent()}
         </div>
       </main>
