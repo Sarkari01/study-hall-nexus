@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Calendar, TrendingUp, Users, Building2, Download, Settings } from 'lucide-react';
+import { Calendar, TrendingUp, Users, Building2, Download, Settings, Activity } from 'lucide-react';
 import DashboardMetrics from './DashboardMetrics';
 import DashboardCharts from './DashboardCharts';
 import ActivityFeed from './ActivityFeed';
 import QuickActionPanel from './QuickActionPanel';
 import DashboardAlerts from './DashboardAlerts';
 import EnhancedDashboardHeader from './EnhancedDashboardHeader';
+import MonitoringDashboard from './MonitoringDashboard';
 import { useDashboardData } from '@/hooks/useDashboardData';
 
 interface InteractiveDashboardProps {
@@ -46,7 +47,7 @@ const InteractiveDashboard: React.FC<InteractiveDashboardProps> = ({ onNavigate 
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between">
-          <TabsList className="grid w-fit grid-cols-4">
+          <TabsList className="grid w-fit grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Overview
@@ -62,6 +63,10 @@ const InteractiveDashboard: React.FC<InteractiveDashboardProps> = ({ onNavigate 
             <TabsTrigger value="merchants" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Merchants
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Monitoring
             </TabsTrigger>
           </TabsList>
 
@@ -126,6 +131,10 @@ const InteractiveDashboard: React.FC<InteractiveDashboardProps> = ({ onNavigate 
               Go to Merchants
             </Button>
           </div>
+        </TabsContent>
+
+        <TabsContent value="monitoring" className="space-y-6">
+          <MonitoringDashboard />
         </TabsContent>
       </Tabs>
     </div>
