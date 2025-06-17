@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,16 +15,37 @@ import {
   Edit,
   Trash2,
   Clock,
-  Users
+  Users,
+  LogOut
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const EditorDashboard = () => {
+  const { signOut } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("create");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [city, setCity] = useState("");
   const [publishDate, setPublishDate] = useState("");
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const stats = [
     {
@@ -98,7 +118,14 @@ const EditorDashboard = () => {
     { id: "manage", label: "Manage Content", icon: <FileText className="h-5 w-5" /> },
     { id: "media", label: "Media Library", icon: <Image className="h-5 w-5" /> },
     { id: "schedule", label: "Scheduler", icon: <Calendar className="h-5 w-5" /> },
-    { id: "analytics", label: "Analytics", icon: <Eye className="h-5 w-5" /> }
+    { id: "analytics", label: "Analytics", icon: <Eye className="h-5 w-5" /> },
+    { 
+      id: "logout", 
+      label: "Sign Out", 
+      icon: <LogOut className="h-5 w-5" />,
+      onClick: handleLogout,
+      className: "text-red-600 hover:text-red-700 hover:bg-red-50"
+    }
   ];
 
   const handlePublish = () => {
@@ -126,7 +153,13 @@ const EditorDashboard = () => {
       <Sidebar 
         items={sidebarItems} 
         activeItem={activeTab} 
-        onItemClick={setActiveTab}
+        onItemClick={(id) => {
+          if (id === "logout") {
+            handleLogout();
+          } else {
+            setActiveTab(id);
+          }
+        }}
         title="Editor Panel"
       />
       

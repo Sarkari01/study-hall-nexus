@@ -2,9 +2,10 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Building2, ChevronDown, ChevronRight } from "lucide-react";
+import { Building2, ChevronDown, ChevronRight, LogOut } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { sidebarItems, AdminSidebarItem } from "./AdminSidebar/sidebarItems";
 
 interface AdminSidebarProps {
@@ -21,9 +22,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   onToggleExpand
 }) => {
   const { toast } = useToast();
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
     try {
+      await signOut();
       toast({
         title: "Logged out",
         description: "You have been successfully logged out."
@@ -39,7 +42,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   return (
     <div className="w-72 bg-white border-r border-gray-200 min-h-screen flex flex-col">
-      <div className="p-6">
+      <div className="p-6 flex-1">
         <div className="mb-8 flex items-center gap-3">
           <Building2 className="h-10 w-10 text-blue-600" />
           <div>
@@ -109,6 +112,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             </div>
           ))}
         </nav>
+      </div>
+      
+      {/* Logout Footer */}
+      <div className="p-6 border-t border-gray-200">
+        <Button
+          variant="ghost"
+          onClick={handleLogout}
+          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <LogOut className="h-4 w-4 mr-3" />
+          Sign Out
+        </Button>
       </div>
     </div>
   );

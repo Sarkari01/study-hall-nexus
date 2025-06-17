@@ -1,11 +1,30 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
-import { Building2, BookOpen, User, Calendar, Loader2 } from 'lucide-react';
+import { Building2, BookOpen, User, Calendar, Loader2, LogOut } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 const StudentPortal = () => {
-  const { userProfile, loading, isAuthReady } = useAuth();
+  const { userProfile, loading, isAuthReady, signOut } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
   if (!isAuthReady || loading) {
     return (
@@ -23,12 +42,22 @@ const StudentPortal = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Building2 className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Student Portal</h1>
-              <p className="text-gray-600">Welcome, {userProfile?.full_name || 'Student'}</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Student Portal</h1>
+                <p className="text-gray-600">Welcome, {userProfile?.full_name || 'Student'}</p>
+              </div>
             </div>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
         </div>
 
