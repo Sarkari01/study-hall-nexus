@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,10 +74,10 @@ const MerchantsTable = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'approved': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'pending': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -196,13 +195,13 @@ const MerchantsTable = () => {
   // Show loading state only when actually loading and no data
   if (loading && (!merchants || merchants.length === 0)) {
     return (
-      <Card>
+      <Card className="border-emerald-200 shadow-lg">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-4 bg-emerald-100 rounded w-1/4"></div>
             <div className="space-y-2">
               {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                <div key={i} className="h-12 bg-emerald-50 rounded"></div>
               ))}
             </div>
           </div>
@@ -214,10 +213,10 @@ const MerchantsTable = () => {
   // Check authentication
   if (!isAuthReady) {
     return (
-      <Card>
+      <Card className="border-emerald-200 shadow-lg">
         <CardContent className="p-6">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Checking authentication...</p>
           </div>
         </CardContent>
@@ -227,7 +226,7 @@ const MerchantsTable = () => {
 
   if (!user) {
     return (
-      <Card>
+      <Card className="border-emerald-200 shadow-lg">
         <CardContent className="p-6">
           <div className="text-center">
             <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
@@ -241,7 +240,7 @@ const MerchantsTable = () => {
 
   if (userRole?.name !== 'admin') {
     return (
-      <Card>
+      <Card className="border-emerald-200 shadow-lg">
         <CardContent className="p-6">
           <div className="text-center">
             <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
@@ -255,13 +254,13 @@ const MerchantsTable = () => {
 
   if (error) {
     return (
-      <Card>
+      <Card className="border-emerald-200 shadow-lg">
         <CardContent className="p-6">
           <div className="text-center text-red-600">
             <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Error Loading Merchants</h3>
             <p className="mb-4">{error}</p>
-            <Button onClick={fetchMerchants}>
+            <Button onClick={fetchMerchants} className="bg-emerald-600 hover:bg-emerald-700">
               Retry
             </Button>
           </div>
@@ -273,43 +272,41 @@ const MerchantsTable = () => {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
+        <Card className="border-emerald-200 shadow-lg bg-white/95 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50 border-b border-emerald-100">
             <div className="flex justify-between items-center">
-              <CardTitle>Merchants Management</CardTitle>
-              <Button onClick={() => setIsAddModalOpen(true)} className="flex items-center gap-2">
+              <div>
+                <CardTitle className="text-emerald-900 flex items-center gap-2">
+                  Merchants Management
+                  <Badge variant="outline" className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                    {filteredMerchants.length} Total
+                  </Badge>
+                </CardTitle>
+                <p className="text-emerald-600 text-sm mt-1">Manage merchant applications and profiles</p>
+              </div>
+              <Button 
+                onClick={() => setIsAddModalOpen(true)} 
+                className="bg-emerald-600 hover:bg-emerald-700 shadow-lg flex items-center gap-2"
+              >
                 <Plus className="h-4 w-4" />
                 Add Merchant
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
-            {/* Debug Info - Remove this in production */}
-            <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
-              <strong>Debug Info:</strong><br />
-              Total merchants: {merchants?.length || 0}<br />
-              Filtered merchants: {filteredMerchants.length}<br />
-              Auth ready: {isAuthReady ? 'Yes' : 'No'}<br />
-              User role: {userRole?.name || 'None'}<br />
-              Loading: {loading ? 'Yes' : 'No'}<br />
-              Error: {error || 'None'}<br />
-              Search term: "{searchTerm}"<br />
-              Status filter: {statusFilter}
-            </div>
-
+          <CardContent className="p-6">
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-400 h-4 w-4" />
                 <Input
                   placeholder="Search by business name, owner, or phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48">
+                <SelectTrigger className="w-full sm:w-48 border-emerald-200 focus:border-emerald-400">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -319,7 +316,11 @@ const MerchantsTable = () => {
                   <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" onClick={exportMerchants} className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                onClick={exportMerchants} 
+                className="flex items-center gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+              >
                 <Download className="h-4 w-4" />
                 Export
               </Button>
@@ -327,36 +328,36 @@ const MerchantsTable = () => {
 
             {/* Merchants Table */}
             {filteredMerchants.length > 0 ? (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden border-emerald-200">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Business Name</TableHead>
-                      <TableHead>Owner</TableHead>
-                      <TableHead>Business Phone</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Study Halls</TableHead>
-                      <TableHead>Revenue</TableHead>
-                      <TableHead>Joined</TableHead>
-                      <TableHead>Actions</TableHead>
+                    <TableRow className="bg-emerald-50/50">
+                      <TableHead className="text-emerald-900 font-semibold">Business Name</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Owner</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Business Phone</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Contact</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Status</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Study Halls</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Revenue</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Joined</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredMerchants.map((merchant) => (
-                      <TableRow key={merchant.id}>
-                        <TableCell className="font-medium">{merchant.business_name || 'N/A'}</TableCell>
-                        <TableCell>{merchant.full_name || 'N/A'}</TableCell>
-                        <TableCell>{merchant.business_phone || 'N/A'}</TableCell>
-                        <TableCell>{merchant.contact_number || 'N/A'}</TableCell>
+                      <TableRow key={merchant.id} className="hover:bg-emerald-50/30">
+                        <TableCell className="font-medium text-gray-900">{merchant.business_name || 'N/A'}</TableCell>
+                        <TableCell className="text-gray-700">{merchant.full_name || 'N/A'}</TableCell>
+                        <TableCell className="text-gray-700">{merchant.business_phone || 'N/A'}</TableCell>
+                        <TableCell className="text-gray-700">{merchant.contact_number || 'N/A'}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(merchant.approval_status || 'pending')}>
                             {merchant.approval_status || 'pending'}
                           </Badge>
                         </TableCell>
-                        <TableCell>{merchant.total_study_halls || 0}</TableCell>
-                        <TableCell>₹{(merchant.total_revenue || 0).toLocaleString()}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-gray-700">{merchant.total_study_halls || 0}</TableCell>
+                        <TableCell className="text-gray-700">₹{(merchant.total_revenue || 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-gray-700">
                           {merchant.created_at ? new Date(merchant.created_at).toLocaleDateString() : 'N/A'}
                         </TableCell>
                         <TableCell>
@@ -366,6 +367,7 @@ const MerchantsTable = () => {
                               variant="outline"
                               onClick={() => handleViewDetails(merchant)}
                               title="View Details"
+                              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -374,13 +376,14 @@ const MerchantsTable = () => {
                               variant="outline"
                               onClick={() => handleEditMerchant(merchant)}
                               title="Edit Merchant"
+                              className="border-blue-200 text-blue-700 hover:bg-blue-50"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
                               size="sm" 
                               variant="outline" 
-                              className="text-red-600 hover:text-red-700"
+                              className="border-red-200 text-red-600 hover:bg-red-50"
                               onClick={() => handleDeleteMerchant(merchant)}
                               title="Delete Merchant"
                             >
@@ -394,20 +397,20 @@ const MerchantsTable = () => {
                 </Table>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-12 bg-emerald-50/30 rounded-lg border border-emerald-100">
                 {merchants && merchants.length > 0 ? (
                   <div>
                     <div className="mb-4">
-                      <strong>No merchants found matching your criteria.</strong>
+                      <strong className="text-emerald-900">No merchants found matching your criteria.</strong>
                     </div>
-                    <p>Try adjusting your search or filter settings.</p>
+                    <p className="text-emerald-700 mb-4">Try adjusting your search or filter settings.</p>
                     <Button 
                       onClick={() => {
                         setSearchTerm('');
                         setStatusFilter('all');
                       }} 
-                      className="mt-2"
-                      variant="outline"
+                      className="mt-2 bg-emerald-600 hover:bg-emerald-700"
+                      variant="default"
                     >
                       Clear Filters
                     </Button>
@@ -415,10 +418,14 @@ const MerchantsTable = () => {
                 ) : (
                   <div>
                     <div className="mb-4">
-                      <strong>No merchants found in database.</strong>
+                      <strong className="text-emerald-900">No merchants found in database.</strong>
                     </div>
-                    <p>Click "Add Merchant" to create the first merchant.</p>
-                    <Button onClick={fetchMerchants} className="mt-2" variant="outline">
+                    <p className="text-emerald-700 mb-4">Click "Add Merchant" to create the first merchant.</p>
+                    <Button 
+                      onClick={fetchMerchants} 
+                      className="mt-2 bg-emerald-600 hover:bg-emerald-700" 
+                      variant="default"
+                    >
                       Refresh Data
                     </Button>
                   </div>
