@@ -2,32 +2,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from '@/contexts/AuthContext';
 
 interface StudyHall {
   id: string;
   name: string;
-  description: string;
+  merchant_id?: string;
+  description?: string;
   location: string;
   capacity: number;
   price_per_day: number;
-  price_per_week: number | null;
-  price_per_month: number | null;
+  price_per_week?: number;
+  price_per_month?: number;
   amenities: string[];
-  operating_hours: any;
-  status: 'active' | 'inactive' | 'maintenance';
+  status: 'draft' | 'active' | 'inactive' | 'maintenance';
   rating: number;
-  total_revenue: number;
   total_bookings: number;
+  total_revenue: number;
   is_featured: boolean;
-  merchant_id: string;
+  operating_hours?: any;
   created_at: string;
   updated_at: string;
-  merchant?: {
-    business_name: string;
-    full_name: string;
-    contact_number: string;
-  };
 }
 
 export const useStudyHalls = () => {
@@ -35,108 +29,36 @@ export const useStudyHalls = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user, userRole, isAuthReady } = useAuth();
   const isMountedRef = useRef(true);
 
   const fetchStudyHalls = async () => {
     try {
       setLoading(true);
-      setError(null);
-      
-      console.log('useStudyHalls: Starting fetch, user:', user?.id, 'role:', userRole?.name);
-      
-      if (!user || !isAuthReady) {
-        console.log('useStudyHalls: User not authenticated or auth not ready');
-        if (isMountedRef.current) {
-          setStudyHalls([]);
-          setError('Authentication required');
-          setLoading(false);
-        }
-        return;
-      }
-
-      let query = supabase
+      const { data, error } = await supabase
         .from('study_halls')
-        .select(`
-          *,
-          merchant_profiles!study_halls_merchant_id_fkey (
-            business_name,
-            full_name,
-            contact_number
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      // If merchant, only show their own study halls
-      if (userRole?.name === 'merchant') {
-        const { data: userProfile } = await supabase
-          .from('user_profiles')
-          .select('merchant_id')
-          .eq('user_id', user.id)
-          .single();
+      if (error) throw error;
 
-        if (userProfile?.merchant_id) {
-          query = query.eq('merchant_id', userProfile.merchant_id);
-        } else {
-          console.log('useStudyHalls: Merchant user has no merchant_id');
-          if (isMountedRef.current) {
-            setStudyHalls([]);
-            setError('Merchant profile not found');
-            setLoading(false);
-          }
-          return;
-        }
-      } else if (userRole?.name === 'student') {
-        // Students see only active study halls
-        query = query.eq('status', 'active');
-      } else if (userRole?.name !== 'admin') {
-        console.log('useStudyHalls: User does not have permission to view study halls');
-        if (isMountedRef.current) {
-          setStudyHalls([]);
-          setError('Permission denied');
-          setLoading(false);
-        }
-        return;
-      }
-
-      const { data: studyHallsData, error: studyHallsError } = await query;
-
-      console.log('useStudyHalls: Study halls response:', { data: studyHallsData, error: studyHallsError });
-
-      if (studyHallsError) {
-        console.error('useStudyHalls: Error fetching study halls:', studyHallsError);
-        throw studyHallsError;
-      }
-
-      const typedStudyHalls = (studyHallsData || []).map(hall => ({
+      // Type assertion to ensure status field matches our interface
+      const typedStudyHalls = (data || []).map(hall => ({
         ...hall,
-        status: hall.status as 'active' | 'inactive' | 'maintenance',
-        merchant: hall.merchant_profiles ? {
-          business_name: hall.merchant_profiles.business_name,
-          full_name: hall.merchant_profiles.full_name,
-          contact_number: hall.merchant_profiles.contact_number
-        } : undefined
+        status: hall.status as 'draft' | 'active' | 'inactive' | 'maintenance'
       }));
 
-      console.log('useStudyHalls: Final processed study halls:', typedStudyHalls);
-
+      // Only update state if component is still mounted
       if (isMountedRef.current) {
         setStudyHalls(typedStudyHalls);
         setError(null);
-        
-        toast({
-          title: "Success",
-          description: `Loaded ${typedStudyHalls.length} study halls`,
-        });
       }
     } catch (err) {
-      console.error('useStudyHalls: Error in fetchStudyHalls:', err);
+      console.error('Error fetching study halls:', err);
       if (isMountedRef.current) {
         setError('Failed to fetch study halls');
-        setStudyHalls([]);
         toast({
           title: "Error",
-          description: "Failed to fetch study halls. Please check your permissions.",
+          description: "Failed to fetch study halls",
           variant: "destructive",
         });
       }
@@ -147,20 +69,46 @@ export const useStudyHalls = () => {
     }
   };
 
-  const updateStudyHall = async (hallId: string, updates: Partial<StudyHall>) => {
+  const deleteStudyHall = async (studyHallId: string) => {
     try {
-      console.log('useStudyHalls: Updating study hall:', hallId, updates);
-      
+      const { error } = await supabase
+        .from('study_halls')
+        .delete()
+        .eq('id', studyHallId);
+
+      if (error) throw error;
+
+      if (isMountedRef.current) {
+        setStudyHalls(prev => prev.filter(hall => hall.id !== studyHallId));
+        toast({
+          title: "Success",
+          description: "Study hall deleted successfully",
+        });
+      }
+    } catch (err) {
+      console.error('Error deleting study hall:', err);
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: "Failed to delete study hall",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const updateStudyHall = async (studyHallId: string, updates: Partial<StudyHall>) => {
+    try {
       const { error } = await supabase
         .from('study_halls')
         .update(updates)
-        .eq('id', hallId);
+        .eq('id', studyHallId);
 
       if (error) throw error;
 
       if (isMountedRef.current) {
         setStudyHalls(prev => prev.map(hall => 
-          hall.id === hallId 
+          hall.id === studyHallId 
             ? { ...hall, ...updates }
             : hall
         ));
@@ -171,7 +119,7 @@ export const useStudyHalls = () => {
         });
       }
     } catch (err) {
-      console.error('useStudyHalls: Error updating study hall:', err);
+      console.error('Error updating study hall:', err);
       if (isMountedRef.current) {
         toast({
           title: "Error",
@@ -182,59 +130,28 @@ export const useStudyHalls = () => {
     }
   };
 
-  const createStudyHall = async (hallData: Omit<StudyHall, 'id' | 'created_at' | 'updated_at' | 'merchant'>) => {
-    try {
-      console.log('useStudyHalls: Creating study hall:', hallData);
-      
-      const { data, error } = await supabase
-        .from('study_halls')
-        .insert([hallData])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      if (isMountedRef.current) {
-        setStudyHalls(prev => [data, ...prev]);
-        
-        toast({
-          title: "Success",
-          description: "Study hall created successfully",
-        });
-      }
-
-      return data;
-    } catch (err) {
-      console.error('useStudyHalls: Error creating study hall:', err);
-      if (isMountedRef.current) {
-        toast({
-          title: "Error",
-          description: "Failed to create study hall",
-          variant: "destructive",
-        });
-      }
-      throw err;
+  const addStudyHall = (studyHall: StudyHall) => {
+    if (isMountedRef.current) {
+      setStudyHalls(prev => [studyHall, ...prev]);
     }
   };
 
   useEffect(() => {
     isMountedRef.current = true;
-    
-    if (isAuthReady) {
-      fetchStudyHalls();
-    }
+    fetchStudyHalls();
 
     return () => {
       isMountedRef.current = false;
     };
-  }, [user, userRole, isAuthReady]);
+  }, []);
 
   return {
     studyHalls,
     loading,
     error,
     fetchStudyHalls,
+    deleteStudyHall,
     updateStudyHall,
-    createStudyHall
+    addStudyHall
   };
 };

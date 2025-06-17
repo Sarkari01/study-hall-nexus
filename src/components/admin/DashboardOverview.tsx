@@ -4,81 +4,51 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, DollarSign, Calendar, TrendingUp, AlertCircle, RefreshCw, Building2, BookOpen, CheckCircle, Clock, Award } from "lucide-react";
-import { useStudents } from "@/hooks/useStudents";
-import { useMerchants } from "@/hooks/useMerchants";
-import { useBookings } from "@/hooks/useBookings";
-import { useStudyHalls } from "@/hooks/useStudyHalls";
 import DashboardStats from './DashboardStats';
 import UpcomingMerchants from './UpcomingMerchants';
 import ErrorBoundary from "./ErrorBoundary";
+
+interface QuickStat {
+  title: string;
+  value: string;
+  change: string;
+  changeType: 'positive' | 'negative' | 'neutral';
+  icon: React.ReactNode;
+}
 
 interface DashboardOverviewProps {
   onRefresh?: () => void;
   loading?: boolean;
 }
 
-const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onRefresh, loading: externalLoading = false }) => {
-  const { students, loading: studentsLoading, fetchStudents } = useStudents();
-  const { merchants, loading: merchantsLoading, fetchMerchants } = useMerchants();
-  const { bookings, loading: bookingsLoading, fetchBookings } = useBookings();
-  const { studyHalls, loading: studyHallsLoading, fetchStudyHalls } = useStudyHalls();
-
-  const loading = externalLoading || studentsLoading || merchantsLoading || bookingsLoading || studyHallsLoading;
-
-  // Calculate stats from real data
-  const totalStudents = students.length;
-  const activeStudents = students.filter(s => s.status === 'active').length;
-  const totalMerchants = merchants.length;
-  const approvedMerchants = merchants.filter(m => m.approval_status === 'approved').length;
-  const totalBookings = bookings.length;
-  const todaysBookings = bookings.filter(b => 
-    new Date(b.booking_date).toDateString() === new Date().toDateString()
-  ).length;
-  const totalRevenue = bookings
-    .filter(b => b.payment_status === 'paid')
-    .reduce((sum, b) => sum + b.final_amount, 0);
-  const todaysRevenue = bookings
-    .filter(b => 
-      new Date(b.booking_date).toDateString() === new Date().toDateString() &&
-      b.payment_status === 'paid'
-    )
-    .reduce((sum, b) => sum + b.final_amount, 0);
-
-  const handleRefreshAll = () => {
-    fetchStudents();
-    fetchMerchants();
-    fetchBookings();
-    fetchStudyHalls();
-    onRefresh?.();
-  };
-
-  const quickStats = [
+const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onRefresh, loading = false }) => {
+  const quickStats: QuickStat[] = [
     {
       title: "Today's Revenue",
-      value: `₹${todaysRevenue.toLocaleString()}`,
+      value: "₹12,450",
       change: "+12%",
-      changeType: 'positive' as const,
+      changeType: 'positive',
       icon: <DollarSign className="h-5 w-5" />
     },
     {
-      title: "Today's Bookings",
-      value: todaysBookings.toString(),
+      title: "Active Bookings",
+      value: "34",
       change: "+5%",
-      changeType: 'positive' as const,
+      changeType: 'positive',
       icon: <Calendar className="h-5 w-5" />
     },
     {
-      title: "Active Students",
-      value: activeStudents.toString(),
-      change: `${totalStudents} total`,
-      changeType: 'neutral' as const,
+      title: "New Students",
+      value: "8",
+      change: "-2%",
+      changeType: 'negative',
       icon: <Users className="h-5 w-5" />
     },
     {
-      title: "Approved Merchants",
-      value: approvedMerchants.toString(),
-      change: `${totalMerchants} total`,
-      changeType: 'positive' as const,
+      title: "Completion Rate",
+      value: "94%",
+      change: "+3%",
+      changeType: 'positive',
       icon: <TrendingUp className="h-5 w-5" />
     }
   ];
@@ -121,10 +91,12 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onRefresh, loadin
           <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
           <p className="text-gray-600">Welcome to your admin dashboard</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleRefreshAll} className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
+        {onRefresh && (
+          <Button variant="outline" size="sm" onClick={onRefresh} className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+        )}
       </div>
 
       {/* Quick Stats Cards */}
@@ -206,23 +178,24 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onRefresh, loadin
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {bookings.slice(0, 3).map((booking, index) => (
+              {[
+                { student: "Rahul Sharma", hall: "Study Hub Central", amount: "₹250", status: "confirmed" },
+                { student: "Priya Patel", hall: "Focus Zone", amount: "₹180", status: "pending" },
+                { student: "Amit Kumar", hall: "Silent Study", amount: "₹300", status: "confirmed" },
+              ].map((booking, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
-                    <p className="font-medium">{booking.student?.full_name || 'Unknown Student'}</p>
-                    <p className="text-sm text-gray-500">{booking.study_hall?.name || 'Unknown Hall'}</p>
+                    <p className="font-medium">{booking.student}</p>
+                    <p className="text-sm text-gray-500">{booking.hall}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">₹{booking.final_amount}</p>
+                    <p className="font-medium">{booking.amount}</p>
                     <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'}>
                       {booking.status}
                     </Badge>
                   </div>
                 </div>
               ))}
-              {bookings.length === 0 && (
-                <p className="text-center text-gray-500 py-4">No recent bookings</p>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -234,9 +207,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onRefresh, loadin
           <CardContent>
             <div className="space-y-4">
               {[
-                { service: "Database", status: "operational", uptime: "99.9%" },
-                { service: "Authentication", status: "operational", uptime: "100%" },
-                { service: "Payment Gateway", status: "operational", uptime: "97.2%" },
+                { service: "Payment Gateway", status: "operational", uptime: "99.9%" },
+                { service: "Database", status: "operational", uptime: "100%" },
+                { service: "Notification Service", status: "degraded", uptime: "97.2%" },
                 { service: "File Storage", status: "operational", uptime: "99.8%" },
               ].map((service, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
