@@ -12,21 +12,19 @@ import {
   CheckCircle, 
   AlertCircle,
   Clock,
-  MoreHorizontal
+  MoreHorizontal,
+  UserPlus
 } from 'lucide-react';
 
 interface Activity {
   id: string;
-  type: 'user' | 'payment' | 'booking' | 'merchant' | 'system';
+  type: 'booking' | 'payment' | 'registration' | 'verification';
   title: string;
   description: string;
   timestamp: string;
-  user?: {
-    name: string;
-    avatar?: string;
-  };
+  user?: string;
   amount?: number;
-  status?: 'success' | 'pending' | 'failed' | 'info';
+  status?: string;
 }
 
 interface ActivityFeedProps {
@@ -38,34 +36,34 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   activities = [], 
   loading = false 
 }) => {
-  const getActivityIcon = (type: string, status?: string) => {
+  const getActivityIcon = (type: string) => {
     const iconClass = "h-4 w-4";
     
     switch (type) {
-      case 'user':
-        return <User className={iconClass} />;
+      case 'registration':
+        return <UserPlus className={iconClass} />;
       case 'payment':
         return <DollarSign className={iconClass} />;
       case 'booking':
         return <Calendar className={iconClass} />;
-      case 'merchant':
-        return <Building2 className={iconClass} />;
-      case 'system':
-        return status === 'success' ? 
-          <CheckCircle className={iconClass} /> : 
-          <AlertCircle className={iconClass} />;
+      case 'verification':
+        return <CheckCircle className={iconClass} />;
       default:
         return <Clock className={iconClass} />;
     }
   };
 
   const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'success':
+    switch (status?.toLowerCase()) {
+      case 'completed':
+      case 'confirmed':
+      case 'approved':
         return 'bg-green-100 text-green-700';
       case 'pending':
+      case 'processing':
         return 'bg-yellow-100 text-yellow-700';
-      case 'failed':
+      case 'cancelled':
+      case 'rejected':
         return 'bg-red-100 text-red-700';
       default:
         return 'bg-blue-100 text-blue-700';
@@ -75,12 +73,12 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   const defaultActivities: Activity[] = [
     {
       id: '1',
-      type: 'user',
+      type: 'registration',
       title: 'New Student Registration',
       description: 'John Doe has registered as a new student',
       timestamp: '5 minutes ago',
-      user: { name: 'John Doe' },
-      status: 'success'
+      user: 'John Doe',
+      status: 'completed'
     },
     {
       id: '2',
@@ -89,11 +87,11 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
       description: 'Booking payment of ₹500 received',
       timestamp: '10 minutes ago',
       amount: 500,
-      status: 'success'
+      status: 'completed'
     },
     {
       id: '3',
-      type: 'merchant',
+      type: 'registration',
       title: 'New Merchant Application',
       description: 'StudyHub Central has applied for merchant verification',
       timestamp: '1 hour ago',
@@ -105,15 +103,15 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
       title: 'Booking Confirmed',
       description: 'Seat A1 booked for tomorrow at 9:00 AM',
       timestamp: '2 hours ago',
-      status: 'success'
+      status: 'confirmed'
     },
     {
       id: '5',
-      type: 'system',
-      title: 'System Update',
-      description: 'Dashboard analytics refreshed successfully',
+      type: 'verification',
+      title: 'Verification Complete',
+      description: 'Merchant verification completed successfully',
       timestamp: '3 hours ago',
-      status: 'info'
+      status: 'approved'
     }
   ];
 
@@ -157,7 +155,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
           {displayActivities.map((activity) => (
             <div key={activity.id} className="flex items-start space-x-4 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
               <div className={`p-2 rounded-lg ${getStatusColor(activity.status)}`}>
-                {getActivityIcon(activity.type, activity.status)}
+                {getActivityIcon(activity.type)}
               </div>
               
               <div className="flex-1 min-w-0">
@@ -173,12 +171,11 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                     {activity.user && (
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={activity.user.avatar} />
                           <AvatarFallback className="text-xs">
-                            {activity.user.name.split(' ').map(n => n[0]).join('')}
+                            {activity.user.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-xs text-gray-500">{activity.user.name}</span>
+                        <span className="text-xs text-gray-500">{activity.user}</span>
                       </div>
                     )}
                     
