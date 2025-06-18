@@ -62,14 +62,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   };
 
   return (
-    <div className="h-screen bg-gradient-to-b from-emerald-900 to-emerald-800 text-white flex flex-col shadow-xl relative w-full">
+    <div className="h-screen bg-gradient-to-b from-green-600 via-green-700 to-green-800 text-white flex flex-col shadow-2xl relative w-full">
       {/* Mobile Close Button */}
       {onToggleCollapse && !collapsed && (
         <Button
           variant="ghost"
           size="sm"
           onClick={onToggleCollapse}
-          className="absolute top-4 right-4 z-10 h-8 w-8 p-0 hover:bg-white/10 text-emerald-100 lg:hidden"
+          className="absolute top-4 right-4 z-10 h-8 w-8 p-0 hover:bg-white/20 text-green-50 lg:hidden"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -78,16 +78,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <div className="p-4 lg:p-6 flex-1 overflow-y-auto">
         {/* Logo Section */}
         <div className={cn(
-          "mb-6 lg:mb-8 flex items-center gap-3 pb-4 lg:pb-6 border-b border-emerald-700 transition-all duration-300",
+          "mb-6 lg:mb-8 flex items-center gap-3 pb-4 lg:pb-6 border-b border-green-500/30 transition-all duration-300",
           collapsed && "justify-center"
         )}>
-          <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm flex-shrink-0">
-            <Building2 className={cn("text-emerald-100", collapsed ? "h-6 w-6" : "h-8 w-8")} />
+          <div className="p-2 bg-white/15 rounded-xl backdrop-blur-sm flex-shrink-0 border border-white/10">
+            <Building2 className={cn("text-green-50", collapsed ? "h-6 w-6" : "h-8 w-8")} />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <h2 className="text-white font-extrabold text-lg lg:text-2xl truncate">Sarkari Ninja</h2>
-              <p className="text-emerald-200 text-xs font-semibold hidden sm:block">Advanced Management System</p>
+              <h2 className="text-white font-extrabold text-lg lg:text-2xl truncate drop-shadow-sm">Sarkari Ninja</h2>
+              <p className="text-green-100 text-xs font-semibold hidden sm:block opacity-90">Advanced Management System</p>
             </div>
           )}
         </div>
@@ -105,21 +105,21 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-full text-left text-emerald-100 hover:bg-white/10 hover:text-white transition-all duration-200",
+                        "w-full text-left text-green-50 hover:bg-white/15 hover:text-white transition-all duration-200 rounded-xl border border-transparent",
                         collapsed ? "justify-center px-2 h-10" : "justify-between h-10 lg:h-12",
-                        expandedItems.includes(item.id) && "bg-white/10 text-white"
+                        expandedItems.includes(item.id) && "bg-white/15 text-white border-white/10 shadow-lg"
                       )}
                       title={collapsed ? item.label : undefined}
                     >
                       <div className="flex items-center min-w-0">
-                        <span className="text-emerald-300 flex-shrink-0 text-lg lg:text-xl">{item.icon}</span>
+                        <span className="text-green-200 flex-shrink-0 text-lg lg:text-xl">{item.icon}</span>
                         {!collapsed && <span className="ml-2 lg:ml-3 font-medium truncate text-sm lg:text-base">{item.label}</span>}
                       </div>
                       {!collapsed && (
                         expandedItems.includes(item.id) ? (
-                          <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 text-emerald-300 flex-shrink-0" />
+                          <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 text-green-200 flex-shrink-0" />
                         ) : (
-                          <ChevronRight className="h-3 w-3 lg:h-4 lg:w-4 text-emerald-300 flex-shrink-0" />
+                          <ChevronRight className="h-3 w-3 lg:h-4 lg:w-4 text-green-200 flex-shrink-0" />
                         )
                       )}
                     </Button>
@@ -132,9 +132,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             key={subItem.id}
                             variant="ghost"
                             className={cn(
-                              "w-full justify-start text-xs lg:text-sm text-emerald-200 hover:bg-white/10 hover:text-white transition-all duration-200 pl-3 lg:pl-4 h-8 lg:h-10",
+                              "w-full justify-start text-xs lg:text-sm text-green-100 hover:bg-white/15 hover:text-white transition-all duration-200 pl-3 lg:pl-4 h-8 lg:h-10 rounded-lg",
                               activeItem === subItem.id &&
-                                "bg-white text-emerald-900 hover:bg-white/90 shadow-sm font-semibold"
+                                "bg-white text-green-700 hover:bg-white/90 shadow-md font-semibold border border-white/20"
                             )}
                             onClick={() => handleSubItemClick(subItem.id)}
                           >
@@ -150,10 +150,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <Button
                   variant="ghost"
                   className={cn(
-                    "w-full text-emerald-100 hover:bg-white/10 hover:text-white transition-all duration-200",
+                    "w-full text-green-50 hover:bg-white/15 hover:text-white transition-all duration-200 rounded-xl border border-transparent",
                     collapsed ? "justify-center px-2 h-10" : "justify-start h-10 lg:h-12",
                     activeItem === item.id &&
-                      "bg-white text-emerald-900 hover:bg-white/90 shadow-sm font-semibold"
+                      "bg-white text-green-700 hover:bg-white/90 shadow-md font-semibold border border-white/20"
                   )}
                   onClick={() => handleItemClick(item.id)}
                   title={collapsed ? item.label : undefined}
@@ -168,12 +168,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </div>
       
       {/* Logout Footer */}
-      <div className="p-4 lg:p-6 border-t border-emerald-700">
+      <div className="p-4 lg:p-6 border-t border-green-500/30">
         <Button
           variant="ghost"
           onClick={handleLogout}
           className={cn(
-            "w-full text-red-300 hover:text-red-200 hover:bg-red-500/10 transition-all duration-200 h-10 lg:h-12",
+            "w-full text-red-200 hover:text-red-100 hover:bg-red-500/20 transition-all duration-200 h-10 lg:h-12 rounded-xl border border-transparent hover:border-red-400/30",
             collapsed ? "justify-center px-2" : "justify-start"
           )}
           title={collapsed ? "Sign Out" : undefined}
