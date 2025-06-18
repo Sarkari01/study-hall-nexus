@@ -17,6 +17,14 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
     refreshAll 
   } = useDashboardData();
 
+  // Get time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
+
   if (error) {
     return (
       <Card className="border-emerald-200 bg-white/95 backdrop-blur-sm">
@@ -32,7 +40,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
         </CardContent>
       </Card>
     );
-  }
+  };
 
   return (
     <ErrorBoundary>
@@ -41,7 +49,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
         <div className="bg-gradient-to-r from-emerald-600 to-green-600 rounded-lg p-4 lg:p-6 text-white shadow-lg">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between space-y-4 lg:space-y-0">
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl lg:text-3xl font-bold mb-2">Welcome to Admin Dashboard</h1>
+              <h1 className="text-xl lg:text-3xl font-bold mb-2">{getGreeting()}</h1>
               <p className="text-emerald-100 text-sm lg:text-base">Monitor and manage your platform efficiently</p>
             </div>
             <div className="hidden md:flex items-center space-x-4 lg:space-x-6 flex-shrink-0">
