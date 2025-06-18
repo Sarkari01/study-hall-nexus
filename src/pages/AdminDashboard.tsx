@@ -38,9 +38,19 @@ const AdminDashboard = () => {
   };
 
   const handleToggleExpand = (itemId: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
-    );
+    console.log('Toggling expand for:', itemId, 'Current expanded:', expandedItems);
+    setExpandedItems((prev) => {
+      const isCurrentlyExpanded = prev.includes(itemId);
+      if (isCurrentlyExpanded) {
+        const newExpanded = prev.filter((id) => id !== itemId);
+        console.log('Collapsing, new expanded items:', newExpanded);
+        return newExpanded;
+      } else {
+        const newExpanded = [...prev, itemId];
+        console.log('Expanding, new expanded items:', newExpanded);
+        return newExpanded;
+      }
+    });
   };
 
   const renderContent = () => {

@@ -45,11 +45,20 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   };
 
   const handleItemClick = (itemId: string, hasSubmenu: boolean = false) => {
-    if (hasSubmenu && !collapsed) {
+    console.log('Clicked item:', itemId, 'Has submenu:', hasSubmenu, 'Collapsed:', collapsed);
+    
+    if (hasSubmenu) {
+      // Always toggle expansion for items with submenus, regardless of collapsed state
       onToggleExpand(itemId);
-    } else if (!hasSubmenu) {
+    } else {
+      // Navigate to the item if it doesn't have a submenu
       onItemClick(itemId);
     }
+  };
+
+  const handleSubItemClick = (itemId: string) => {
+    console.log('Clicked sub-item:', itemId);
+    onItemClick(itemId);
   };
 
   return (
@@ -89,8 +98,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             <div key={item.id}>
               {item.hasSubmenu ? (
                 <Collapsible
-                  open={!collapsed && expandedItems.includes(item.id)}
-                  onOpenChange={() => !collapsed && onToggleExpand(item.id)}
+                  open={expandedItems.includes(item.id)}
+                  onOpenChange={() => handleItemClick(item.id, true)}
                 >
                   <CollapsibleTrigger asChild>
                     <Button
@@ -98,9 +107,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       className={cn(
                         "w-full text-left text-emerald-100 hover:bg-white/10 hover:text-white transition-all duration-200",
                         collapsed ? "justify-center px-2 h-10" : "justify-between h-10 lg:h-12",
-                        expandedItems.includes(item.id) && !collapsed && "bg-white/10 text-white"
+                        expandedItems.includes(item.id) && "bg-white/10 text-white"
                       )}
-                      onClick={() => handleItemClick(item.id, true)}
                       title={collapsed ? item.label : undefined}
                     >
                       <div className="flex items-center min-w-0">
@@ -116,25 +124,27 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                       )}
                     </Button>
                   </CollapsibleTrigger>
-                  {!collapsed && (
-                    <CollapsibleContent className="ml-4 lg:ml-6 mt-1 space-y-1">
-                      {item.submenu?.map((subItem) => (
-                        <Button
-                          key={subItem.id}
-                          variant="ghost"
-                          className={cn(
-                            "w-full justify-start text-xs lg:text-sm text-emerald-200 hover:bg-white/10 hover:text-white transition-all duration-200 pl-3 lg:pl-4 h-8 lg:h-10",
-                            activeItem === subItem.id &&
-                              "bg-white text-emerald-900 hover:bg-white/90 shadow-sm font-semibold"
-                          )}
-                          onClick={() => handleItemClick(subItem.id)}
-                        >
-                          <span className="text-current flex-shrink-0">{subItem.icon}</span>
-                          <span className="ml-2 truncate">{subItem.label}</span>
-                        </Button>
-                      ))}
-                    </CollapsibleContent>
-                  )}
+                  <CollapsibleContent className="overflow-hidden transition-all duration-200">
+                    {!collapsed && (
+                      <div className="ml-4 lg:ml-6 mt-1 space-y-1">
+                        {item.submenu?.map((subItem) => (
+                          <Button
+                            key={subItem.id}
+                            variant="ghost"
+                            className={cn(
+                              "w-full justify-start text-xs lg:text-sm text-emerald-200 hover:bg-white/10 hover:text-white transition-all duration-200 pl-3 lg:pl-4 h-8 lg:h-10",
+                              activeItem === subItem.id &&
+                                "bg-white text-emerald-900 hover:bg-white/90 shadow-sm font-semibold"
+                            )}
+                            onClick={() => handleSubItemClick(subItem.id)}
+                          >
+                            <span className="text-current flex-shrink-0">{subItem.icon}</span>
+                            <span className="ml-2 truncate">{subItem.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </CollapsibleContent>
                 </Collapsible>
               ) : (
                 <Button
