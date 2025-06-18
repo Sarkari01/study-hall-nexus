@@ -17,23 +17,6 @@ const StudentPortal = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { user } = useAuth();
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <DashboardOverview />;
-      case 'booking':
-        return <StudyHallBooking />;
-      case 'my-bookings':
-        return <StudentBookings />;
-      case 'news':
-        return <StudentNewsFeed />;
-      case 'profile':
-        return <StudentProfile />;
-      default:
-        return <DashboardOverview />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
       {/* Header */}

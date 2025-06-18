@@ -20,7 +20,7 @@ interface NewsArticle {
   excerpt?: string;
   featured_image_url?: string;
   video_url?: string;
-  status: 'draft' | 'published' | 'archived';
+  status: string; // Changed from union type to string
   is_featured: boolean;
   is_breaking: boolean;
   published_at?: string;
@@ -33,10 +33,10 @@ interface NewsArticle {
   news_categories?: {
     name: string;
     color: string;
-  };
+  } | null;
   user_profiles?: {
     full_name: string;
-  };
+  } | null;
 }
 
 const NewsManagement: React.FC = () => {
@@ -59,7 +59,7 @@ const NewsManagement: React.FC = () => {
         .select(`
           *,
           news_categories(name, color),
-          user_profiles(full_name)
+          user_profiles!inner(full_name)
         `)
         .order('created_at', { ascending: false });
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Heart, MessageSquare, Share2, Clock, Star, Play } from 'lucide-react';
+import { Search, Heart, MessageSquare, Share2, Clock, Star, Play, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -27,11 +27,11 @@ interface NewsArticle {
   news_categories?: {
     name: string;
     color: string;
-  };
+  } | null;
   user_profiles?: {
     full_name: string;
     avatar_url?: string;
-  };
+  } | null;
 }
 
 const StudentNewsFeed: React.FC = () => {
@@ -60,7 +60,7 @@ const StudentNewsFeed: React.FC = () => {
         .select(`
           *,
           news_categories(name, color),
-          user_profiles(full_name, avatar_url)
+          user_profiles!inner(full_name, avatar_url)
         `)
         .eq('status', 'published')
         .order('published_at', { ascending: false });
