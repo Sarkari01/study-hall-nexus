@@ -32,6 +32,11 @@ const AdminDashboard = () => {
   const [searchValue, setSearchValue] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Get API key from localStorage for AI features
+  const getApiKey = () => {
+    return localStorage.getItem('deepseek_api_key') || '';
+  };
+
   const handleItemClick = (itemId: string) => {
     console.log('Navigating to:', itemId);
     setActiveItem(itemId);
@@ -88,13 +93,13 @@ const AdminDashboard = () => {
       case "banner-management":
         return <BannerManager />;
       case "ai-analytics":
-        return <AIAnalyticsDashboard />;
+        return <AIAnalyticsDashboard apiKey={getApiKey()} />;
       case "ai-chatbot":
-        return <AIChatbot userType="admin" />;
+        return <AIChatbot userType="admin" apiKey={getApiKey()} />;
       case "content-moderation":
-        return <ContentModerator />;
+        return <ContentModerator apiKey={getApiKey()} />;
       case "text-assistant":
-        return <SmartTextAssistant />;
+        return <SmartTextAssistant apiKey={getApiKey()} />;
       case "chat-system":
         return <ChatSystem />;
       case "community":
