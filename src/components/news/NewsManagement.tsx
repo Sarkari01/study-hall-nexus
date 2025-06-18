@@ -80,24 +80,26 @@ const NewsManagement: React.FC = () => {
       const typedArticles = (data || []).map(article => {
         // Safe type check for user_profiles with proper type guarding
         const userProfilesData = article.user_profiles;
-        const userProfiles = userProfilesData && 
-                            userProfilesData !== null &&
-                            typeof userProfilesData === 'object' && 
-                            'full_name' in userProfilesData
-          ? { full_name: String(userProfilesData.full_name) }
-          : null;
+        let userProfiles = null;
+        if (userProfilesData && 
+            userProfilesData !== null &&
+            typeof userProfilesData === 'object' && 
+            'full_name' in userProfilesData) {
+          userProfiles = { full_name: String(userProfilesData.full_name) };
+        }
 
         // Safe type check for news_categories with proper type guarding
         const newsCategoriesData = article.news_categories;
-        const newsCategories = newsCategoriesData && 
-                              newsCategoriesData !== null &&
-                              typeof newsCategoriesData === 'object' && 
-                              'name' in newsCategoriesData
-          ? { 
-              name: String(newsCategoriesData.name), 
-              color: String(newsCategoriesData.color) 
-            }
-          : null;
+        let newsCategories = null;
+        if (newsCategoriesData && 
+            newsCategoriesData !== null &&
+            typeof newsCategoriesData === 'object' && 
+            'name' in newsCategoriesData) {
+          newsCategories = { 
+            name: String(newsCategoriesData.name), 
+            color: String(newsCategoriesData.color) 
+          };
+        }
 
         return {
           ...article,
