@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -73,10 +74,16 @@ const NewsManagement: React.FC = () => {
       // Type assertion to handle the Supabase response
       const typedArticles = (data || []).map(article => ({
         ...article,
-        user_profiles: article.user_profiles && typeof article.user_profiles === 'object' && 'full_name' in article.user_profiles 
+        user_profiles: article.user_profiles && 
+                      typeof article.user_profiles === 'object' && 
+                      article.user_profiles !== null &&
+                      'full_name' in article.user_profiles 
           ? article.user_profiles 
           : null,
-        news_categories: article.news_categories && typeof article.news_categories === 'object' && 'name' in article.news_categories
+        news_categories: article.news_categories && 
+                        typeof article.news_categories === 'object' && 
+                        article.news_categories !== null &&
+                        'name' in article.news_categories
           ? article.news_categories
           : null
       })) as NewsArticle[];
