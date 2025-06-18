@@ -78,22 +78,24 @@ const NewsManagement: React.FC = () => {
       
       // Type assertion to handle the Supabase response with proper null checks
       const typedArticles = (data || []).map(article => {
-        // Safe type check for user_profiles with explicit null check
-        const userProfiles = article.user_profiles && 
-                            article.user_profiles !== null &&
-                            typeof article.user_profiles === 'object' && 
-                            'full_name' in article.user_profiles
-          ? { full_name: String(article.user_profiles.full_name) }
+        // Safe type check for user_profiles with proper type guarding
+        const userProfilesData = article.user_profiles;
+        const userProfiles = userProfilesData && 
+                            userProfilesData !== null &&
+                            typeof userProfilesData === 'object' && 
+                            'full_name' in userProfilesData
+          ? { full_name: String(userProfilesData.full_name) }
           : null;
 
-        // Safe type check for news_categories  
-        const newsCategories = article.news_categories && 
-                              article.news_categories !== null &&
-                              typeof article.news_categories === 'object' && 
-                              'name' in article.news_categories
+        // Safe type check for news_categories with proper type guarding
+        const newsCategoriesData = article.news_categories;
+        const newsCategories = newsCategoriesData && 
+                              newsCategoriesData !== null &&
+                              typeof newsCategoriesData === 'object' && 
+                              'name' in newsCategoriesData
           ? { 
-              name: String(article.news_categories.name), 
-              color: String(article.news_categories.color) 
+              name: String(newsCategoriesData.name), 
+              color: String(newsCategoriesData.color) 
             }
           : null;
 
