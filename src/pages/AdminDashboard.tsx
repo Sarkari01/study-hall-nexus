@@ -32,6 +32,7 @@ const AdminDashboard = () => {
   const [searchValue, setSearchValue] = useState('');
 
   const handleItemClick = (itemId: string) => {
+    console.log('Navigating to:', itemId);
     setActiveItem(itemId);
   };
 
@@ -42,9 +43,11 @@ const AdminDashboard = () => {
   };
 
   const renderContent = () => {
+    console.log('Rendering content for:', activeItem);
+    
     switch (activeItem) {
       case "dashboard":
-        return <DashboardOverview />;
+        return <DashboardOverview onNavigate={handleItemClick} />;
       case "students":
         return <StudentsTable />;
       case "role-management":
@@ -102,7 +105,8 @@ const AdminDashboard = () => {
           </div>
         );
       default:
-        return <DashboardOverview />;
+        console.log('Unknown route, defaulting to dashboard');
+        return <DashboardOverview onNavigate={handleItemClick} />;
     }
   };
 

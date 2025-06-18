@@ -40,6 +40,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     }
   };
 
+  const handleItemClick = (itemId: string, hasSubmenu: boolean = false) => {
+    if (hasSubmenu) {
+      onToggleExpand(itemId);
+    } else {
+      onItemClick(itemId);
+    }
+  };
+
   return (
     <div className="w-72 bg-gradient-to-b from-emerald-900 to-emerald-800 text-white min-h-screen flex flex-col shadow-xl">
       <div className="p-6 flex-1">
@@ -68,6 +76,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         "w-full justify-between text-left text-emerald-100 hover:bg-white/10 hover:text-white transition-all duration-200",
                         expandedItems.includes(item.id) && "bg-white/10 text-white"
                       )}
+                      onClick={() => handleItemClick(item.id, true)}
                     >
                       <div className="flex items-center">
                         <span className="text-emerald-300">{item.icon}</span>
@@ -90,7 +99,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                           activeItem === subItem.id &&
                             "bg-white text-emerald-900 hover:bg-white/90 shadow-sm font-semibold"
                         )}
-                        onClick={() => onItemClick(subItem.id)}
+                        onClick={() => handleItemClick(subItem.id)}
                       >
                         <span className="text-current">{subItem.icon}</span>
                         <span className="ml-2">{subItem.label}</span>
@@ -106,7 +115,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     activeItem === item.id &&
                       "bg-white text-emerald-900 hover:bg-white/90 shadow-sm font-semibold"
                   )}
-                  onClick={() => onItemClick(item.id)}
+                  onClick={() => handleItemClick(item.id)}
                 >
                   <span className="text-current">{item.icon}</span>
                   <span className="ml-3 font-medium">{item.label}</span>
