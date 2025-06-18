@@ -8,7 +8,7 @@ import StudentsTable from '@/components/admin/StudentsTable';
 import MerchantsTable from '@/components/admin/MerchantsTable';
 import StudyHallsTable from '@/components/admin/StudyHallsTable';
 import BookingsTable from '@/components/admin/BookingsTable';
-import RoleManagementTab from '@/components/admin/RoleManagementTab';
+import RoleManagement from '@/components/admin/RoleManagement';
 import AIAnalyticsDashboard from '@/components/ai/AIAnalyticsDashboard';
 import AIChatbot from '@/components/ai/AIChatbot';
 import ContentModerator from '@/components/ai/ContentModerator';
@@ -48,7 +48,7 @@ const AdminDashboard = () => {
       case "students":
         return <StudentsTable />;
       case "role-management":
-        return <RoleManagementTab />;
+        return <RoleManagement />;
       case "merchants":
         return <MerchantsTable />;
       case "study-halls":
@@ -89,14 +89,14 @@ const AdminDashboard = () => {
         return <DeveloperManagement />;
       case "analytics":
         return (
-          <div className="p-6 bg-white rounded-lg shadow-sm border border-emerald-200">
+          <div className="p-6 bg-white/95 backdrop-blur-sm rounded-lg shadow-sm border border-emerald-200">
             <h2 className="text-2xl font-bold mb-4 text-emerald-900">Analytics Dashboard</h2>
             <p className="text-emerald-600">Advanced analytics coming soon...</p>
           </div>
         );
       case "settings":
         return (
-          <div className="p-6 bg-white rounded-lg shadow-sm border border-emerald-200">
+          <div className="p-6 bg-white/95 backdrop-blur-sm rounded-lg shadow-sm border border-emerald-200">
             <h2 className="text-2xl font-bold mb-4 text-emerald-900">System Settings</h2>
             <p className="text-emerald-600">System configuration coming soon...</p>
           </div>
