@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,8 @@ import { Plus, Search, Filter, Eye, Edit, Trash2, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
+import { InputValidator } from '@/utils/inputValidation';
+import { apiRateLimiter } from '@/utils/rateLimiter';
 import NewsEditor from './NewsEditor';
 import NewsAnalytics from './NewsAnalytics';
 
@@ -53,6 +56,16 @@ const NewsManagement: React.FC = () => {
 
   const fetchArticles = async () => {
     try {
+      // Rate limiting for API calls
+      if (!apiRateLimiter.isAllowed('fetch_articles')) {
+        toast({
+          title: "Rate Limit",
+          description: "Too many requests. Please wait a moment.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       console.log('Fetching articles...');
       let query = supabase
         .from('news_articles')
@@ -76,8 +89,17 @@ const NewsManagement: React.FC = () => {
       
       console.log('Raw data from Supabase:', data);
       
-      // Type assertion to handle the Supabase response with proper null checks
+      // Enhanced type checking and validation with security considerations
       const typedArticles = (data || []).map(article => {
+        // Validate and sanitize article data
+        const sanitizedTitle = typeof article.title === 'string' 
+          ? InputValidator.sanitizeHtml(article.title) 
+          : 'Untitled';
+
+        const sanitizedContent = typeof article.content === 'string'
+          ? InputValidator.sanitizeHtml(article.content)
+          : '';
+
         // Safe type check for user_profiles with proper type guarding
         const userProfilesData = article.user_profiles as any;
         let userProfiles: { full_name: string } | null = null;
@@ -103,6 +125,8 @@ const NewsManagement: React.FC = () => {
 
         return {
           ...article,
+          title: sanitizedTitle,
+          content: sanitizedContent,
           user_profiles: userProfiles,
           news_categories: newsCategories
         };
@@ -124,6 +148,26 @@ const NewsManagement: React.FC = () => {
 
   const handleStatusChange = async (articleId: string, newStatus: string) => {
     try {
+      // Validate inputs
+      if (!InputValidator.validateUUID(articleId)) {
+        toast({
+          title: "Invalid Input",
+          description: "Invalid article ID",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Rate limiting
+      if (!apiRateLimiter.isAllowed(`status_change_${articleId}`)) {
+        toast({
+          title: "Rate Limit",
+          description: "Too many status change attempts",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const updates: any = { status: newStatus };
       if (newStatus === 'published') {
         updates.published_at = new Date().toISOString();
@@ -153,6 +197,16 @@ const NewsManagement: React.FC = () => {
 
   const handleFeatureToggle = async (articleId: string, isFeatured: boolean) => {
     try {
+      // Validate inputs
+      if (!InputValidator.validateUUID(articleId)) {
+        toast({
+          title: "Invalid Input",
+          description: "Invalid article ID",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('news_articles')
         .update({ is_featured: !isFeatured })
@@ -179,6 +233,16 @@ const NewsManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this article?')) return;
 
     try {
+      // Validate inputs
+      if (!InputValidator.validateUUID(articleId)) {
+        toast({
+          title: "Invalid Input",
+          description: "Invalid article ID",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('news_articles')
         .delete()
@@ -208,6 +272,12 @@ const NewsManagement: React.FC = () => {
       case 'archived': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Sanitize search input
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const sanitizedValue = InputValidator.sanitizeHtml(e.target.value);
+    setSearchTerm(sanitizedValue);
   };
 
   const filteredArticles = articles.filter(article =>
@@ -261,8 +331,9 @@ const NewsManagement: React.FC = () => {
                     <Input
                       placeholder="Search articles..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={handleSearchChange}
                       className="pl-10"
+                      maxLength={100}
                     />
                   </div>
                 </div>

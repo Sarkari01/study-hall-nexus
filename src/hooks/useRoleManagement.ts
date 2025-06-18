@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ValidRole, ROLE_HIERARCHY, VALID_ROLES } from "@/utils/roleValidation";
 import { usePermissions } from "@/hooks/usePermissions";
+import { InputValidator, USER_VALIDATION_SCHEMA } from "@/utils/inputValidation";
+import { apiRateLimiter } from "@/utils/rateLimiter";
 
 interface UserProfile {
   id: string;
@@ -39,6 +41,16 @@ export const useRoleManagement = () => {
 
   const fetchUsers = async () => {
     try {
+      // Rate limiting for API calls
+      if (!apiRateLimiter.isAllowed('fetch_users')) {
+        toast({
+          title: "Rate Limit",
+          description: "Too many requests. Please wait a moment.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       const { data: profiles, error } = await supabase
         .from('user_profiles')
         .select(`
@@ -58,9 +70,16 @@ export const useRoleManagement = () => {
 
       const combinedUsers: UserWithRole[] = (profiles || []).map(profile => {
         const authUser = authUsers.find((u: AuthUser) => u.id === profile.user_id);
+        
+        // Validate email if present
+        const email = authUser?.email || '';
+        if (email && !InputValidator.validateEmail(email)) {
+          console.warn(`Invalid email format for user ${profile.user_id}`);
+        }
+
         return {
           id: profile.user_id || '',
-          email: authUser?.email || 'Unknown',
+          email: email || 'Unknown',
           full_name: profile.full_name || 'Unknown User',
           role: profile.role as ValidRole || null,
           created_at: authUser?.created_at || '',
@@ -85,9 +104,12 @@ export const useRoleManagement = () => {
     let filtered = users;
 
     if (searchTerm) {
+      // Sanitize search term
+      const sanitizedSearch = searchTerm.toLowerCase().trim();
+      
       filtered = filtered.filter(user => 
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+        user.email.toLowerCase().includes(sanitizedSearch) ||
+        user.full_name.toLowerCase().includes(sanitizedSearch)
       );
     }
 
@@ -100,6 +122,35 @@ export const useRoleManagement = () => {
 
   const assignRole = async (userId: string, newRole: ValidRole) => {
     try {
+      // Rate limiting for role assignment
+      if (!apiRateLimiter.isAllowed(`assign_role_${userId}`)) {
+        toast({
+          title: "Rate Limit",
+          description: "Too many role assignment attempts. Please wait.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Validate inputs
+      if (!InputValidator.validateUUID(userId)) {
+        toast({
+          title: "Invalid Input",
+          description: "Invalid user ID format",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      if (!VALID_ROLES.includes(newRole)) {
+        toast({
+          title: "Invalid Role",
+          description: "Invalid role specified",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       const { error: updateError } = await supabase
         .from('user_profiles')
         .update({ role: newRole })

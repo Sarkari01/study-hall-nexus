@@ -1798,6 +1798,10 @@ export type Database = {
         }
         Returns: string
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_permissions: {
         Args: { user_id: string }
         Returns: {
@@ -1819,6 +1823,10 @@ export type Database = {
       get_user_role_safe: {
         Args: { user_id: string }
         Returns: string
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       user_has_permission: {
         Args: { user_id: string; permission_name: string }
