@@ -24,7 +24,8 @@ import {
   Gift,
   Bell,
   DollarSign,
-  Banknote
+  Banknote,
+  Newspaper
 } from 'lucide-react';
 
 export interface AdminSidebarItem {
@@ -73,6 +74,11 @@ export const sidebarItems: AdminSidebarItem[] = [
     id: 'bookings',
     label: 'Bookings',
     icon: <BookOpen className="h-5 w-5" />,
+  },
+  {
+    id: 'news-management',
+    label: 'News Management',
+    icon: <Newspaper className="h-5 w-5" />,
   },
   {
     id: 'subscription-management',

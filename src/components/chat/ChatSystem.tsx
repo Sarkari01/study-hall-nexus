@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -123,7 +122,6 @@ const ChatSystem: React.FC = () => {
     try {
       if (!currentUser) return;
 
-      // First, try to get rooms where user is a participant
       const { data: roomsData, error: roomsError } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -131,7 +129,6 @@ const ChatSystem: React.FC = () => {
 
       if (roomsError) {
         console.error('Error fetching chat rooms:', roomsError);
-        // If there's an error or no rooms, create a default general chat room
         await createDefaultChatRoom();
         return;
       }
@@ -156,6 +153,7 @@ const ChatSystem: React.FC = () => {
           name: 'General Chat',
           type: 'group',
           description: 'General discussion room for all users',
+          created_by: currentUser.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }])
@@ -192,7 +190,13 @@ const ChatSystem: React.FC = () => {
         return;
       }
 
-      setMessages(messagesData || []);
+      // Type assertion to fix the user_profiles type issue
+      const typedMessages = (messagesData || []).map(msg => ({
+        ...msg,
+        user_profiles: Array.isArray(msg.user_profiles) ? msg.user_profiles[0] : msg.user_profiles
+      })) as ChatMessage[];
+
+      setMessages(typedMessages);
     } catch (error) {
       console.error('Error in fetchMessages:', error);
     }
@@ -217,7 +221,6 @@ const ChatSystem: React.FC = () => {
 
       if (error) throw error;
 
-      // Update room's updated_at timestamp
       await supabase
         .from('chat_rooms')
         .update({ updated_at: new Date().toISOString() })

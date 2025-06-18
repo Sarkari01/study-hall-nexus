@@ -25,6 +25,7 @@ import BannerManager from '@/components/banners/BannerManager';
 import SubscriptionManagement from '@/components/admin/SubscriptionManagement';
 import PromotionsRewards from '@/components/admin/PromotionsRewards';
 import PushNotifications from '@/components/admin/PushNotifications';
+import NewsManagement from '@/components/news/NewsManagement';
 
 const AdminDashboard = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
@@ -74,6 +75,8 @@ const AdminDashboard = () => {
         return <StudyHallsTable />;
       case "bookings":
         return <BookingsTable />;
+      case "news-management":
+        return <NewsManagement />;
       case "subscription-management":
         return <SubscriptionManagement />;
       case "promotions-rewards":
