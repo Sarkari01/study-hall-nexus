@@ -1,4 +1,3 @@
-
 import { sanitizeInput } from './securityUtils';
 
 // Enhanced validation patterns
@@ -21,7 +20,7 @@ interface ValidationRule {
   custom?: (value: any) => boolean | string;
 }
 
-interface ValidationSchema {
+export interface ValidationSchema {
   [key: string]: ValidationRule;
 }
 
