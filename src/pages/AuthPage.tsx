@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, Building2, Lock, Mail } from "lucide-react";
+import { Loader2, Lock, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isValidRole, getRoleRoute, ValidRole } from '@/utils/roleValidation';
 
@@ -139,7 +139,11 @@ const AuthPage = () => {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-6">
             <div className="bg-green-600 p-3 rounded-2xl shadow-lg">
-              <Building2 className="h-8 w-8 text-white" />
+              <img 
+                src="/lovable-uploads/a0f60459-3d97-4bba-9582-45a8b069134e.png" 
+                alt="Sarkari Ninja Logo" 
+                className="h-8 w-8 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-green-900">Sarkari Ninja</h1>

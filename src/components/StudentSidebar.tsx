@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarFooter } from "@/components/ui/sidebar";
-import { Building2, Calendar, MessageSquare, User, LogOut, Search } from "lucide-react";
+import { Calendar, MessageSquare, User, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface StudentSidebarProps {
@@ -51,7 +51,11 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({ activeTab, onTabChange 
     <Sidebar>
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Building2 className="h-8 w-8 text-blue-600" />
+          <img 
+            src="/lovable-uploads/a0f60459-3d97-4bba-9582-45a8b069134e.png" 
+            alt="Sarkari Ninja Logo" 
+            className="h-8 w-8 object-contain"
+          />
           <div>
             <h2 className="font-bold text-lg">Student Portal</h2>
             <p className="text-sm text-gray-600">Welcome, {mockUserProfile?.full_name}</p>

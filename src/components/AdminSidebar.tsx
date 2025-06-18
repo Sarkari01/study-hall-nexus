@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Building2, ChevronDown, ChevronRight, LogOut, X } from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, X } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -82,7 +82,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           collapsed && "justify-center"
         )}>
           <div className="p-2 bg-white/15 rounded-xl backdrop-blur-sm flex-shrink-0 border border-white/10">
-            <Building2 className={cn("text-green-50", collapsed ? "h-6 w-6" : "h-8 w-8")} />
+            <img 
+              src="/lovable-uploads/a0f60459-3d97-4bba-9582-45a8b069134e.png" 
+              alt="Sarkari Ninja Logo" 
+              className={cn("object-contain", collapsed ? "h-6 w-6" : "h-8 w-8")}
+            />
           </div>
           {!collapsed && (
             <div className="overflow-hidden">

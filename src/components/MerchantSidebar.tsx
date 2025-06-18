@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Building2, Calendar, DollarSign, BarChart3, Settings, User, Home, MessageSquare, Users, CreditCard, UserPlus, Shield } from "lucide-react";
+import { Calendar, DollarSign, BarChart3, Settings, User, Home, MessageSquare, Users, CreditCard, UserPlus, Shield } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -97,8 +97,12 @@ const MerchantSidebar: React.FC<MerchantSidebarProps> = ({
         <div className="space-y-4">
           {/* Logo/Brand */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Building2 className="h-6 w-6 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center p-2">
+              <img 
+                src="/lovable-uploads/a0f60459-3d97-4bba-9582-45a8b069134e.png" 
+                alt="Sarkari Ninja Logo" 
+                className="h-6 w-6 object-contain"
+              />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Sarkari Ninja</h2>
