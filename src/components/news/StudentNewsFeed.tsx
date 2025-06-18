@@ -75,12 +75,12 @@ const StudentNewsFeed: React.FC = () => {
       // Type assertion to handle the Supabase response with proper null checks
       const typedArticles = (data || []).map(article => {
         // Safe type check for user_profiles with proper type guarding
-        const userProfilesData = article.user_profiles;
-        let userProfiles = null;
-        if (userProfilesData && 
-            userProfilesData !== null &&
+        const userProfilesData = article.user_profiles as any;
+        let userProfiles: { full_name: string; avatar_url?: string } | null = null;
+        if (userProfilesData !== null && 
+            userProfilesData !== undefined &&
             typeof userProfilesData === 'object' && 
-            'full_name' in userProfilesData) {
+            userProfilesData.full_name) {
           userProfiles = { 
             full_name: String(userProfilesData.full_name),
             avatar_url: userProfilesData.avatar_url ? String(userProfilesData.avatar_url) : undefined
@@ -88,15 +88,15 @@ const StudentNewsFeed: React.FC = () => {
         }
 
         // Safe type check for news_categories with proper type guarding
-        const newsCategoriesData = article.news_categories;
-        let newsCategories = null;
-        if (newsCategoriesData && 
-            newsCategoriesData !== null &&
+        const newsCategoriesData = article.news_categories as any;
+        let newsCategories: { name: string; color: string } | null = null;
+        if (newsCategoriesData !== null && 
+            newsCategoriesData !== undefined &&
             typeof newsCategoriesData === 'object' && 
-            'name' in newsCategoriesData) {
+            newsCategoriesData.name) {
           newsCategories = { 
             name: String(newsCategoriesData.name), 
-            color: String(newsCategoriesData.color) 
+            color: String(newsCategoriesData.color || '#3B82F6')
           };
         }
 
