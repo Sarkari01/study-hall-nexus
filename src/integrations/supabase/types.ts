@@ -919,6 +919,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "news_comments_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "news_articles_with_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "news_comments_parent_comment_id_fkey"
             columns: ["parent_comment_id"]
             isOneToOne: false
@@ -954,6 +961,13 @@ export type Database = {
             referencedRelation: "news_articles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "news_likes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "news_articles_with_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       news_views: {
@@ -987,6 +1001,13 @@ export type Database = {
             columns: ["article_id"]
             isOneToOne: false
             referencedRelation: "news_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_views_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "news_articles_with_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1715,7 +1736,44 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      news_articles_with_profiles: {
+        Row: {
+          author_avatar: string | null
+          author_id: string | null
+          author_name: string | null
+          category_color: string | null
+          category_id: string | null
+          category_name: string | null
+          comments_count: number | null
+          content: string | null
+          created_at: string | null
+          excerpt: string | null
+          featured_image_url: string | null
+          id: string | null
+          is_breaking: boolean | null
+          is_featured: boolean | null
+          likes_count: number | null
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          slug: string | null
+          status: string | null
+          tags: string[] | null
+          title: string | null
+          updated_at: string | null
+          video_url: string | null
+          views_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_articles_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "news_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       create_merchant_with_auth: {

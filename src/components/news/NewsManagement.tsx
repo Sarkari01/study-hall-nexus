@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,22 +76,31 @@ const NewsManagement: React.FC = () => {
       
       console.log('Raw data from Supabase:', data);
       
-      // Type assertion to handle the Supabase response
-      const typedArticles = (data || []).map(article => ({
-        ...article,
-        user_profiles: article.user_profiles && 
-                      typeof article.user_profiles === 'object' && 
-                      article.user_profiles !== null &&
-                      'full_name' in article.user_profiles 
-          ? article.user_profiles as { full_name: string }
-          : null,
-        news_categories: article.news_categories && 
-                        typeof article.news_categories === 'object' && 
-                        article.news_categories !== null &&
-                        'name' in article.news_categories
-          ? article.news_categories as { name: string; color: string }
-          : null
-      })) as NewsArticle[];
+      // Type assertion to handle the Supabase response with proper null checks
+      const typedArticles = (data || []).map(article => {
+        // Safe type check for user_profiles
+        const userProfiles = article.user_profiles && 
+                            typeof article.user_profiles === 'object' && 
+                            'full_name' in article.user_profiles
+          ? { full_name: (article.user_profiles as any).full_name as string }
+          : null;
+
+        // Safe type check for news_categories  
+        const newsCategories = article.news_categories && 
+                              typeof article.news_categories === 'object' && 
+                              'name' in article.news_categories
+          ? { 
+              name: (article.news_categories as any).name as string, 
+              color: (article.news_categories as any).color as string 
+            }
+          : null;
+
+        return {
+          ...article,
+          user_profiles: userProfiles,
+          news_categories: newsCategories
+        };
+      }) as NewsArticle[];
       
       console.log('Processed articles:', typedArticles);
       setArticles(typedArticles);
