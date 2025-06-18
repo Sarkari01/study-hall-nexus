@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Calendar, MapPin, Clock, Star, BookOpen, Users, Newspaper } from "lucide-react";
 import DashboardOverview from '@/components/student/DashboardOverview';
-import StudyHallBooking from '@/components/student/StudyHallBooking';
 import StudentBookings from '@/components/student/StudentBookings';
 import StudentProfile from '@/components/student/StudentProfile';
 import StudentNewsFeed from '@/components/news/StudentNewsFeed';
@@ -45,20 +44,13 @@ const StudentPortal = () => {
       <div className="bg-white border-b border-emerald-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 bg-transparent border-none">
+            <TabsList className="grid w-full grid-cols-4 bg-transparent border-none">
               <TabsTrigger 
                 value="dashboard" 
                 className="flex items-center space-x-2 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700"
               >
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Dashboard</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="booking"
-                className="flex items-center space-x-2 data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700"
-              >
-                <Calendar className="h-4 w-4" />
-                <span className="hidden sm:inline">Book Study Hall</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="my-bookings"
@@ -91,9 +83,6 @@ const StudentPortal = () => {
         <Tabs value={activeTab} className="w-full">
           <TabsContent value="dashboard" className="mt-0">
             <DashboardOverview />
-          </TabsContent>
-          <TabsContent value="booking" className="mt-0">
-            <StudyHallBooking />
           </TabsContent>
           <TabsContent value="my-bookings" className="mt-0">
             <StudentBookings />

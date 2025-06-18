@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ interface NewsArticle {
   excerpt?: string;
   featured_image_url?: string;
   video_url?: string;
-  status: string; // Changed from union type to string
+  status: string;
   is_featured: boolean;
   is_breaking: boolean;
   published_at?: string;
@@ -59,7 +58,7 @@ const NewsManagement: React.FC = () => {
         .select(`
           *,
           news_categories(name, color),
-          user_profiles!inner(full_name)
+          user_profiles(full_name)
         `)
         .order('created_at', { ascending: false });
 

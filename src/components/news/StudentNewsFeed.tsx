@@ -60,7 +60,7 @@ const StudentNewsFeed: React.FC = () => {
         .select(`
           *,
           news_categories(name, color),
-          user_profiles!inner(full_name, avatar_url)
+          user_profiles(full_name, avatar_url)
         `)
         .eq('status', 'published')
         .order('published_at', { ascending: false });
