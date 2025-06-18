@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
+import DashboardHeader from '@/components/admin/DashboardHeader';
+import DashboardFooter from '@/components/admin/DashboardFooter';
 import DashboardOverview from '@/components/admin/DashboardOverview';
 import StudentsTable from '@/components/admin/StudentsTable';
 import MerchantsTable from '@/components/admin/MerchantsTable';
@@ -27,6 +29,7 @@ import PushNotifications from '@/components/admin/PushNotifications';
 const AdminDashboard = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [searchValue, setSearchValue] = useState('');
 
   const handleItemClick = (itemId: string) => {
     setActiveItem(itemId);
@@ -86,16 +89,16 @@ const AdminDashboard = () => {
         return <DeveloperManagement />;
       case "analytics":
         return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">Analytics Dashboard</h2>
-            <p className="text-gray-600">Advanced analytics coming soon...</p>
+          <div className="p-6 bg-white rounded-lg shadow-sm border border-emerald-200">
+            <h2 className="text-2xl font-bold mb-4 text-emerald-900">Analytics Dashboard</h2>
+            <p className="text-emerald-600">Advanced analytics coming soon...</p>
           </div>
         );
       case "settings":
         return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-4">System Settings</h2>
-            <p className="text-gray-600">System configuration coming soon...</p>
+          <div className="p-6 bg-white rounded-lg shadow-sm border border-emerald-200">
+            <h2 className="text-2xl font-bold mb-4 text-emerald-900">System Settings</h2>
+            <p className="text-emerald-600">System configuration coming soon...</p>
           </div>
         );
       default:
@@ -104,7 +107,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-emerald-50 to-green-100">
+    <div className="flex h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
       <AdminSidebar
         activeItem={activeItem}
         onItemClick={handleItemClick}
@@ -112,11 +115,21 @@ const AdminDashboard = () => {
         onToggleExpand={handleToggleExpand}
       />
 
-      <main className="flex-1 overflow-auto">
-        <div className="p-8 bg-white/50 backdrop-blur-sm min-h-full">
-          {renderContent()}
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DashboardHeader
+          searchValue={searchValue}
+          onSearchChange={setSearchValue}
+          notifications={3}
+        />
+
+        <main className="flex-1 overflow-auto bg-gradient-to-br from-emerald-50/50 to-white">
+          <div className="p-6 min-h-full">
+            {renderContent()}
+          </div>
+        </main>
+
+        <DashboardFooter />
+      </div>
     </div>
   );
 };

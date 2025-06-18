@@ -41,13 +41,15 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   };
 
   return (
-    <div className="w-72 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+    <div className="w-72 bg-gradient-to-b from-emerald-900 to-emerald-800 text-white min-h-screen flex flex-col shadow-xl">
       <div className="p-6 flex-1">
-        <div className="mb-8 flex items-center gap-3">
-          <Building2 className="h-10 w-10 text-blue-600" />
+        <div className="mb-8 flex items-center gap-3 pb-6 border-b border-emerald-700">
+          <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+            <Building2 className="h-8 w-8 text-emerald-100" />
+          </div>
           <div>
-            <h2 className="text-gray-900 font-extrabold text-3xl">Sarkari Ninja</h2>
-            <p className="text-zinc-950 text-xs font-semibold">Advanced Management System</p>
+            <h2 className="text-white font-extrabold text-2xl">Sarkari Ninja</h2>
+            <p className="text-emerald-200 text-xs font-semibold">Advanced Management System</p>
           </div>
         </div>
         
@@ -63,18 +65,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-full justify-between text-left",
-                        expandedItems.includes(item.id) && "bg-gray-100"
+                        "w-full justify-between text-left text-emerald-100 hover:bg-white/10 hover:text-white transition-all duration-200",
+                        expandedItems.includes(item.id) && "bg-white/10 text-white"
                       )}
                     >
                       <div className="flex items-center">
-                        {item.icon}
-                        <span className="ml-3">{item.label}</span>
+                        <span className="text-emerald-300">{item.icon}</span>
+                        <span className="ml-3 font-medium">{item.label}</span>
                       </div>
                       {expandedItems.includes(item.id) ? (
-                        <ChevronDown className="h-4 w-4" />
+                        <ChevronDown className="h-4 w-4 text-emerald-300" />
                       ) : (
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4 text-emerald-300" />
                       )}
                     </Button>
                   </CollapsibleTrigger>
@@ -82,31 +84,32 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     {item.submenu?.map((subItem) => (
                       <Button
                         key={subItem.id}
-                        variant={activeItem === subItem.id ? "default" : "ghost"}
+                        variant="ghost"
                         className={cn(
-                          "w-full justify-start text-sm",
+                          "w-full justify-start text-sm text-emerald-200 hover:bg-white/10 hover:text-white transition-all duration-200 pl-4",
                           activeItem === subItem.id &&
-                            "bg-blue-600 text-white hover:bg-blue-700"
+                            "bg-white text-emerald-900 hover:bg-white/90 shadow-sm font-semibold"
                         )}
                         onClick={() => onItemClick(subItem.id)}
                       >
-                        {subItem.label}
+                        <span className="text-current">{subItem.icon}</span>
+                        <span className="ml-2">{subItem.label}</span>
                       </Button>
                     ))}
                   </CollapsibleContent>
                 </Collapsible>
               ) : (
                 <Button
-                  variant={activeItem === item.id ? "default" : "ghost"}
+                  variant="ghost"
                   className={cn(
-                    "w-full justify-start",
+                    "w-full justify-start text-emerald-100 hover:bg-white/10 hover:text-white transition-all duration-200",
                     activeItem === item.id &&
-                      "bg-blue-600 text-white hover:bg-blue-700"
+                      "bg-white text-emerald-900 hover:bg-white/90 shadow-sm font-semibold"
                   )}
                   onClick={() => onItemClick(item.id)}
                 >
-                  {item.icon}
-                  <span className="ml-3">{item.label}</span>
+                  <span className="text-current">{item.icon}</span>
+                  <span className="ml-3 font-medium">{item.label}</span>
                 </Button>
               )}
             </div>
@@ -115,11 +118,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </div>
       
       {/* Logout Footer */}
-      <div className="p-6 border-t border-gray-200">
+      <div className="p-6 border-t border-emerald-700">
         <Button
           variant="ghost"
           onClick={handleLogout}
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+          className="w-full justify-start text-red-300 hover:text-red-200 hover:bg-red-500/10 transition-all duration-200"
         >
           <LogOut className="h-4 w-4 mr-3" />
           Sign Out
