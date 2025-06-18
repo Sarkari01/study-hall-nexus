@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,7 +66,18 @@ const StudentNewsFeed: React.FC = () => {
 
       if (error) throw error;
 
-      setArticles(data || []);
+      // Type assertion to handle the Supabase response
+      const typedArticles = (data || []).map(article => ({
+        ...article,
+        user_profiles: article.user_profiles && typeof article.user_profiles === 'object' && 'full_name' in article.user_profiles 
+          ? article.user_profiles 
+          : null,
+        news_categories: article.news_categories && typeof article.news_categories === 'object' && 'name' in article.news_categories
+          ? article.news_categories
+          : null
+      })) as NewsArticle[];
+
+      setArticles(typedArticles);
     } catch (error) {
       console.error('Error fetching articles:', error);
       toast({
