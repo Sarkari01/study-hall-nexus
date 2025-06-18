@@ -74,23 +74,25 @@ const StudentNewsFeed: React.FC = () => {
 
       // Type assertion to handle the Supabase response with proper null checks
       const typedArticles = (data || []).map(article => {
-        // Safe type check for user_profiles
+        // Safe type check for user_profiles with explicit null check
         const userProfiles = article.user_profiles && 
+                            article.user_profiles !== null &&
                             typeof article.user_profiles === 'object' && 
                             'full_name' in article.user_profiles
           ? { 
-              full_name: (article.user_profiles as any).full_name as string,
-              avatar_url: (article.user_profiles as any).avatar_url as string | undefined
+              full_name: String(article.user_profiles.full_name),
+              avatar_url: article.user_profiles.avatar_url ? String(article.user_profiles.avatar_url) : undefined
             }
           : null;
 
         // Safe type check for news_categories  
         const newsCategories = article.news_categories && 
+                              article.news_categories !== null &&
                               typeof article.news_categories === 'object' && 
                               'name' in article.news_categories
           ? { 
-              name: (article.news_categories as any).name as string, 
-              color: (article.news_categories as any).color as string 
+              name: String(article.news_categories.name), 
+              color: String(article.news_categories.color) 
             }
           : null;
 
