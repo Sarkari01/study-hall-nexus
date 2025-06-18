@@ -30,6 +30,7 @@ const AdminDashboard = () => {
   const [activeItem, setActiveItem] = useState('dashboard');
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchValue, setSearchValue] = useState('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const handleItemClick = (itemId: string) => {
     console.log('Navigating to:', itemId);
@@ -111,23 +112,31 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
-      <AdminSidebar
-        activeItem={activeItem}
-        onItemClick={handleItemClick}
-        expandedItems={expandedItems}
-        onToggleExpand={handleToggleExpand}
-      />
+    <div className="min-h-screen w-full flex bg-gradient-to-br from-emerald-50 via-white to-green-50">
+      {/* Sidebar */}
+      <div className={`${sidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 ease-in-out flex-shrink-0`}>
+        <AdminSidebar
+          activeItem={activeItem}
+          onItemClick={handleItemClick}
+          expandedItems={expandedItems}
+          onToggleExpand={handleToggleExpand}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+      </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <DashboardHeader
           searchValue={searchValue}
           onSearchChange={setSearchValue}
           notifications={3}
+          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+          sidebarCollapsed={sidebarCollapsed}
         />
 
         <main className="flex-1 overflow-auto bg-gradient-to-br from-emerald-50/50 to-white">
-          <div className="p-6 min-h-full">
+          <div className="p-4 lg:p-6 min-h-full">
             {renderContent()}
           </div>
         </main>

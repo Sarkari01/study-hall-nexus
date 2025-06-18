@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SearchInput } from '@/components/ui/search-input';
-import { Bell, Settings, User, MessageSquare, HelpCircle, ChevronDown } from 'lucide-react';
+import { Bell, Settings, User, MessageSquare, HelpCircle, ChevronDown, Menu } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,40 +17,54 @@ interface DashboardHeaderProps {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   notifications?: number;
+  onToggleSidebar?: () => void;
+  sidebarCollapsed?: boolean;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   searchValue = '',
   onSearchChange,
-  notifications = 3
+  notifications = 3,
+  onToggleSidebar,
+  sidebarCollapsed = false
 }) => {
   const { user, signOut } = useAuth();
 
   return (
-    <header className="bg-white border-b border-emerald-200 shadow-sm">
-      <div className="flex items-center justify-between px-6 py-4">
+    <header className="bg-white border-b border-emerald-200 shadow-sm flex-shrink-0">
+      <div className="flex items-center justify-between px-4 lg:px-6 py-4">
         <div className="flex items-center space-x-4">
+          {onToggleSidebar && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onToggleSidebar}
+              className="lg:hidden border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
           <div>
-            <h1 className="text-2xl font-bold text-emerald-900">Admin Dashboard</h1>
-            <p className="text-emerald-600 text-sm">Welcome back, manage your platform efficiently</p>
+            <h1 className="text-xl lg:text-2xl font-bold text-emerald-900">Admin Dashboard</h1>
+            <p className="text-emerald-600 text-sm hidden sm:block">Welcome back, manage your platform efficiently</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 lg:space-x-4">
           {onSearchChange && (
             <div className="hidden md:block">
               <SearchInput
                 value={searchValue}
                 onChange={onSearchChange}
                 placeholder="Search across dashboard..."
-                className="w-80 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400"
+                className="w-60 lg:w-80 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400"
               />
             </div>
           )}
 
-          <Button variant="outline" size="sm" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+          <Button variant="outline" size="sm" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hidden sm:flex">
             <MessageSquare className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Messages</span>
+            <span className="hidden lg:inline">Messages</span>
           </Button>
 
           <Button variant="outline" size="sm" className="relative border-emerald-200 text-emerald-700 hover:bg-emerald-50">
@@ -65,7 +79,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             )}
           </Button>
 
-          <Button variant="outline" size="sm" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+          <Button variant="outline" size="sm" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hidden sm:flex">
             <HelpCircle className="h-4 w-4" />
           </Button>
 
