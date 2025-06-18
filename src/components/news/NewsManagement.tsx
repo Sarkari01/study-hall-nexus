@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ const NewsManagement: React.FC = () => {
 
   const fetchArticles = async () => {
     try {
+      console.log('Fetching articles...');
       let query = supabase
         .from('news_articles')
         .select(`
@@ -68,7 +70,12 @@ const NewsManagement: React.FC = () => {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Raw data from Supabase:', data);
       
       // Type assertion to handle the Supabase response
       const typedArticles = (data || []).map(article => ({
@@ -77,16 +84,17 @@ const NewsManagement: React.FC = () => {
                       typeof article.user_profiles === 'object' && 
                       article.user_profiles !== null &&
                       'full_name' in article.user_profiles 
-          ? article.user_profiles 
+          ? article.user_profiles as { full_name: string }
           : null,
         news_categories: article.news_categories && 
                         typeof article.news_categories === 'object' && 
                         article.news_categories !== null &&
                         'name' in article.news_categories
-          ? article.news_categories
+          ? article.news_categories as { name: string; color: string }
           : null
       })) as NewsArticle[];
       
+      console.log('Processed articles:', typedArticles);
       setArticles(typedArticles);
     } catch (error) {
       console.error('Error fetching articles:', error);
