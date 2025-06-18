@@ -93,15 +93,15 @@ const AdminDashboard = () => {
         return <DeveloperManagement />;
       case "analytics":
         return (
-          <div className="p-6 bg-white/95 backdrop-blur-sm rounded-lg shadow-sm border border-emerald-200">
-            <h2 className="text-2xl font-bold mb-4 text-emerald-900">Analytics Dashboard</h2>
+          <div className="p-4 lg:p-6 bg-white/95 backdrop-blur-sm rounded-lg shadow-sm border border-emerald-200">
+            <h2 className="text-xl lg:text-2xl font-bold mb-4 text-emerald-900">Analytics Dashboard</h2>
             <p className="text-emerald-600">Advanced analytics coming soon...</p>
           </div>
         );
       case "settings":
         return (
-          <div className="p-6 bg-white/95 backdrop-blur-sm rounded-lg shadow-sm border border-emerald-200">
-            <h2 className="text-2xl font-bold mb-4 text-emerald-900">System Settings</h2>
+          <div className="p-4 lg:p-6 bg-white/95 backdrop-blur-sm rounded-lg shadow-sm border border-emerald-200">
+            <h2 className="text-xl lg:text-2xl font-bold mb-4 text-emerald-900">System Settings</h2>
             <p className="text-emerald-600">System configuration coming soon...</p>
           </div>
         );
@@ -112,12 +112,22 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-gradient-to-br from-emerald-50 via-white to-green-50">
-      {/* Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300 ease-in-out flex-shrink-0`}>
+    <div className="min-h-screen w-full flex bg-gradient-to-br from-emerald-50 via-white to-green-50 overflow-hidden">
+      {/* Sidebar - Hidden on mobile when collapsed, overlay on mobile when expanded */}
+      <div className={`
+        ${sidebarCollapsed ? 'w-0 lg:w-16' : 'w-72'} 
+        transition-all duration-300 ease-in-out flex-shrink-0
+        ${!sidebarCollapsed ? 'fixed lg:relative z-50 lg:z-auto' : 'hidden lg:block'}
+      `}>
         <AdminSidebar
           activeItem={activeItem}
-          onItemClick={handleItemClick}
+          onItemClick={(itemId) => {
+            handleItemClick(itemId);
+            // Auto-collapse sidebar on mobile after navigation
+            if (window.innerWidth < 1024) {
+              setSidebarCollapsed(true);
+            }
+          }}
           expandedItems={expandedItems}
           onToggleExpand={handleToggleExpand}
           collapsed={sidebarCollapsed}
@@ -125,8 +135,16 @@ const AdminDashboard = () => {
         />
       </div>
 
+      {/* Overlay for mobile when sidebar is open */}
+      {!sidebarCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
+
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-screen">
         <DashboardHeader
           searchValue={searchValue}
           onSearchChange={setSearchValue}
@@ -136,8 +154,10 @@ const AdminDashboard = () => {
         />
 
         <main className="flex-1 overflow-auto bg-gradient-to-br from-emerald-50/50 to-white">
-          <div className="p-4 lg:p-6 min-h-full">
-            {renderContent()}
+          <div className="p-3 sm:p-4 lg:p-6 h-full">
+            <div className="max-w-full">
+              {renderContent()}
+            </div>
           </div>
         </main>
 
