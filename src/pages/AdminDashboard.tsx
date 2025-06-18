@@ -7,7 +7,6 @@ import MerchantsTable from '@/components/admin/MerchantsTable';
 import StudyHallsTable from '@/components/admin/StudyHallsTable';
 import BookingsTable from '@/components/admin/BookingsTable';
 import RoleManagementTab from '@/components/admin/RoleManagementTab';
-import AdminDetailsTab from '@/components/admin/AdminDetailsTab';
 import AIAnalyticsDashboard from '@/components/ai/AIAnalyticsDashboard';
 import AIChatbot from '@/components/ai/AIChatbot';
 import ContentModerator from '@/components/ai/ContentModerator';
@@ -43,8 +42,6 @@ const AdminDashboard = () => {
     switch (activeItem) {
       case "dashboard":
         return <DashboardOverview />;
-      case "admin-details":
-        return <AdminDetailsTab />;
       case "students":
         return <StudentsTable />;
       case "role-management":
@@ -107,7 +104,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    <div className="flex h-screen bg-gradient-to-br from-emerald-50 to-green-100">
       <AdminSidebar
         activeItem={activeItem}
         onItemClick={handleItemClick}

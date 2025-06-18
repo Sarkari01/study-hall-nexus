@@ -8,7 +8,6 @@ import {
   Settings, 
   BarChart3,
   Shield,
-  UserCheck,
   Bot,
   MessageSquare,
   Heart,
@@ -41,11 +40,6 @@ export const sidebarItems: AdminSidebarItem[] = [
     id: 'dashboard',
     label: 'Dashboard',
     icon: <LayoutDashboard className="h-5 w-5" />,
-  },
-  {
-    id: 'admin-details',
-    label: 'Admin Details',
-    icon: <UserCheck className="h-5 w-5" />,
   },
   {
     id: 'user-management',

@@ -73,13 +73,18 @@ const RoleManagement = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <div className="bg-gradient-to-r from-emerald-600 to-green-600 rounded-lg p-6 text-white">
+        <h1 className="text-3xl font-bold mb-2">Role Management</h1>
+        <p className="text-emerald-100">Manage user roles and permissions across the platform</p>
+      </div>
+
       <RoleManagementHeader userCount={users.length} />
 
       <RoleFilters
@@ -89,11 +94,16 @@ const RoleManagement = () => {
         onRoleChange={setSelectedRole}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Users & Roles</CardTitle>
+      <Card className="border-emerald-200 shadow-lg bg-white/95 backdrop-blur-sm">
+        <CardHeader className="bg-gradient-to-r from-emerald-50 to-green-50 border-b border-emerald-100">
+          <CardTitle className="text-emerald-900 flex items-center gap-2">
+            Users & Roles
+            <span className="text-sm font-normal bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
+              {users.length} Total
+            </span>
+          </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <UsersTable
             users={users}
             onManageUser={handleManageUser}
