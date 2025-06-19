@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,13 +32,10 @@ interface NewsArticle {
   tags: string[];
   created_at: string;
   updated_at: string;
-  news_categories?: {
-    name: string;
-    color: string;
-  } | null;
-  user_profiles?: {
-    full_name: string;
-  } | null;
+  author_name?: string;
+  author_avatar?: string;
+  category_name?: string;
+  category_color?: string;
 }
 
 const NewsManagement: React.FC = () => {
@@ -55,39 +53,12 @@ const NewsManagement: React.FC = () => {
 
   const fetchArticles = async () => {
     try {
-      console.log('Fetching articles...');
+      console.log('Fetching articles from news_articles_with_profiles view...');
       setLoading(true);
       
       let query = supabase
-        .from('news_articles')
-        .select(`
-          id,
-          title,
-          slug,
-          content,
-          excerpt,
-          featured_image_url,
-          video_url,
-          status,
-          is_featured,
-          is_breaking,
-          published_at,
-          views_count,
-          likes_count,
-          comments_count,
-          tags,
-          created_at,
-          updated_at,
-          category_id,
-          author_id,
-          news_categories (
-            name,
-            color
-          ),
-          user_profiles (
-            full_name
-          )
-        `)
+        .from('news_articles_with_profiles')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
@@ -101,14 +72,10 @@ const NewsManagement: React.FC = () => {
         throw new Error(`Database error: ${error.message}`);
       }
       
-      console.log('Raw data from Supabase:', data);
+      console.log('Raw data from view:', data);
       
       // Process and validate the data
       const processedArticles = (data || []).map(article => {
-        // Safely handle the data structure
-        const newsCategories = article.news_categories as any;
-        const userProfiles = article.user_profiles as any;
-        
         return {
           id: article.id,
           title: article.title || 'Untitled',
@@ -127,13 +94,10 @@ const NewsManagement: React.FC = () => {
           tags: Array.isArray(article.tags) ? article.tags : [],
           created_at: article.created_at,
           updated_at: article.updated_at,
-          news_categories: newsCategories ? {
-            name: newsCategories.name || 'Uncategorized',
-            color: newsCategories.color || '#3B82F6'
-          } : null,
-          user_profiles: userProfiles ? {
-            full_name: userProfiles.full_name || 'Unknown Author'
-          } : null
+          author_name: article.author_name || 'Unknown Author',
+          author_avatar: article.author_avatar || null,
+          category_name: article.category_name || 'Uncategorized',
+          category_color: article.category_color || '#3B82F6'
         };
       }) as NewsArticle[];
       
@@ -411,13 +375,13 @@ const NewsManagement: React.FC = () => {
                               </p>
                               
                               <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                <span>By {article.user_profiles?.full_name || 'Unknown'}</span>
-                                {article.news_categories && (
+                                <span>By {article.author_name}</span>
+                                {article.category_name && (
                                   <Badge 
-                                    style={{ backgroundColor: article.news_categories.color + '20', color: article.news_categories.color }}
+                                    style={{ backgroundColor: article.category_color + '20', color: article.category_color }}
                                     variant="secondary"
                                   >
-                                    {article.news_categories.name}
+                                    {article.category_name}
                                   </Badge>
                                 )}
                                 <span>{formatDistanceToNow(new Date(article.created_at), { addSuffix: true })}</span>
