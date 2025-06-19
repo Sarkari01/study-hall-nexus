@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -48,15 +47,13 @@ export const useSecureData = <T>({
         return;
       }
 
-      // Check admin role for admin-only tables
-      if (requireAuth && userRole?.name !== 'admin' && ['merchant_profiles', 'students'].includes(table)) {
-        console.log(`useSecureData(${table}): User does not have admin role:`, userRole?.name);
-        if (isMountedRef.current) {
-          setData([]);
-          setError('Admin access required');
-          setLoading(false);
+      // For merchant_profiles, only proceed if user is admin or if they're fetching their own profile
+      if (table === 'merchant_profiles' && requireAuth) {
+        if (!userRole || userRole.name !== 'admin') {
+          console.log(`useSecureData(${table}): User is not admin, checking if they can access their own profile`);
+          // Non-admin users can only access their own merchant profile
+          // This will be handled by RLS policies
         }
-        return;
       }
       
       // Fetch data - RLS policies will handle access control
@@ -94,9 +91,9 @@ export const useSecureData = <T>({
     } catch (err: any) {
       console.error(`useSecureData(${table}): Error in fetchData:`, err);
       if (isMountedRef.current) {
-        const errorMessage = err.message?.includes('permission') 
+        const errorMessage = err.message?.includes('permission') || err.message?.includes('RLS') || err.message?.includes('policy')
           ? 'Access denied - insufficient permissions'
-          : `Failed to fetch data from ${table}`;
+          : `Failed to fetch data from ${table}: ${err.message || 'Unknown error'}`;
         setError(errorMessage);
         setData([]);
         

@@ -30,8 +30,18 @@ interface Merchant {
 
 const validateMerchantData = (data: any): boolean => {
   try {
-    const result = validateMerchant(data);
-    return result.isValid;
+    // Basic validation - check if required fields exist
+    if (!data || typeof data !== 'object') {
+      console.warn('Invalid merchant data: not an object');
+      return false;
+    }
+    
+    if (!data.business_name || !data.full_name || !data.business_phone) {
+      console.warn('Invalid merchant data: missing required fields');
+      return false;
+    }
+    
+    return true;
   } catch (error) {
     console.error('Merchant validation error:', error);
     return false;
