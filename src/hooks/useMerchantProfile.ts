@@ -15,6 +15,11 @@ interface MerchantProfile {
   verification_status: string;
   onboarding_completed: boolean;
   email?: string;
+  incharge_name?: string;
+  incharge_designation?: string;
+  incharge_phone?: string;
+  incharge_email?: string;
+  incharge_address?: any;
 }
 
 interface CreateMerchantProfileData {
@@ -71,7 +76,41 @@ export const useMerchantProfile = () => {
       }
 
       console.log('useMerchantProfile: Merchant profile data:', data);
-      setMerchantProfile(data);
+      
+      // If no profile exists, create a mock one for demo purposes
+      if (!data) {
+        const mockProfile: MerchantProfile = {
+          id: 'demo-merchant-profile-id',
+          user_id: mockUser.id,
+          business_name: 'Demo Study Hall Business',
+          business_phone: '+91 98765 43210',
+          full_name: 'John Doe',
+          contact_number: '+91 98765 43210',
+          business_address: {
+            street: '123 Business Street',
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            pincode: '400001'
+          },
+          approval_status: 'approved',
+          verification_status: 'verified',
+          onboarding_completed: true,
+          email: mockUser.email,
+          incharge_name: 'Jane Smith',
+          incharge_designation: 'Operations Manager',
+          incharge_phone: '+91 87654 32109',
+          incharge_email: 'jane.smith@demo.com',
+          incharge_address: {
+            street: '456 Incharge Avenue',
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            pincode: '400002'
+          }
+        };
+        setMerchantProfile(mockProfile);
+      } else {
+        setMerchantProfile(data);
+      }
     } catch (err) {
       console.error('useMerchantProfile: Unexpected error:', err);
       setError('An unexpected error occurred while loading merchant profile');
@@ -171,20 +210,8 @@ export const useMerchantProfile = () => {
       loading: loading 
     });
     
-    // In development mode, just set loading to false and don't fetch from database
-    // This prevents infinite loading when there's no real authentication
-    if (mockUser && mockUserProfile?.role === 'merchant') {
-      console.log('useMerchantProfile: Development mode - skipping database fetch');
-      setLoading(false);
-      setMerchantProfile(null); // Will be handled by the dashboard component
-    } else if (mockUser && mockUserProfile && mockUserProfile.role !== 'merchant') {
-      console.log('useMerchantProfile: User is not a merchant, role:', mockUserProfile.role);
-      setError('Access denied: This account is not a merchant account');
-      setLoading(false);
-    } else {
-      console.log('useMerchantProfile: No user available');
-      setLoading(false);
-    }
+    // Always fetch profile data
+    fetchMerchantProfile();
   }, []); // Empty dependency array to prevent re-runs
 
   return {

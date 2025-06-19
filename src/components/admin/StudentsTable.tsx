@@ -10,6 +10,7 @@ import { Search, Plus, Eye, Edit, Trash2, Filter, Download } from "lucide-react"
 import { useStudents } from "@/hooks/useStudents";
 import StudentDetailsModal from "./StudentDetailsModal";
 import AddStudentModal from "./AddStudentModal";
+import EditStudentModal from "./EditStudentModal";
 import ErrorBoundary from "./ErrorBoundary";
 
 const StudentsTable = () => {
@@ -17,8 +18,10 @@ const StudentsTable = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [editingStudent, setEditingStudent] = useState<any>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,8 +45,17 @@ const StudentsTable = () => {
     setIsDetailsModalOpen(true);
   };
 
+  const handleEditStudent = (student: any) => {
+    setEditingStudent(student);
+    setIsEditModalOpen(true);
+  };
+
   const handleStatusChange = async (studentId: string, newStatus: string) => {
     await updateStudent(studentId, { status: newStatus as 'active' | 'inactive' | 'suspended' });
+  };
+
+  const handleStudentUpdated = async (studentId: string, updates: any) => {
+    await updateStudent(studentId, updates);
   };
 
   if (loading) {
@@ -177,7 +189,11 @@ const StudentsTable = () => {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditStudent(student)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button size="sm" variant="outline" className="text-red-600">
@@ -207,6 +223,16 @@ const StudentsTable = () => {
             setIsDetailsModalOpen(false);
             setSelectedStudent(null);
           }}
+        />
+
+        <EditStudentModal
+          student={editingStudent}
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setEditingStudent(null);
+          }}
+          onStudentUpdated={handleStudentUpdated}
         />
 
         <AddStudentModal
