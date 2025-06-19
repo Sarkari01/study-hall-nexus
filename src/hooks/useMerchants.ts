@@ -20,6 +20,12 @@ interface Merchant {
   total_revenue?: number;
   created_at: string;
   updated_at: string;
+  incharge_name?: string;
+  incharge_designation?: string;
+  incharge_phone?: string;
+  incharge_email?: string;
+  incharge_address?: any;
+  onboarding_completed?: boolean;
 }
 
 const validateMerchantData = (data: any): boolean => {

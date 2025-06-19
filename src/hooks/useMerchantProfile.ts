@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MerchantProfile {
   id: string;
@@ -20,6 +21,12 @@ interface MerchantProfile {
   incharge_phone?: string;
   incharge_email?: string;
   incharge_address?: any;
+  communication_address?: any;
+  bank_account_details?: any;
+  total_study_halls?: number;
+  total_revenue?: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface CreateMerchantProfileData {
@@ -31,33 +38,31 @@ interface CreateMerchantProfileData {
   approval_status?: string;
   verification_status?: string;
   onboarding_completed?: boolean;
+  email?: string;
+  incharge_name?: string;
+  incharge_designation?: string;
+  incharge_phone?: string;
+  incharge_email?: string;
+  incharge_address?: any;
+  communication_address?: any;
+  bank_account_details?: any;
 }
 
 export const useMerchantProfile = () => {
-  // Mock user data for development mode
-  const mockUser = {
-    id: 'demo-merchant-user-id',
-    email: 'demo@merchant.com'
-  };
-  
-  const mockUserProfile = {
-    role: 'merchant'
-  };
-
+  const { user } = useAuth();
   const [merchantProfile, setMerchantProfile] = useState<MerchantProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchMerchantProfile = async () => {
-    if (!mockUser?.id) {
-      console.log('useMerchantProfile: No user ID available (development mode)');
+    if (!user?.id) {
+      console.log('useMerchantProfile: No user ID available');
       setLoading(false);
       return;
     }
 
-    console.log('useMerchantProfile: Fetching merchant profile for user:', mockUser.id);
-    console.log('useMerchantProfile: User profile role:', mockUserProfile?.role);
+    console.log('useMerchantProfile: Fetching merchant profile for user:', user.id);
 
     try {
       setLoading(true);
@@ -66,7 +71,7 @@ export const useMerchantProfile = () => {
       const { data, error: fetchError } = await supabase
         .from('merchant_profiles')
         .select('*')
-        .eq('user_id', mockUser.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (fetchError) {
@@ -76,41 +81,7 @@ export const useMerchantProfile = () => {
       }
 
       console.log('useMerchantProfile: Merchant profile data:', data);
-      
-      // If no profile exists, create a mock one for demo purposes
-      if (!data) {
-        const mockProfile: MerchantProfile = {
-          id: 'demo-merchant-profile-id',
-          user_id: mockUser.id,
-          business_name: 'Demo Study Hall Business',
-          business_phone: '+91 98765 43210',
-          full_name: 'John Doe',
-          contact_number: '+91 98765 43210',
-          business_address: {
-            street: '123 Business Street',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            pincode: '400001'
-          },
-          approval_status: 'approved',
-          verification_status: 'verified',
-          onboarding_completed: true,
-          email: mockUser.email,
-          incharge_name: 'Jane Smith',
-          incharge_designation: 'Operations Manager',
-          incharge_phone: '+91 87654 32109',
-          incharge_email: 'jane.smith@demo.com',
-          incharge_address: {
-            street: '456 Incharge Avenue',
-            city: 'Mumbai',
-            state: 'Maharashtra',
-            pincode: '400002'
-          }
-        };
-        setMerchantProfile(mockProfile);
-      } else {
-        setMerchantProfile(data);
-      }
+      setMerchantProfile(data);
     } catch (err) {
       console.error('useMerchantProfile: Unexpected error:', err);
       setError('An unexpected error occurred while loading merchant profile');
@@ -120,13 +91,13 @@ export const useMerchantProfile = () => {
   };
 
   const createMerchantProfile = async (profileData: CreateMerchantProfileData) => {
-    if (!mockUser?.id) {
+    if (!user?.id) {
       throw new Error('User not authenticated');
     }
 
     try {
       const insertData = {
-        user_id: mockUser.id,
+        user_id: user.id,
         business_name: profileData.business_name,
         business_phone: profileData.business_phone,
         full_name: profileData.full_name,
@@ -135,7 +106,14 @@ export const useMerchantProfile = () => {
         approval_status: profileData.approval_status || 'pending',
         verification_status: profileData.verification_status || 'unverified',
         onboarding_completed: profileData.onboarding_completed || false,
-        email: mockUser.email
+        email: profileData.email || user.email,
+        incharge_name: profileData.incharge_name,
+        incharge_designation: profileData.incharge_designation,
+        incharge_phone: profileData.incharge_phone,
+        incharge_email: profileData.incharge_email,
+        incharge_address: profileData.incharge_address,
+        communication_address: profileData.communication_address,
+        bank_account_details: profileData.bank_account_details
       };
 
       const { data, error: createError } = await supabase
@@ -205,14 +183,16 @@ export const useMerchantProfile = () => {
 
   useEffect(() => {
     console.log('useMerchantProfile: useEffect triggered', { 
-      user: !!mockUser, 
-      userProfileRole: mockUserProfile?.role,
+      user: !!user, 
       loading: loading 
     });
     
-    // Always fetch profile data
-    fetchMerchantProfile();
-  }, []); // Empty dependency array to prevent re-runs
+    if (user) {
+      fetchMerchantProfile();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   return {
     merchantProfile,

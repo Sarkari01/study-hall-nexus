@@ -651,6 +651,8 @@ export type Database = {
           onboarding_completed: boolean | null
           refundable_security_deposit: number | null
           slide_images: string[] | null
+          total_revenue: number | null
+          total_study_halls: number | null
           trade_license_url: string | null
           updated_at: string | null
           updated_by: string | null
@@ -681,6 +683,8 @@ export type Database = {
           onboarding_completed?: boolean | null
           refundable_security_deposit?: number | null
           slide_images?: string[] | null
+          total_revenue?: number | null
+          total_study_halls?: number | null
           trade_license_url?: string | null
           updated_at?: string | null
           updated_by?: string | null
@@ -711,6 +715,8 @@ export type Database = {
           onboarding_completed?: boolean | null
           refundable_security_deposit?: number | null
           slide_images?: string[] | null
+          total_revenue?: number | null
+          total_study_halls?: number | null
           trade_license_url?: string | null
           updated_at?: string | null
           updated_by?: string | null
