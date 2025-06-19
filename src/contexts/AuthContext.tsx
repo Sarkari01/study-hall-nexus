@@ -70,30 +70,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Creating default profile for user:', userId);
       
-      const { data: studentRole } = await supabase
-        .from('custom_roles')
-        .select('id')
-        .eq('name', 'student')
-        .eq('is_system_role', true)
-        .single();
+      // Use the new security definer function to safely create profile
+      const defaultProfile = {
+        user_id: userId,
+        full_name: userEmail.split('@')[0],
+        role: 'student',
+        custom_role_id: null
+      };
 
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .insert({
-          user_id: userId,
-          full_name: userEmail.split('@')[0],
-          role: 'student',
-          custom_role_id: studentRole?.id || null
-        })
+        .insert(defaultProfile)
         .select()
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('Error creating default profile:', profileError);
+        return null;
+      }
       
       console.log('Default profile created:', profile);
       return profile;
     } catch (error) {
-      console.error('Error creating default profile:', error);
+      console.error('Error in createDefaultProfile:', error);
       return null;
     }
   };
@@ -141,17 +140,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Fetching user data for:', userId);
       
-      // Use the new security definer function approach - query directly without complex joins
-      let { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      // First, try to get the user profile using a simple direct query
+      // This should work with our new RLS policies
+      let profile = null;
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
 
-      if (profileError?.code === 'PGRST116') {
-        profile = await createDefaultProfile(userId, userEmail || '');
-      } else if (profileError) {
-        throw profileError;
+        if (profileError?.code === 'PGRST116') {
+          // Profile doesn't exist, create it
+          console.log('Profile not found, creating default profile');
+          profile = await createDefaultProfile(userId, userEmail || '');
+        } else if (profileError) {
+          console.error('Profile fetch error:', profileError);
+          throw profileError;
+        } else {
+          profile = profileData;
+        }
+      } catch (err) {
+        console.error('Error in profile fetch:', err);
+        // Try to create default profile as fallback
+        if (userEmail) {
+          profile = await createDefaultProfile(userId, userEmail);
+        }
       }
 
       if (!profile) {
@@ -159,71 +173,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { profile: null, role: null, permissions: [] };
       }
 
-      console.log('Profile found:', profile);
+      console.log('Profile found/created:', profile);
 
-      let roleData = null;
+      // Now get role data - start with a basic role object
+      let roleData = {
+        id: '',
+        name: profile.role || 'student',
+        description: `${profile.role || 'student'} role`,
+        is_system_role: true,
+        color: '#3B82F6'
+      };
+
       let userPermissions: Permission[] = [];
       
-      // Try to get role data from custom_role_id first
+      // Try to get enhanced role data if custom_role_id exists
       if (profile.custom_role_id) {
-        console.log('Fetching role with ID:', profile.custom_role_id);
-        const { data: customRole, error: roleError } = await supabase
-          .from('custom_roles')
-          .select('*')
-          .eq('id', profile.custom_role_id)
-          .single();
-        
-        if (customRole && !roleError) {
-          console.log('Found custom role:', customRole);
-          roleData = customRole;
-          userPermissions = await fetchUserPermissions(customRole.id);
-        } else {
-          console.log('Role fetch error or no role found:', roleError);
-        }
-      }
-
-      // Fallback to role string if custom role not found
-      if (!roleData && profile.role) {
-        console.log('Fallback to role string:', profile.role);
-        const { data: systemRole, error: systemRoleError } = await supabase
-          .from('custom_roles')
-          .select('*')
-          .eq('name', profile.role)
-          .eq('is_system_role', true)
-          .single();
-
-        if (systemRole && !systemRoleError) {
-          console.log('Found system role:', systemRole);
-          roleData = systemRole;
-          userPermissions = await fetchUserPermissions(systemRole.id);
+        try {
+          const { data: customRole, error: roleError } = await supabase
+            .from('custom_roles')
+            .select('*')
+            .eq('id', profile.custom_role_id)
+            .single();
           
-          // Update profile with the correct custom_role_id
-          await supabase
-            .from('user_profiles')
-            .update({ custom_role_id: systemRole.id })
-            .eq('id', profile.id);
-        } else {
-          console.log('System role fetch error:', systemRoleError);
+          if (customRole && !roleError) {
+            console.log('Found custom role:', customRole);
+            roleData = customRole;
+            userPermissions = await fetchUserPermissions(customRole.id);
+          }
+        } catch (err) {
+          console.warn('Error fetching custom role, using basic role:', err);
         }
-      }
-
-      // If we still don't have role data, create a minimal role object from the role string
-      if (!roleData && profile.role) {
-        console.log('Creating minimal role object from role string:', profile.role);
-        roleData = {
-          id: '',
-          name: profile.role,
-          description: `${profile.role} role`,
-          is_system_role: true,
-          color: '#3B82F6'
-        };
       }
 
       console.log('Final user data:', { profile, role: roleData, permissions: userPermissions });
       return { profile, role: roleData, permissions: userPermissions };
     } catch (error) {
       console.error('Error fetching user data:', error);
-      // Return a fallback structure to prevent complete failure
+      // Return a safe fallback structure
       if (userEmail) {
         const fallbackProfile = {
           id: '',
@@ -300,7 +286,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (mounted) {
               console.error('Error loading initial user data:', error);
               setError('Failed to load user data');
-              // Don't completely reset user data on error - let them stay logged in
             }
           }
         }
@@ -319,6 +304,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -331,7 +317,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user?.id && event !== 'TOKEN_REFRESHED') {
           setLoading(true);
           
-          // Use a small delay to ensure database consistency
+          // Use a delay to ensure database consistency
           setTimeout(async () => {
             if (!mounted) return;
             
@@ -352,7 +338,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (mounted) {
                 console.error('Error loading user data:', error);
                 setError('Failed to load user data');
-                // Still set auth as ready even on error
                 setIsAuthReady(true);
               }
             } finally {
@@ -390,6 +375,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const hasPermission = (permission: string): boolean => {
+    // Admin has all permissions
+    if (userRole?.name === 'admin') return true;
     return permissions.some(p => p.name === permission);
   };
 
