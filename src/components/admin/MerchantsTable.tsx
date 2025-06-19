@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Eye, Edit, Trash2, Download, AlertTriangle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Plus, Eye, Edit, Trash2, Download, AlertTriangle, CheckCircle2, XCircle, Filter } from "lucide-react";
 import { useMerchants } from "@/hooks/useMerchants";
 import { useAuth } from '@/contexts/AuthContext';
 import MerchantDetailsModal from "./MerchantDetailsModal";
@@ -20,10 +22,13 @@ const MerchantsTable = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [verificationFilter, setVerificationFilter] = useState<string>('all');
   const [selectedMerchant, setSelectedMerchant] = useState<any>(null);
+  const [selectedMerchants, setSelectedMerchants] = useState<string[]>([]);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Debug logging
   useEffect(() => {
@@ -59,18 +64,22 @@ const MerchantsTable = () => {
       const searchMatch = searchTerm === '' || 
         (merchant.business_name && merchant.business_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (merchant.full_name && merchant.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (merchant.business_phone && merchant.business_phone.includes(searchTerm));
+        (merchant.business_phone && merchant.business_phone.includes(searchTerm)) ||
+        (merchant.email && merchant.email.toLowerCase().includes(searchTerm.toLowerCase()));
       
       // Status filter
       const statusMatch = statusFilter === 'all' || merchant.approval_status === statusFilter;
       
-      return searchMatch && statusMatch;
+      // Verification filter
+      const verificationMatch = verificationFilter === 'all' || merchant.verification_status === verificationFilter;
+      
+      return searchMatch && statusMatch && verificationMatch;
     });
 
     console.log('MerchantsTable: filteredMerchants:', filtered);
     console.log('MerchantsTable: filteredMerchants.length:', filtered.length);
     return filtered;
-  }, [merchants, searchTerm, statusFilter]);
+  }, [merchants, searchTerm, statusFilter, verificationFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -78,6 +87,76 @@ const MerchantsTable = () => {
       case 'pending': return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const handleSelectMerchant = (merchantId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedMerchants(prev => [...prev, merchantId]);
+    } else {
+      setSelectedMerchants(prev => prev.filter(id => id !== merchantId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedMerchants(filteredMerchants.map(m => m.id));
+    } else {
+      setSelectedMerchants([]);
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedMerchants.length === 0) return;
+    
+    try {
+      const promises = selectedMerchants.map(id => 
+        updateMerchant(id, { approval_status: 'approved' })
+      );
+      await Promise.all(promises);
+      
+      toast({
+        title: "Bulk Approval Successful",
+        description: `${selectedMerchants.length} merchants have been approved.`,
+      });
+      
+      setSelectedMerchants([]);
+    } catch (error) {
+      console.error('Error in bulk approval:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve some merchants. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedMerchants.length === 0) return;
+    
+    if (!window.confirm(`Are you sure you want to reject ${selectedMerchants.length} merchants? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      const promises = selectedMerchants.map(id => 
+        updateMerchant(id, { approval_status: 'rejected' })
+      );
+      await Promise.all(promises);
+      
+      toast({
+        title: "Bulk Rejection Successful",
+        description: `${selectedMerchants.length} merchants have been rejected.`,
+      });
+      
+      setSelectedMerchants([]);
+    } catch (error) {
+      console.error('Error in bulk rejection:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject some merchants. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -165,13 +244,15 @@ const MerchantsTable = () => {
 
   const exportMerchants = () => {
     const csvContent = [
-      ['Business Name', 'Owner', 'Business Phone', 'Contact', 'Status', 'Study Halls', 'Revenue', 'Joined'],
+      ['Business Name', 'Owner', 'Business Phone', 'Contact', 'Email', 'Approval Status', 'Verification Status', 'Study Halls', 'Revenue', 'Joined'],
       ...filteredMerchants.map(merchant => [
         merchant.business_name || '',
         merchant.full_name || '',
         merchant.business_phone || '',
         merchant.contact_number || '',
+        merchant.email || '',
         merchant.approval_status || '',
+        merchant.verification_status || '',
         merchant.total_study_halls || 0,
         merchant.total_revenue || 0,
         merchant.created_at ? new Date(merchant.created_at).toLocaleDateString() : ''
@@ -182,7 +263,7 @@ const MerchantsTable = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'merchants.csv';
+    a.download = `merchants_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
 
@@ -294,36 +375,103 @@ const MerchantsTable = () => {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-400 h-4 w-4" />
-                <Input
-                  placeholder="Search by business name, owner, or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400"
-                />
+            {/* Enhanced Filters */}
+            <div className="space-y-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search by business name, owner, phone, or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 border-emerald-200 focus:border-emerald-400 focus:ring-emerald-400"
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="flex items-center gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                >
+                  <Filter className="h-4 w-4" />
+                  Filters
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={exportMerchants} 
+                  className="flex items-center gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48 border-emerald-200 focus:border-emerald-400">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                variant="outline" 
-                onClick={exportMerchants} 
-                className="flex items-center gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
+
+              {showAdvancedFilters && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-emerald-50/50 rounded-lg border border-emerald-100">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="border-emerald-200 focus:border-emerald-400">
+                      <SelectValue placeholder="Approval Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Approval Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={verificationFilter} onValueChange={setVerificationFilter}>
+                    <SelectTrigger className="border-emerald-200 focus:border-emerald-400">
+                      <SelectValue placeholder="Verification Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Verification Status</SelectItem>
+                      <SelectItem value="unverified">Unverified</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="verified">Verified</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setStatusFilter('all');
+                      setVerificationFilter('all');
+                    }}
+                    className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              )}
+
+              {/* Bulk Actions */}
+              {selectedMerchants.length > 0 && (
+                <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <span className="text-blue-800 font-medium">
+                    {selectedMerchants.length} merchants selected
+                  </span>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      onClick={handleBulkApprove}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Bulk Approve
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={handleBulkReject}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Bulk Reject
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Merchants Table */}
@@ -332,11 +480,18 @@ const MerchantsTable = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-emerald-50/50">
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedMerchants.length === filteredMerchants.length && filteredMerchants.length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                      </TableHead>
                       <TableHead className="text-emerald-900 font-semibold">Business Name</TableHead>
                       <TableHead className="text-emerald-900 font-semibold">Owner</TableHead>
                       <TableHead className="text-emerald-900 font-semibold">Business Phone</TableHead>
-                      <TableHead className="text-emerald-900 font-semibold">Contact</TableHead>
-                      <TableHead className="text-emerald-900 font-semibold">Status</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Email</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Approval</TableHead>
+                      <TableHead className="text-emerald-900 font-semibold">Verification</TableHead>
                       <TableHead className="text-emerald-900 font-semibold">Study Halls</TableHead>
                       <TableHead className="text-emerald-900 font-semibold">Revenue</TableHead>
                       <TableHead className="text-emerald-900 font-semibold">Joined</TableHead>
@@ -346,13 +501,24 @@ const MerchantsTable = () => {
                   <TableBody>
                     {filteredMerchants.map((merchant) => (
                       <TableRow key={merchant.id} className="hover:bg-emerald-50/30">
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedMerchants.includes(merchant.id)}
+                            onCheckedChange={(checked) => handleSelectMerchant(merchant.id, checked as boolean)}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium text-gray-900">{merchant.business_name || 'N/A'}</TableCell>
                         <TableCell className="text-gray-700">{merchant.full_name || 'N/A'}</TableCell>
                         <TableCell className="text-gray-700">{merchant.business_phone || 'N/A'}</TableCell>
-                        <TableCell className="text-gray-700">{merchant.contact_number || 'N/A'}</TableCell>
+                        <TableCell className="text-gray-700">{merchant.email || 'N/A'}</TableCell>
                         <TableCell>
                           <Badge className={getStatusColor(merchant.approval_status || 'pending')}>
                             {merchant.approval_status || 'pending'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(merchant.verification_status || 'unverified')}>
+                            {merchant.verification_status || 'unverified'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-gray-700">{merchant.total_study_halls || 0}</TableCell>
@@ -408,6 +574,7 @@ const MerchantsTable = () => {
                       onClick={() => {
                         setSearchTerm('');
                         setStatusFilter('all');
+                        setVerificationFilter('all');
                       }} 
                       className="mt-2 bg-emerald-600 hover:bg-emerald-700"
                       variant="default"
