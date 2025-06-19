@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,23 +55,38 @@ const NewsManagement: React.FC = () => {
 
   const fetchArticles = async () => {
     try {
-      // Rate limiting for API calls
-      if (!apiRateLimiter.isAllowed('fetch_articles')) {
-        toast({
-          title: "Rate Limit",
-          description: "Too many requests. Please wait a moment.",
-          variant: "destructive"
-        });
-        return;
-      }
-
       console.log('Fetching articles...');
+      setLoading(true);
+      
       let query = supabase
         .from('news_articles')
         .select(`
-          *,
-          news_categories(name, color),
-          user_profiles(full_name)
+          id,
+          title,
+          slug,
+          content,
+          excerpt,
+          featured_image_url,
+          video_url,
+          status,
+          is_featured,
+          is_breaking,
+          published_at,
+          views_count,
+          likes_count,
+          comments_count,
+          tags,
+          created_at,
+          updated_at,
+          category_id,
+          author_id,
+          news_categories (
+            name,
+            color
+          ),
+          user_profiles (
+            full_name
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -84,63 +98,60 @@ const NewsManagement: React.FC = () => {
 
       if (error) {
         console.error('Supabase error:', error);
-        throw error;
+        throw new Error(`Database error: ${error.message}`);
       }
       
       console.log('Raw data from Supabase:', data);
       
-      // Enhanced type checking and validation with security considerations
-      const typedArticles = (data || []).map(article => {
-        // Validate and sanitize article data
-        const sanitizedTitle = typeof article.title === 'string' 
-          ? InputValidator.sanitizeHtml(article.title) 
-          : 'Untitled';
-
-        const sanitizedContent = typeof article.content === 'string'
-          ? InputValidator.sanitizeHtml(article.content)
-          : '';
-
-        // Safe type check for user_profiles with proper type guarding
-        const userProfilesData = article.user_profiles as any;
-        let userProfiles: { full_name: string } | null = null;
-        if (userProfilesData !== null && 
-            userProfilesData !== undefined &&
-            typeof userProfilesData === 'object' && 
-            userProfilesData.full_name) {
-          userProfiles = { full_name: String(userProfilesData.full_name) };
-        }
-
-        // Safe type check for news_categories with proper type guarding
-        const newsCategoriesData = article.news_categories as any;
-        let newsCategories: { name: string; color: string } | null = null;
-        if (newsCategoriesData !== null && 
-            newsCategoriesData !== undefined &&
-            typeof newsCategoriesData === 'object' && 
-            newsCategoriesData.name) {
-          newsCategories = { 
-            name: String(newsCategoriesData.name), 
-            color: String(newsCategoriesData.color || '#3B82F6')
-          };
-        }
-
+      // Process and validate the data
+      const processedArticles = (data || []).map(article => {
+        // Safely handle the data structure
+        const newsCategories = article.news_categories as any;
+        const userProfiles = article.user_profiles as any;
+        
         return {
-          ...article,
-          title: sanitizedTitle,
-          content: sanitizedContent,
-          user_profiles: userProfiles,
-          news_categories: newsCategories
+          id: article.id,
+          title: article.title || 'Untitled',
+          slug: article.slug || '',
+          content: article.content || '',
+          excerpt: article.excerpt || null,
+          featured_image_url: article.featured_image_url || null,
+          video_url: article.video_url || null,
+          status: article.status || 'draft',
+          is_featured: article.is_featured || false,
+          is_breaking: article.is_breaking || false,
+          published_at: article.published_at || null,
+          views_count: article.views_count || 0,
+          likes_count: article.likes_count || 0,
+          comments_count: article.comments_count || 0,
+          tags: Array.isArray(article.tags) ? article.tags : [],
+          created_at: article.created_at,
+          updated_at: article.updated_at,
+          news_categories: newsCategories ? {
+            name: newsCategories.name || 'Uncategorized',
+            color: newsCategories.color || '#3B82F6'
+          } : null,
+          user_profiles: userProfiles ? {
+            full_name: userProfiles.full_name || 'Unknown Author'
+          } : null
         };
       }) as NewsArticle[];
       
-      console.log('Processed articles:', typedArticles);
-      setArticles(typedArticles);
+      console.log('Processed articles:', processedArticles);
+      setArticles(processedArticles);
+      
+      if (processedArticles.length === 0) {
+        console.log('No articles found for current filter:', statusFilter);
+      }
+      
     } catch (error) {
       console.error('Error fetching articles:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch articles",
+        description: error instanceof Error ? error.message : "Failed to fetch articles. Please try again.",
         variant: "destructive"
       });
+      setArticles([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -358,120 +369,139 @@ const NewsManagement: React.FC = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
                   <p>Loading articles...</p>
                 </div>
-              ) : filteredArticles.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">No articles found</p>
-                </div>
               ) : (
-                <div className="space-y-4">
-                  {filteredArticles.map((article) => (
-                    <div key={article.id} className="border rounded-lg p-4 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold text-lg">{article.title}</h3>
-                            {article.is_featured && (
-                              <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                            )}
-                            {article.is_breaking && (
-                              <Badge variant="destructive" className="text-xs">BREAKING</Badge>
-                            )}
-                          </div>
-                          
-                          <p className="text-gray-600 text-sm mb-2">
-                            {article.excerpt || article.content.substring(0, 150) + '...'}
-                          </p>
-                          
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
-                            <span>By {article.user_profiles?.full_name || 'Unknown'}</span>
-                            {article.news_categories && (
-                              <Badge 
-                                style={{ backgroundColor: article.news_categories.color + '20', color: article.news_categories.color }}
-                                variant="secondary"
-                              >
-                                {article.news_categories.name}
-                              </Badge>
-                            )}
-                            <span>{formatDistanceToNow(new Date(article.created_at), { addSuffix: true })}</span>
-                          </div>
-                          
-                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                            <div className="flex items-center space-x-1">
-                              <Eye className="h-3 w-3" />
-                              <span>{article.views_count}</span>
-                            </div>
-                            <span>❤️ {article.likes_count}</span>
-                            <span>💬 {article.comments_count}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getStatusColor(article.status)}>
-                            {article.status}
-                          </Badge>
-                        </div>
+                <>
+                  {filteredArticles.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="text-gray-400 mb-4">
+                        <Plus className="h-12 w-12 mx-auto" />
                       </div>
-                      
-                      <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="flex items-center space-x-2">
-                          {article.tags.slice(0, 3).map((tag, index) => (
-                            <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                              #{tag}
-                            </span>
-                          ))}
-                          {article.tags.length > 3 && (
-                            <span className="text-xs text-gray-500">+{article.tags.length - 3} more</span>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          {article.status === 'draft' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStatusChange(article.id, 'published')}
-                            >
-                              Publish
-                            </Button>
-                          )}
-                          {article.status === 'published' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleStatusChange(article.id, 'archived')}
-                            >
-                              Archive
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleFeatureToggle(article.id, article.is_featured)}
-                          >
-                            <Star className={`h-3 w-3 ${article.is_featured ? 'fill-current text-yellow-500' : ''}`} />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingArticle(article);
-                              setIsEditorOpen(true);
-                            }}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(article.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No articles found</h3>
+                      <p className="text-gray-500 mb-4">
+                        {searchTerm || statusFilter !== 'all' 
+                          ? 'Try adjusting your search or filter criteria' 
+                          : 'Get started by creating your first article'}
+                      </p>
+                      <Button 
+                        onClick={() => setIsEditorOpen(true)}
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Article
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {filteredArticles.map((article) => (
+                        <div key={article.id} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h3 className="font-semibold text-lg">{article.title}</h3>
+                                {article.is_featured && (
+                                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                                )}
+                                {article.is_breaking && (
+                                  <Badge variant="destructive" className="text-xs">BREAKING</Badge>
+                                )}
+                              </div>
+                              
+                              <p className="text-gray-600 text-sm mb-2">
+                                {article.excerpt || article.content.substring(0, 150) + '...'}
+                              </p>
+                              
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                <span>By {article.user_profiles?.full_name || 'Unknown'}</span>
+                                {article.news_categories && (
+                                  <Badge 
+                                    style={{ backgroundColor: article.news_categories.color + '20', color: article.news_categories.color }}
+                                    variant="secondary"
+                                  >
+                                    {article.news_categories.name}
+                                  </Badge>
+                                )}
+                                <span>{formatDistanceToNow(new Date(article.created_at), { addSuffix: true })}</span>
+                              </div>
+                              
+                              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                <div className="flex items-center space-x-1">
+                                  <Eye className="h-3 w-3" />
+                                  <span>{article.views_count}</span>
+                                </div>
+                                <span>❤️ {article.likes_count}</span>
+                                <span>💬 {article.comments_count}</span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              <Badge className={getStatusColor(article.status)}>
+                                {article.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between pt-2 border-t">
+                            <div className="flex items-center space-x-2">
+                              {article.tags.slice(0, 3).map((tag, index) => (
+                                <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
+                                  #{tag}
+                                </span>
+                              ))}
+                              {article.tags.length > 3 && (
+                                <span className="text-xs text-gray-500">+{article.tags.length - 3} more</span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              {article.status === 'draft' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleStatusChange(article.id, 'published')}
+                                >
+                                  Publish
+                                </Button>
+                              )}
+                              {article.status === 'published' && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleStatusChange(article.id, 'archived')}
+                                >
+                                  Archive
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleFeatureToggle(article.id, article.is_featured)}
+                              >
+                                <Star className={`h-3 w-3 ${article.is_featured ? 'fill-current text-yellow-500' : ''}`} />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingArticle(article);
+                                  setIsEditorOpen(true);
+                                }}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDelete(article.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
