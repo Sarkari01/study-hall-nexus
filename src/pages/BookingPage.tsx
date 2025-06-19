@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +36,8 @@ const BookingPage: React.FC = () => {
       }
 
       try {
-        const { data, error } = await supabase
+        // First fetch the study hall
+        const { data: studyHallData, error: studyHallError } = await supabase
           .from('study_halls')
           .select(`
             id,
@@ -47,27 +47,42 @@ const BookingPage: React.FC = () => {
             capacity,
             amenities,
             description,
-            merchant_profiles(business_name)
+            merchant_id
           `)
           .eq('id', id)
           .eq('status', 'active')
           .single();
 
-        if (error) {
-          console.error('Error fetching study hall:', error);
+        if (studyHallError) {
+          console.error('Error fetching study hall:', studyHallError);
           setError('Study hall not found or is not available for booking');
           return;
         }
 
+        let merchantName = undefined;
+
+        // If there's a merchant_id, fetch the merchant details
+        if (studyHallData.merchant_id) {
+          const { data: merchantData, error: merchantError } = await supabase
+            .from('merchant_profiles')
+            .select('business_name')
+            .eq('id', studyHallData.merchant_id)
+            .single();
+
+          if (!merchantError && merchantData) {
+            merchantName = merchantData.business_name;
+          }
+        }
+
         setStudyHall({
-          id: data.id,
-          name: data.name,
-          location: data.location,
-          price_per_day: data.price_per_day,
-          capacity: data.capacity,
-          amenities: data.amenities || [],
-          description: data.description,
-          merchant_name: data.merchant_profiles?.business_name
+          id: studyHallData.id,
+          name: studyHallData.name,
+          location: studyHallData.location,
+          price_per_day: studyHallData.price_per_day,
+          capacity: studyHallData.capacity,
+          amenities: studyHallData.amenities || [],
+          description: studyHallData.description,
+          merchant_name: merchantName
         });
       } catch (err) {
         console.error('Error:', err);
