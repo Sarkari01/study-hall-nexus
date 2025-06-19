@@ -14,6 +14,7 @@ import MerchantDashboard from "./pages/MerchantDashboard";
 import EditorDashboard from "./pages/EditorDashboard";
 import TelecallerDashboard from "./pages/TelecallerDashboard";
 import InchargeDashboard from "./pages/InchargeDashboard";
+import BookingPage from "./pages/BookingPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 
@@ -38,6 +39,9 @@ const App = () => (
             <Routes>
               {/* Auth route */}
               <Route path="/auth" element={<AuthPage />} />
+              
+              {/* Public booking route - no authentication required */}
+              <Route path="/book/:id" element={<BookingPage />} />
               
               {/* Redirect root to admin */}
               <Route path="/" element={<Navigate to="/admin" replace />} />
