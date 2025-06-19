@@ -65,6 +65,75 @@ export const validateBookingData = (data: any): { isValid: boolean; errors: stri
   };
 };
 
+// Add the missing InputValidator class and related exports
+export class InputValidator {
+  static sanitizeHtml(input: string): string {
+    return sanitizeInput(input);
+  }
+
+  static validateEmail(email: string): boolean {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
+  static validateUUID(id: string): boolean {
+    return validateStudyHallId(id);
+  }
+
+  static validate(data: any, schema: ValidationSchema): { isValid: boolean; errors: Record<string, string>; sanitizedData: any } {
+    const errors: Record<string, string> = {};
+    const sanitizedData: any = {};
+
+    for (const [field, rules] of Object.entries(schema)) {
+      const value = data[field];
+      
+      if (rules.required && (!value || value.toString().trim() === '')) {
+        errors[field] = `${field} is required`;
+        continue;
+      }
+
+      if (value) {
+        let sanitizedValue = value;
+        
+        if (rules.type === 'email') {
+          sanitizedValue = sanitizeEmail(value);
+          if (!this.validateEmail(sanitizedValue)) {
+            errors[field] = `Invalid ${field} format`;
+          }
+        } else if (rules.type === 'string') {
+          sanitizedValue = sanitizeInput(value);
+          if (rules.maxLength && sanitizedValue.length > rules.maxLength) {
+            errors[field] = `${field} must be less than ${rules.maxLength} characters`;
+          }
+        }
+        
+        sanitizedData[field] = sanitizedValue;
+      }
+    }
+
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors,
+      sanitizedData
+    };
+  }
+}
+
+export interface ValidationSchema {
+  [field: string]: {
+    required?: boolean;
+    type: 'string' | 'email' | 'number';
+    maxLength?: number;
+  };
+}
+
+export const USER_VALIDATION_SCHEMA: ValidationSchema = {
+  full_name: { required: true, type: 'string', maxLength: 100 },
+  email: { required: true, type: 'email' },
+  phone: { required: false, type: 'string', maxLength: 20 }
+};
+
 export const rateLimiter = (() => {
   const attempts = new Map<string, { count: number; resetTime: number }>();
   
