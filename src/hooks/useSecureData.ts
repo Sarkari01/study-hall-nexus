@@ -1,283 +1,254 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuditLog } from './useAuditLog';
-import { validateUUID, isObject } from '@/utils/typeGuards';
 
-interface SecureDataOptions {
+interface UseSecureDataOptions<T> {
   table: string;
   auditResource?: string;
   requireAuth?: boolean;
   validateData?: (data: any) => boolean;
 }
 
-interface UseSecureDataReturn<T> {
-  data: T[];
-  loading: boolean;
-  error: string | null;
-  create: (data: Omit<T, 'id' | 'created_at' | 'updated_at'>) => Promise<T | null>;
-  read: (filters?: Record<string, any>) => Promise<T[]>;
-  update: (id: string, updates: Partial<T>) => Promise<boolean>;
-  delete: (id: string) => Promise<boolean>;
-  refresh: () => Promise<void>;
-}
-
-export const useSecureData = <T extends Record<string, any>>(
-  options: SecureDataOptions
-): UseSecureDataReturn<T> => {
+export const useSecureData = <T>({
+  table,
+  auditResource,
+  requireAuth = true,
+  validateData
+}: UseSecureDataOptions<T>) => {
   const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user, isAuthReady } = useAuth();
-  const { logAction } = useAuditLog();
+  const { user, userRole, isAuthReady } = useAuth();
+  const isMountedRef = useRef(true);
 
-  const validateAccess = useCallback(() => {
-    if (options.requireAuth !== false && (!user || !isAuthReady)) {
-      throw new Error('Authentication required');
-    }
-    return true;
-  }, [user, isAuthReady, options.requireAuth]);
+  console.log(`useSecureData(${table}): Auth state - user:`, user?.id, 'role:', userRole?.name, 'ready:', isAuthReady);
 
-  const validateInput = useCallback((data: any): boolean => {
-    if (options.validateData && !options.validateData(data)) {
-      throw new Error('Data validation failed');
-    }
-    return true;
-  }, [options.validateData]);
-
-  const create = useCallback(async (inputData: Omit<T, 'id' | 'created_at' | 'updated_at'>): Promise<T | null> => {
+  const fetchData = async () => {
     try {
-      validateAccess();
-      validateInput(inputData);
       setLoading(true);
       setError(null);
+      
+      console.log(`useSecureData(${table}): Starting fetch`);
+      
+      // Check authentication if required
+      if (requireAuth && (!user || !isAuthReady)) {
+        console.log(`useSecureData(${table}): User not authenticated or auth not ready`);
+        if (isMountedRef.current) {
+          setData([]);
+          setError('Authentication required');
+          setLoading(false);
+        }
+        return;
+      }
 
-      // Use type assertion to handle dynamic table access
-      const { data: result, error: dbError } = await (supabase as any)
-        .from(options.table)
-        .insert([inputData])
+      // Check admin role for admin-only tables
+      if (requireAuth && userRole?.name !== 'admin' && ['merchant_profiles', 'students'].includes(table)) {
+        console.log(`useSecureData(${table}): User does not have admin role:`, userRole?.name);
+        if (isMountedRef.current) {
+          setData([]);
+          setError('Admin access required');
+          setLoading(false);
+        }
+        return;
+      }
+      
+      // Fetch data - RLS policies will handle access control
+      const { data: fetchedData, error: fetchError } = await supabase
+        .from(table)
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      console.log(`useSecureData(${table}): Fetch response:`, { data: fetchedData, error: fetchError });
+
+      if (fetchError) {
+        console.error(`useSecureData(${table}): Error fetching data:`, fetchError);
+        throw fetchError;
+      }
+
+      // Validate data if validator provided
+      const validData = (fetchedData || []).filter(item => {
+        if (validateData) {
+          const isValid = validateData(item);
+          if (!isValid) {
+            console.warn(`useSecureData(${table}): Invalid data item filtered out:`, item);
+          }
+          return isValid;
+        }
+        return true;
+      });
+
+      console.log(`useSecureData(${table}): Final processed data:`, validData);
+
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setData(validData as T[]);
+        setError(null);
+      }
+    } catch (err: any) {
+      console.error(`useSecureData(${table}): Error in fetchData:`, err);
+      if (isMountedRef.current) {
+        const errorMessage = err.message?.includes('permission') 
+          ? 'Access denied - insufficient permissions'
+          : `Failed to fetch data from ${table}`;
+        setError(errorMessage);
+        setData([]);
+        
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
+    }
+  };
+
+  const create = async (newData: Partial<T>) => {
+    try {
+      console.log(`useSecureData(${table}): Creating new record:`, newData);
+      
+      const { data: createdData, error } = await supabase
+        .from(table)
+        .insert([newData])
         .select()
         .single();
 
-      if (dbError) throw dbError;
+      if (error) throw error;
 
-      const typedResult = result as T;
-      setData(prev => [typedResult, ...prev]);
-
-      if (options.auditResource && typedResult) {
-        await logAction({
-          action: 'CREATE',
-          resource_type: options.auditResource,
-          resource_id: (typedResult as any).id,
-          new_values: inputData,
-          severity: 'medium'
+      if (isMountedRef.current) {
+        setData(prev => [createdData as T, ...prev]);
+        
+        toast({
+          title: "Success",
+          description: `Record created successfully`,
         });
       }
 
-      toast({
-        title: "Success",
-        description: `${options.auditResource || 'Record'} created successfully`,
-      });
-
-      return typedResult;
+      return createdData;
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to create record';
-      setError(errorMessage);
-      console.error(`Error creating ${options.table}:`, err);
+      console.error(`useSecureData(${table}): Error creating record:`, err);
+      const errorMessage = err.message?.includes('permission') 
+        ? 'Access denied - insufficient permissions to create'
+        : 'Failed to create record';
       
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [validateAccess, validateInput, options, logAction, toast]);
-
-  const read = useCallback(async (filters?: Record<string, any>): Promise<T[]> => {
-    try {
-      validateAccess();
-      setLoading(true);
-      setError(null);
-
-      // Use type assertion to handle dynamic table access
-      let query = (supabase as any).from(options.table).select('*');
-
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            query = query.eq(key, value);
-          }
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
         });
       }
-
-      const { data: result, error: dbError } = await query
-        .order('created_at', { ascending: false });
-
-      if (dbError) throw dbError;
-
-      const typedResult = (result || []) as T[];
-      setData(typedResult);
-      return typedResult;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to fetch records';
-      setError(errorMessage);
-      console.error(`Error reading ${options.table}:`, err);
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-
-      return [];
-    } finally {
-      setLoading(false);
+      throw err;
     }
-  }, [validateAccess, options, toast]);
+  };
 
-  const update = useCallback(async (id: string, updates: Partial<T>): Promise<boolean> => {
+  const update = async (id: string, updates: Partial<T>) => {
     try {
-      validateAccess();
-      validateInput(updates);
+      console.log(`useSecureData(${table}): Updating record:`, id, updates);
       
-      if (!validateUUID(id)) {
-        throw new Error('Invalid ID format');
-      }
-
-      setLoading(true);
-      setError(null);
-
-      // Get current record for audit
-      const { data: currentRecord } = await (supabase as any)
-        .from(options.table)
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      const { data: result, error: dbError } = await (supabase as any)
-        .from(options.table)
+      const { data: updatedData, error } = await supabase
+        .from(table)
         .update(updates)
         .eq('id', id)
         .select()
         .single();
 
-      if (dbError) throw dbError;
+      if (error) throw error;
 
-      setData(prev => prev.map(item => 
-        (item as any).id === id ? { ...item, ...updates } : item
-      ));
+      if (isMountedRef.current) {
+        setData(prev => prev.map(item => 
+          (item as any).id === id ? updatedData as T : item
+        ));
 
-      if (options.auditResource) {
-        await logAction({
-          action: 'UPDATE',
-          resource_type: options.auditResource,
-          resource_id: id,
-          old_values: currentRecord,
-          new_values: updates,
-          severity: 'medium'
+        toast({
+          title: "Success",
+          description: `Record updated successfully`,
         });
       }
 
-      toast({
-        title: "Success",
-        description: `${options.auditResource || 'Record'} updated successfully`,
-      });
-
-      return true;
+      return updatedData;
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to update record';
-      setError(errorMessage);
-      console.error(`Error updating ${options.table}:`, err);
+      console.error(`useSecureData(${table}): Error updating record:`, err);
+      const errorMessage = err.message?.includes('permission') 
+        ? 'Access denied - insufficient permissions to update'
+        : 'Failed to update record';
       
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [validateAccess, validateInput, options, logAction, toast]);
-
-  const deleteRecord = useCallback(async (id: string): Promise<boolean> => {
-    try {
-      validateAccess();
-      
-      if (!validateUUID(id)) {
-        throw new Error('Invalid ID format');
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
       }
+      throw err;
+    }
+  };
 
-      setLoading(true);
-      setError(null);
-
-      // Get current record for audit
-      const { data: currentRecord } = await (supabase as any)
-        .from(options.table)
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      const { error: dbError } = await (supabase as any)
-        .from(options.table)
+  const deleteRecord = async (id: string) => {
+    try {
+      console.log(`useSecureData(${table}): Deleting record:`, id);
+      
+      const { error } = await supabase
+        .from(table)
         .delete()
         .eq('id', id);
 
-      if (dbError) throw dbError;
+      if (error) throw error;
 
-      setData(prev => prev.filter(item => (item as any).id !== id));
-
-      if (options.auditResource) {
-        await logAction({
-          action: 'DELETE',
-          resource_type: options.auditResource,
-          resource_id: id,
-          old_values: currentRecord,
-          severity: 'high'
+      if (isMountedRef.current) {
+        setData(prev => prev.filter(item => (item as any).id !== id));
+        
+        toast({
+          title: "Success",
+          description: `Record deleted successfully`,
         });
       }
-
-      toast({
-        title: "Success",
-        description: `${options.auditResource || 'Record'} deleted successfully`,
-      });
-
-      return true;
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to delete record';
-      setError(errorMessage);
-      console.error(`Error deleting ${options.table}:`, err);
+      console.error(`useSecureData(${table}): Error deleting record:`, err);
+      const errorMessage = err.message?.includes('permission') 
+        ? 'Access denied - insufficient permissions to delete'
+        : 'Failed to delete record';
       
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-
-      return false;
-    } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+      throw err;
     }
-  }, [validateAccess, options, logAction, toast]);
+  };
 
-  const refresh = useCallback(async () => {
-    await read();
-  }, [read]);
+  const refresh = () => {
+    fetchData();
+  };
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    // Only fetch when auth is ready
+    if (isAuthReady) {
+      fetchData();
+    }
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [user, userRole, isAuthReady, table]);
 
   return {
     data,
     loading,
     error,
     create,
-    read,
+    read: fetchData,
     update,
     delete: deleteRecord,
     refresh

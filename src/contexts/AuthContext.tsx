@@ -141,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Fetching user data for:', userId);
       
+      // Use the new security definer function approach - query directly without complex joins
       let { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
