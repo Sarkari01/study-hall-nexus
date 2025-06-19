@@ -3,9 +3,13 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
+import type { Database } from '@/integrations/supabase/types';
+
+// Define valid table names from the database schema
+type TableName = keyof Database['public']['Tables'];
 
 interface UseSecureDataOptions<T> {
-  table: string;
+  table: TableName;
   auditResource?: string;
   requireAuth?: boolean;
   validateData?: (data: any) => boolean;
@@ -56,9 +60,8 @@ export const useSecureData = <T>({
       }
       
       // Fetch data - RLS policies will handle access control
-      // Cast table to any to bypass TypeScript strict typing for dynamic table access
-      const query = supabase.from(table as any);
-      const { data: fetchedData, error: fetchError } = await query
+      const { data: fetchedData, error: fetchError } = await supabase
+        .from(table)
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -115,7 +118,7 @@ export const useSecureData = <T>({
       console.log(`useSecureData(${table}): Creating new record:`, newData);
       
       const { data: createdData, error } = await supabase
-        .from(table as any)
+        .from(table)
         .insert([newData])
         .select()
         .single();
@@ -154,7 +157,7 @@ export const useSecureData = <T>({
       console.log(`useSecureData(${table}): Updating record:`, id, updates);
       
       const { data: updatedData, error } = await supabase
-        .from(table as any)
+        .from(table)
         .update(updates)
         .eq('id', id)
         .select()
@@ -196,7 +199,7 @@ export const useSecureData = <T>({
       console.log(`useSecureData(${table}): Deleting record:`, id);
       
       const { error } = await supabase
-        .from(table as any)
+        .from(table)
         .delete()
         .eq('id', id);
 
