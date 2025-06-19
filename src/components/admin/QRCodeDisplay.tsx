@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Download, Copy, ExternalLink } from "lucide-react";
+import { QrCode, Download, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import QRCodeLib from 'qrcode';
 
 interface QRCodeDisplayProps {
   qrCode: string;
@@ -18,6 +19,39 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   onClose
 }) => {
   const { toast } = useToast();
+  const [qrCodeDataURL, setQrCodeDataURL] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  // Generate QR code image when component mounts
+  useEffect(() => {
+    const generateQRCode = async () => {
+      try {
+        setLoading(true);
+        const qrDataURL = await QRCodeLib.toDataURL(qrCode, {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        setQrCodeDataURL(qrDataURL);
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+        toast({
+          title: "QR Code Error",
+          description: "Failed to generate QR code image",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (qrCode) {
+      generateQRCode();
+    }
+  }, [qrCode, toast]);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(qrCode);
@@ -28,7 +62,22 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   };
 
   const downloadQR = () => {
-    // In a real implementation, you would generate an actual QR code image
+    if (!qrCodeDataURL) {
+      toast({
+        title: "Error",
+        description: "QR code not ready for download",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.download = `${studyHallName.replace(/\s+/g, '-')}-qr-code.png`;
+    link.href = qrCodeDataURL;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
     toast({
       title: "Download Started",
       description: "QR code image downloaded successfully",
@@ -53,10 +102,23 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           {/* QR Code Display */}
           <div className="flex justify-center">
             <div className="w-48 h-48 bg-white border-2 border-gray-200 rounded-lg flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <QrCode className="h-24 w-24 text-gray-600 mx-auto" />
-                <p className="text-xs text-gray-500">QR Code Preview</p>
-              </div>
+              {loading ? (
+                <div className="text-center space-y-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-600 mx-auto" />
+                  <p className="text-xs text-gray-500">Generating QR Code...</p>
+                </div>
+              ) : qrCodeDataURL ? (
+                <img 
+                  src={qrCodeDataURL} 
+                  alt="QR Code for booking" 
+                  className="w-full h-full object-contain p-2"
+                />
+              ) : (
+                <div className="text-center space-y-2">
+                  <QrCode className="h-24 w-24 text-gray-600 mx-auto" />
+                  <p className="text-xs text-gray-500">QR Code Preview</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -88,7 +150,12 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-3">
-            <Button variant="outline" onClick={downloadQR} className="w-full">
+            <Button 
+              variant="outline" 
+              onClick={downloadQR} 
+              className="w-full"
+              disabled={loading || !qrCodeDataURL}
+            >
               <Download className="h-4 w-4 mr-2" />
               Download QR
             </Button>

@@ -45,6 +45,9 @@ const StudyHallView: React.FC<StudyHallViewProps> = ({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const { toast } = useToast();
 
+  // Generate proper booking link
+  const bookingLink = `${window.location.origin}/book/${studyHall.id}`;
+
   const getAmenityIcon = (amenity: string) => {
     const icons = {
       'AC': <Car className="h-4 w-4" />,
@@ -59,7 +62,6 @@ const StudyHallView: React.FC<StudyHallViewProps> = ({
   };
 
   const copyBookingLink = () => {
-    const bookingLink = studyHall.qrCode || `${window.location.origin}/book/${studyHall.id}`;
     navigator.clipboard.writeText(bookingLink);
     toast({
       title: "Copied!",
@@ -185,7 +187,7 @@ const StudyHallView: React.FC<StudyHallViewProps> = ({
                   variant="outline" 
                   size="sm" 
                   className="w-full"
-                  onClick={() => window.open(studyHall.qrCode || `${window.location.origin}/book/${studyHall.id}`, '_blank')}
+                  onClick={() => window.open(bookingLink, '_blank')}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Test Booking Page
@@ -395,7 +397,7 @@ const StudyHallView: React.FC<StudyHallViewProps> = ({
         {/* QR Code Modal */}
         {showQRCode && (
           <QRCodeDisplay
-            qrCode={studyHall.qrCode || `${window.location.origin}/book/${studyHall.id}`}
+            qrCode={bookingLink}
             studyHallName={studyHall.name}
             onClose={() => setShowQRCode(false)}
           />

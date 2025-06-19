@@ -13,8 +13,11 @@ interface QRCodeSectionProps {
 
 const QRCodeSection: React.FC<QRCodeSectionProps> = ({ formData, updateFormData, onShowQRCode }) => {
   const generateQRCode = () => {
-    const qrData = `${window.location.origin}/book/${Date.now()}`;
-    updateFormData({ qrCode: qrData });
+    // Generate a proper booking URL with the study hall ID or a placeholder
+    const studyHallId = formData.id || 'new-study-hall';
+    const bookingUrl = `${window.location.origin}/book/${studyHallId}`;
+    
+    updateFormData({ qrCode: bookingUrl });
     onShowQRCode();
   };
 
@@ -36,7 +39,7 @@ const QRCodeSection: React.FC<QRCodeSectionProps> = ({ formData, updateFormData,
               <Button variant="outline" size="sm" onClick={onShowQRCode}>
                 View QR Code
               </Button>
-              <p className="text-xs text-gray-500">QR code will be generated after saving</p>
+              <p className="text-xs text-gray-500">Click to view the generated QR code</p>
             </div>
           </div>
         ) : (
