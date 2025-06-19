@@ -79,6 +79,41 @@ const NewsEditor: React.FC<NewsEditorProps> = ({ article, onClose }) => {
       .replace(/^-|-$/g, '');
   };
 
+  const generateUniqueSlug = async (title: string, articleId?: string) => {
+    const baseSlug = generateSlug(title);
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+
+    while (true) {
+      // Check if this slug already exists (excluding the current article if editing)
+      let query = supabase
+        .from('news_articles')
+        .select('id')
+        .eq('slug', uniqueSlug);
+
+      // If we're editing an existing article, exclude it from the check
+      if (articleId) {
+        query = query.neq('id', articleId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error checking slug uniqueness:', error);
+        throw error;
+      }
+
+      // If no existing article found with this slug, it's unique
+      if (!data || data.length === 0) {
+        return uniqueSlug;
+      }
+
+      // If slug exists, try with a counter
+      counter++;
+      uniqueSlug = `${baseSlug}-${counter}`;
+    }
+  };
+
   const handleSave = async (publishNow = false) => {
     if (!title.trim() || !content.trim()) {
       toast({
@@ -94,7 +129,9 @@ const NewsEditor: React.FC<NewsEditorProps> = ({ article, onClose }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const slug = generateSlug(title);
+      // Generate unique slug
+      const slug = await generateUniqueSlug(title, article?.id);
+      
       const articleData = {
         title: title.trim(),
         slug,
@@ -133,9 +170,18 @@ const NewsEditor: React.FC<NewsEditorProps> = ({ article, onClose }) => {
       onClose();
     } catch (error: any) {
       console.error('Error saving article:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = "Failed to save article";
+      if (error.message.includes('duplicate key value violates unique constraint')) {
+        errorMessage = "A slug conflict occurred. Please try again or modify the title.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to save article",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
