@@ -3,77 +3,144 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, Users, CreditCard, CheckCircle } from "lucide-react";
-import { useBookingFlow } from '@/hooks/useBookingFlow';
+import { Calendar, Clock, User, CreditCard, CheckCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { sanitizeInput, validateBookingData } from '@/utils/inputValidation';
+import SecureBookingForm from '@/components/security/SecureBookingForm';
+
+interface StudyHall {
+  id: string;
+  name: string;
+  location: string;
+  price_per_day: number;
+  capacity: number;
+  amenities: string[];
+  description?: string;
+  merchant_name?: string;
+}
 
 interface BookingWizardProps {
-  studyHall: {
-    id: string;
-    name: string;
-    location: string;
-    price_per_day: number;
-    capacity: number;
-    amenities: string[];
-  };
-  onComplete?: () => void;
+  studyHall: StudyHall;
+  onComplete: () => void;
 }
 
 const BookingWizard: React.FC<BookingWizardProps> = ({ studyHall, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [bookingData, setBookingData] = useState({
-    date: '',
-    startTime: '',
-    endTime: '',
-    selectedSeats: [] as string[],
-    paymentMethod: 'upi' as 'upi' | 'card' | 'wallet'
-  });
-
-  const { loading, createBooking, processPayment } = useBookingFlow();
+  const [bookingData, setBookingData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const steps = [
-    { id: 1, title: 'Select Date & Time', icon: Calendar },
-    { id: 2, title: 'Choose Seats', icon: Users },
+    { id: 1, title: 'Booking Details', icon: Calendar },
+    { id: 2, title: 'Confirmation', icon: CheckCircle },
     { id: 3, title: 'Payment', icon: CreditCard },
-    { id: 4, title: 'Confirmation', icon: CheckCircle }
+    { id: 4, title: 'Complete', icon: CheckCircle }
   ];
 
-  const calculateTotalAmount = () => {
-    return studyHall.price_per_day * bookingData.selectedSeats.length;
-  };
-
-  const handleNext = async () => {
-    if (currentStep === 3) {
-      // Process payment
-      try {
-        const booking = await createBooking({
-          studyHallId: studyHall.id,
-          bookingDate: bookingData.date,
-          startTime: bookingData.startTime,
-          endTime: bookingData.endTime,
-          selectedSeats: bookingData.selectedSeats,
-          totalAmount: calculateTotalAmount()
-        });
-
-        if (booking) {
-          await processPayment({
-            method: bookingData.paymentMethod,
-            amount: calculateTotalAmount()
-          });
-          setCurrentStep(4);
-        }
-      } catch (error) {
-        console.error('Booking failed:', error);
-      }
-    } else if (currentStep < 4) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onComplete?.();
+  const handleBookingSubmit = async (data: any) => {
+    // Validate and sanitize the booking data
+    const validation = validateBookingData(data);
+    if (!validation.isValid) {
+      throw new Error(validation.errors.join(', '));
     }
+
+    setBookingData({
+      ...data,
+      study_hall_name: sanitizeInput(studyHall.name),
+      study_hall_location: sanitizeInput(studyHall.location),
+      price_per_day: studyHall.price_per_day
+    });
+    setCurrentStep(2);
   };
 
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+  const handleConfirmBooking = async () => {
+    if (!bookingData) return;
+
+    setLoading(true);
+    try {
+      // First, create or get student record
+      const { data: existingStudent, error: studentCheckError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('email', bookingData.student_email)
+        .maybeSingle();
+
+      if (studentCheckError) {
+        console.error('Error checking student:', studentCheckError);
+        throw new Error('Failed to process student information');
+      }
+
+      let studentId = existingStudent?.id;
+
+      if (!studentId) {
+        // Create new student record with sanitized data
+        const { data: newStudent, error: studentError } = await supabase
+          .from('students')
+          .insert([{
+            full_name: sanitizeInput(bookingData.student_name),
+            email: bookingData.student_email.toLowerCase().trim(),
+            phone: bookingData.student_phone.replace(/[^\d\s\-\(\)\+]/g, ''),
+            status: 'active'
+          }])
+          .select('id')
+          .single();
+
+        if (studentError) {
+          console.error('Error creating student:', studentError);
+          throw new Error('Failed to create student record');
+        }
+
+        studentId = newStudent.id;
+      }
+
+      // Calculate total amount
+      const totalAmount = studyHall.price_per_day;
+
+      // Create booking with validated data
+      const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .insert([{
+          student_id: studentId,
+          study_hall_id: studyHall.id,
+          booking_date: bookingData.booking_date,
+          start_time: bookingData.start_time,
+          end_time: bookingData.end_time,
+          total_amount: totalAmount,
+          final_amount: totalAmount,
+          status: 'pending',
+          payment_status: 'pending'
+        }])
+        .select()
+        .single();
+
+      if (bookingError) {
+        console.error('Error creating booking:', bookingError);
+        throw new Error('Failed to create booking');
+      }
+
+      setCurrentStep(3);
+      
+      toast({
+        title: "Booking Created",
+        description: "Your booking has been created successfully.",
+      });
+
+      // Simulate payment process
+      setTimeout(() => {
+        setCurrentStep(4);
+        setTimeout(onComplete, 2000);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Booking error:', error);
+      toast({
+        title: "Booking Failed",
+        description: error instanceof Error ? error.message : "Failed to create booking. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,183 +148,100 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ studyHall, onComplete }) 
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Date
-              </label>
-              <input
-                type="date"
-                value={bookingData.date}
-                onChange={(e) => setBookingData({ ...bookingData, date: e.target.value })}
-                className="w-full p-2 border rounded-lg"
-                min={new Date().toISOString().split('T')[0]}
-              />
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Enter Booking Details</h3>
+              <p className="text-gray-600">Please provide your information and preferred time slot</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Time
-                </label>
-                <input
-                  type="time"
-                  value={bookingData.startTime}
-                  onChange={(e) => setBookingData({ ...bookingData, startTime: e.target.value })}
-                  className="w-full p-2 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  End Time
-                </label>
-                <input
-                  type="time"
-                  value={bookingData.endTime}
-                  onChange={(e) => setBookingData({ ...bookingData, endTime: e.target.value })}
-                  className="w-full p-2 border rounded-lg"
-                />
-              </div>
-            </div>
+            <SecureBookingForm
+              studyHallId={studyHall.id}
+              onSubmit={handleBookingSubmit}
+            />
           </div>
         );
-      
+
       case 2:
         return (
-          <div className="space-y-4">
-            <h3 className="font-medium">Select Your Seats</h3>
-            <div className="grid grid-cols-10 gap-2">
-              {Array.from({ length: studyHall.capacity }, (_, i) => {
-                const seatId = `A${String(i + 1).padStart(2, '0')}`;
-                const isSelected = bookingData.selectedSeats.includes(seatId);
-                return (
-                  <button
-                    key={seatId}
-                    onClick={() => {
-                      if (isSelected) {
-                        setBookingData({
-                          ...bookingData,
-                          selectedSeats: bookingData.selectedSeats.filter(s => s !== seatId)
-                        });
-                      } else {
-                        setBookingData({
-                          ...bookingData,
-                          selectedSeats: [...bookingData.selectedSeats, seatId]
-                        });
-                      }
-                    }}
-                    className={`
-                      aspect-square text-xs font-medium rounded border-2 
-                      ${isSelected 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-300'
-                      }
-                    `}
-                  >
-                    {seatId}
-                  </button>
-                );
-              })}
-            </div>
-            <p className="text-sm text-gray-600">
-              Selected: {bookingData.selectedSeats.length} seats
-            </p>
-          </div>
-        );
-      
-      case 3:
-        return (
-          <div className="space-y-4">
-            <h3 className="font-medium">Payment Method</h3>
-            <div className="space-y-2">
-              {[
-                { id: 'upi', label: 'UPI Payment' },
-                { id: 'card', label: 'Credit/Debit Card' },
-                { id: 'wallet', label: 'Digital Wallet' }
-              ].map((method) => (
-                <label key={method.id} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value={method.id}
-                    checked={bookingData.paymentMethod === method.id}
-                    onChange={(e) => setBookingData({ 
-                      ...bookingData, 
-                      paymentMethod: e.target.value as any 
-                    })}
-                  />
-                  <span>{method.label}</span>
-                </label>
-              ))}
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Your Booking</h3>
+              <p className="text-gray-600">Please review your booking details before proceeding</p>
             </div>
             
-            <div className="border-t pt-4">
-              <div className="flex justify-between">
-                <span>Total Amount:</span>
-                <span className="font-semibold">₹{calculateTotalAmount()}</span>
+            {bookingData && (
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Student Information</h4>
+                  <p className="text-sm text-gray-600">Name: {bookingData.student_name}</p>
+                  <p className="text-sm text-gray-600">Email: {bookingData.student_email}</p>
+                  <p className="text-sm text-gray-600">Phone: {bookingData.student_phone}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Booking Details</h4>
+                  <p className="text-sm text-gray-600">Date: {bookingData.booking_date}</p>
+                  <p className="text-sm text-gray-600">Time: {bookingData.start_time} - {bookingData.end_time}</p>
+                  <p className="text-sm text-gray-600">Study Hall: {studyHall.name}</p>
+                  <p className="text-sm text-gray-600">Location: {studyHall.location}</p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Payment Summary</h4>
+                  <p className="text-lg font-semibold text-blue-900">Total: ₹{studyHall.price_per_day}</p>
+                </div>
               </div>
+            )}
+
+            <div className="flex gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => setCurrentStep(1)} 
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button 
+                onClick={handleConfirmBooking} 
+                disabled={loading} 
+                className="flex-1"
+              >
+                {loading ? 'Processing...' : 'Confirm Booking'}
+              </Button>
             </div>
           </div>
         );
-      
+
+      case 3:
+        return (
+          <div className="text-center space-y-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing Payment</h3>
+              <p className="text-gray-600">Please wait while we process your payment...</p>
+            </div>
+          </div>
+        );
+
       case 4:
         return (
-          <div className="text-center space-y-4">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-            <h3 className="text-xl font-semibold">Booking Confirmed!</h3>
-            <p className="text-gray-600">
-              Your booking has been successfully confirmed. You will receive a confirmation email shortly.
-            </p>
-            <div className="bg-gray-50 p-4 rounded-lg text-left">
-              <h4 className="font-medium mb-2">Booking Details:</h4>
-              <p><strong>Study Hall:</strong> {studyHall.name}</p>
-              <p><strong>Date:</strong> {bookingData.date}</p>
-              <p><strong>Time:</strong> {bookingData.startTime} - {bookingData.endTime}</p>
-              <p><strong>Seats:</strong> {bookingData.selectedSeats.join(', ')}</p>
-              <p><strong>Total:</strong> ₹{calculateTotalAmount()}</p>
+          <div className="text-center space-y-6">
+            <CheckCircle className="h-16 w-16 text-green-600 mx-auto" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Booking Confirmed!</h3>
+              <p className="text-gray-600">Your booking has been successfully confirmed. You will receive a confirmation email shortly.</p>
             </div>
           </div>
         );
-      
+
       default:
         return null;
     }
   };
 
-  const canProceed = () => {
-    switch (currentStep) {
-      case 1:
-        return bookingData.date && bookingData.startTime && bookingData.endTime;
-      case 2:
-        return bookingData.selectedSeats.length > 0;
-      case 3:
-        return bookingData.paymentMethod;
-      case 4:
-        return true;
-      default:
-        return false;
-    }
-  };
-
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      {/* Study Hall Info */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">{studyHall.name}</h2>
-              <div className="flex items-center text-gray-600 mt-1">
-                <MapPin className="h-4 w-4 mr-1" />
-                <span className="text-sm">{studyHall.location}</span>
-              </div>
-            </div>
-            <Badge variant="outline">₹{studyHall.price_per_day}/day</Badge>
-          </div>
-        </CardContent>
-      </Card>
-
+    <div className="max-w-2xl mx-auto">
       {/* Progress Steps */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-center mb-8 space-x-4">
         {steps.map((step, index) => {
           const Icon = step.icon;
           const isActive = currentStep === step.id;
@@ -266,18 +250,17 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ studyHall, onComplete }) 
           return (
             <div key={step.id} className="flex items-center">
               <div className={`
-                flex items-center justify-center w-10 h-10 rounded-full border-2
-                ${isActive ? 'bg-blue-500 border-blue-500 text-white' :
-                  isCompleted ? 'bg-green-500 border-green-500 text-white' :
-                  'bg-white border-gray-300 text-gray-400'}
+                flex items-center justify-center w-10 h-10 rounded-full border-2 
+                ${isActive ? 'border-blue-600 bg-blue-600 text-white' : 
+                  isCompleted ? 'border-green-600 bg-green-600 text-white' : 
+                  'border-gray-300 bg-white text-gray-400'}
               `}>
                 <Icon className="h-5 w-5" />
               </div>
-              <span className={`ml-2 text-sm ${isActive ? 'font-semibold' : 'text-gray-500'}`}>
-                {step.title}
-              </span>
               {index < steps.length - 1 && (
-                <div className={`h-0.5 w-8 mx-4 ${isCompleted ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div className={`w-12 h-0.5 mx-2 ${
+                  isCompleted ? 'bg-green-600' : 'bg-gray-300'
+                }`} />
               )}
             </div>
           );
@@ -285,31 +268,15 @@ const BookingWizard: React.FC<BookingWizardProps> = ({ studyHall, onComplete }) 
       </div>
 
       {/* Step Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{steps[currentStep - 1]?.title}</CardTitle>
+      <Card className="shadow-lg">
+        <CardHeader className="text-center">
+          <Badge variant="outline" className="w-fit mx-auto mb-2">
+            Step {currentStep} of {steps.length}
+          </Badge>
+          <CardTitle className="text-xl">{steps[currentStep - 1]?.title}</CardTitle>
         </CardHeader>
         <CardContent>
           {renderStepContent()}
-          
-          <div className="flex justify-between mt-6">
-            <Button 
-              variant="outline" 
-              onClick={handleBack}
-              disabled={currentStep === 1}
-            >
-              Back
-            </Button>
-            <Button 
-              onClick={handleNext}
-              disabled={!canProceed() || loading}
-              className={currentStep === 4 ? 'bg-green-500 hover:bg-green-600' : ''}
-            >
-              {loading ? 'Processing...' : 
-               currentStep === 4 ? 'Done' :
-               currentStep === 3 ? 'Pay Now' : 'Next'}
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>

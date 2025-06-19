@@ -1,12 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Users, ArrowLeft, Loader2 } from "lucide-react";
+import { MapPin, Calendar, Users, ArrowLeft, Loader2, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import BookingWizard from '@/components/booking/BookingWizard';
+import { CSRFProvider } from '@/components/security/CSRFProtection';
+import { validateStudyHallId, rateLimiter } from '@/utils/inputValidation';
 
 interface StudyHall {
   id: string;
@@ -31,6 +34,21 @@ const BookingPage: React.FC = () => {
     const fetchStudyHall = async () => {
       if (!id) {
         setError('Study hall ID is required');
+        setLoading(false);
+        return;
+      }
+
+      // Validate study hall ID format
+      if (!validateStudyHallId(id)) {
+        setError('Invalid study hall ID format');
+        setLoading(false);
+        return;
+      }
+
+      // Rate limiting for API calls
+      const clientId = `booking-${navigator.userAgent}`;
+      if (!rateLimiter.isAllowed(clientId, 10, 60000)) {
+        setError('Too many requests. Please try again later.');
         setLoading(false);
         return;
       }
@@ -100,7 +118,7 @@ const BookingPage: React.FC = () => {
       title: "Booking Completed!",
       description: "Your booking has been successfully confirmed.",
     });
-    // Could navigate to a success page or back to home
+    // Navigate to a thank you page or back to home
     navigate('/');
   };
 
@@ -136,81 +154,86 @@ const BookingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/')}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
+    <CSRFProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/')}
+                  className="mr-4"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back
+                </Button>
+                <div>
+                  <h1 className="text-xl font-semibold text-gray-900">Book Your Seat</h1>
+                  <p className="text-sm text-gray-500">Complete your booking in a few simple steps</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Shield className="h-4 w-4 text-green-600" />
+                <Badge variant="outline" className="text-green-600 border-green-200">
+                  Secure Booking
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Study Hall Info Header */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Book Your Seat</h1>
-                <p className="text-sm text-gray-500">Complete your booking in a few simple steps</p>
+                <h2 className="text-2xl font-bold text-gray-900">{studyHall.name}</h2>
+                <div className="flex items-center text-gray-600 mt-1">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <span>{studyHall.location}</span>
+                  {studyHall.merchant_name && (
+                    <>
+                      <span className="mx-2">•</span>
+                      <span>by {studyHall.merchant_name}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-blue-600">₹{studyHall.price_per_day}</div>
+                <div className="text-sm text-gray-500">per day</div>
               </div>
             </div>
-            <Badge variant="outline" className="text-green-600 border-green-200">
-              Available for Booking
-            </Badge>
-          </div>
-        </div>
-      </div>
 
-      {/* Study Hall Info Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">{studyHall.name}</h2>
-              <div className="flex items-center text-gray-600 mt-1">
-                <MapPin className="h-4 w-4 mr-1" />
-                <span>{studyHall.location}</span>
-                {studyHall.merchant_name && (
-                  <>
-                    <span className="mx-2">•</span>
-                    <span>by {studyHall.merchant_name}</span>
-                  </>
-                )}
+            {studyHall.description && (
+              <p className="mt-4 text-gray-700">{studyHall.description}</p>
+            )}
+
+            <div className="flex items-center mt-4 space-x-4">
+              <div className="flex items-center text-sm text-gray-600">
+                <Users className="h-4 w-4 mr-1" />
+                <span>Capacity: {studyHall.capacity} seats</span>
               </div>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-blue-600">₹{studyHall.price_per_day}</div>
-              <div className="text-sm text-gray-500">per day</div>
-            </div>
-          </div>
-
-          {studyHall.description && (
-            <p className="mt-4 text-gray-700">{studyHall.description}</p>
-          )}
-
-          <div className="flex items-center mt-4 space-x-4">
-            <div className="flex items-center text-sm text-gray-600">
-              <Users className="h-4 w-4 mr-1" />
-              <span>Capacity: {studyHall.capacity} seats</span>
-            </div>
-            <div className="flex items-center text-sm text-gray-600">
-              <Calendar className="h-4 w-4 mr-1" />
-              <span>Available for booking</span>
+              <div className="flex items-center text-sm text-gray-600">
+                <Calendar className="h-4 w-4 mr-1" />
+                <span>Available for booking</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Booking Wizard */}
-      <div className="py-8">
-        <BookingWizard 
-          studyHall={studyHall} 
-          onComplete={handleBookingComplete}
-        />
+        {/* Booking Wizard */}
+        <div className="py-8">
+          <BookingWizard 
+            studyHall={studyHall} 
+            onComplete={handleBookingComplete}
+          />
+        </div>
       </div>
-    </div>
+    </CSRFProvider>
   );
 };
 

@@ -1802,6 +1802,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_user_role_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_permissions: {
         Args: { user_id: string }
         Returns: {
@@ -1824,7 +1828,15 @@ export type Database = {
         Args: { user_id: string }
         Returns: string
       }
+      has_role_secure: {
+        Args: { role_name: string }
+        Returns: boolean
+      }
       is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_secure: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }

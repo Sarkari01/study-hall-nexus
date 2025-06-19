@@ -1,203 +1,93 @@
-import { sanitizeInput } from './securityUtils';
 
-// Enhanced validation patterns
-const VALIDATION_PATTERNS = {
-  email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-  phone: /^\+?[\d\s\-\(\)]{10,15}$/,
-  password: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-  alphanumeric: /^[a-zA-Z0-9\s]+$/,
-  numeric: /^\d+$/,
-  uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-  slug: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-  url: /^https?:\/\/.+/
+// Enhanced input validation and sanitization utilities
+
+export const sanitizeInput = (input: string): string => {
+  if (!input || typeof input !== 'string') return '';
+  
+  return input
+    .replace(/[<>]/g, '') // Remove HTML tags
+    .replace(/javascript:/gi, '') // Remove javascript: URLs
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .replace(/data:/gi, '') // Remove data URLs
+    .replace(/vbscript:/gi, '') // Remove vbscript
+    .trim()
+    .slice(0, 1000); // Limit length
 };
 
-interface ValidationRule {
-  required?: boolean;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: RegExp;
-  custom?: (value: any) => boolean | string;
-}
+export const sanitizeEmail = (email: string): string => {
+  if (!email) return '';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const sanitized = sanitizeInput(email);
+  return emailRegex.test(sanitized) ? sanitized : '';
+};
 
-export interface ValidationSchema {
-  [key: string]: ValidationRule;
-}
+export const sanitizePhoneNumber = (phone: string): string => {
+  if (!phone) return '';
+  // Allow only digits, spaces, hyphens, parentheses, and plus
+  return phone.replace(/[^\d\s\-\(\)\+]/g, '').slice(0, 20);
+};
 
-interface ValidationResult {
-  isValid: boolean;
-  errors: Record<string, string>;
-  sanitizedData: Record<string, any>;
-}
+export const sanitizeNumericInput = (input: string | number): number => {
+  if (typeof input === 'number') return Math.max(0, input);
+  const num = parseFloat(String(input).replace(/[^\d.-]/g, ''));
+  return isNaN(num) ? 0 : Math.max(0, num);
+};
 
-export class InputValidator {
-  static validate(data: Record<string, any>, schema: ValidationSchema): ValidationResult {
-    const errors: Record<string, string> = {};
-    const sanitizedData: Record<string, any> = {};
+export const validateStudyHallId = (id: string): boolean => {
+  if (!id || typeof id !== 'string') return false;
+  // UUID format validation
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
 
-    for (const [field, rule] of Object.entries(schema)) {
-      const value = data[field];
+export const validateBookingData = (data: any): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  if (!data.booking_date || new Date(data.booking_date) <= new Date()) {
+    errors.push('Booking date must be in the future');
+  }
+  
+  if (!data.start_time || !data.end_time) {
+    errors.push('Start and end times are required');
+  }
+  
+  if (data.start_time && data.end_time && data.start_time >= data.end_time) {
+    errors.push('End time must be after start time');
+  }
+  
+  if (!validateStudyHallId(data.study_hall_id)) {
+    errors.push('Invalid study hall ID');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
+export const rateLimiter = (() => {
+  const attempts = new Map<string, { count: number; resetTime: number }>();
+  
+  return {
+    isAllowed: (identifier: string, maxAttempts: number = 5, windowMs: number = 15 * 60 * 1000): boolean => {
+      const now = Date.now();
+      const userAttempts = attempts.get(identifier);
       
-      // Check required fields
-      if (rule.required && (value === undefined || value === null || value === '')) {
-        errors[field] = `${field} is required`;
-        continue;
+      if (!userAttempts || now > userAttempts.resetTime) {
+        attempts.set(identifier, { count: 1, resetTime: now + windowMs });
+        return true;
       }
-
-      // Skip validation if field is not required and empty
-      if (!rule.required && (value === undefined || value === null || value === '')) {
-        sanitizedData[field] = value;
-        continue;
-      }
-
-      const stringValue = String(value);
-
-      // Sanitize input
-      const sanitized = typeof value === 'string' ? sanitizeInput(stringValue) : value;
       
-      // Length validation
-      if (rule.minLength && stringValue.length < rule.minLength) {
-        errors[field] = `${field} must be at least ${rule.minLength} characters`;
-        continue;
+      if (userAttempts.count >= maxAttempts) {
+        return false;
       }
-
-      if (rule.maxLength && stringValue.length > rule.maxLength) {
-        errors[field] = `${field} must not exceed ${rule.maxLength} characters`;
-        continue;
-      }
-
-      // Pattern validation
-      if (rule.pattern && !rule.pattern.test(stringValue)) {
-        errors[field] = `${field} format is invalid`;
-        continue;
-      }
-
-      // Custom validation
-      if (rule.custom) {
-        const result = rule.custom(value);
-        if (result !== true) {
-          errors[field] = typeof result === 'string' ? result : `${field} is invalid`;
-          continue;
-        }
-      }
-
-      sanitizedData[field] = sanitized;
-    }
-
-    return {
-      isValid: Object.keys(errors).length === 0,
-      errors,
-      sanitizedData
-    };
-  }
-
-  static validateEmail(email: string): boolean {
-    return VALIDATION_PATTERNS.email.test(email);
-  }
-
-  static validatePassword(password: string): { isValid: boolean; errors: string[] } {
-    const errors: string[] = [];
+      
+      userAttempts.count++;
+      return true;
+    },
     
-    if (password.length < 8) {
-      errors.push('Password must be at least 8 characters long');
+    reset: (identifier: string): void => {
+      attempts.delete(identifier);
     }
-    
-    if (!/(?=.*[a-z])/.test(password)) {
-      errors.push('Password must contain at least one lowercase letter');
-    }
-    
-    if (!/(?=.*[A-Z])/.test(password)) {
-      errors.push('Password must contain at least one uppercase letter');
-    }
-    
-    if (!/(?=.*\d)/.test(password)) {
-      errors.push('Password must contain at least one number');
-    }
-    
-    if (!/(?=.*[@$!%*?&])/.test(password)) {
-      errors.push('Password must contain at least one special character');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
-  }
-
-  static validatePhone(phone: string): boolean {
-    return VALIDATION_PATTERNS.phone.test(phone);
-  }
-
-  static validateUUID(uuid: string): boolean {
-    return VALIDATION_PATTERNS.uuid.test(uuid);
-  }
-
-  static validateUrl(url: string): boolean {
-    return VALIDATION_PATTERNS.url.test(url);
-  }
-
-  static sanitizeHtml(input: string): string {
-    return input
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-      .replace(/javascript:/gi, '')
-      .replace(/on\w+\s*=/gi, '');
-  }
-}
-
-// Pre-defined validation schemas for common use cases
-export const USER_VALIDATION_SCHEMA: ValidationSchema = {
-  email: {
-    required: true,
-    maxLength: 255,
-    pattern: VALIDATION_PATTERNS.email
-  },
-  full_name: {
-    required: true,
-    minLength: 2,
-    maxLength: 100,
-    pattern: /^[a-zA-Z\s]+$/
-  },
-  phone: {
-    required: false,
-    pattern: VALIDATION_PATTERNS.phone
-  }
-};
-
-export const NEWS_ARTICLE_VALIDATION_SCHEMA: ValidationSchema = {
-  title: {
-    required: true,
-    minLength: 5,
-    maxLength: 200
-  },
-  content: {
-    required: true,
-    minLength: 50,
-    maxLength: 50000
-  },
-  excerpt: {
-    required: false,
-    maxLength: 500
-  },
-  slug: {
-    required: true,
-    pattern: VALIDATION_PATTERNS.slug,
-    maxLength: 100
-  }
-};
-
-export const MERCHANT_VALIDATION_SCHEMA: ValidationSchema = {
-  business_name: {
-    required: true,
-    minLength: 2,
-    maxLength: 100
-  },
-  business_phone: {
-    required: true,
-    pattern: VALIDATION_PATTERNS.phone
-  },
-  email: {
-    required: true,
-    pattern: VALIDATION_PATTERNS.email
-  }
-};
+  };
+})();
