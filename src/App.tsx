@@ -18,7 +18,6 @@ import BookingPage from "./pages/BookingPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import MerchantLogin from "./components/auth/MerchantLogin";
-import MerchantSignup from "./components/auth/MerchantSignup";
 import MobileStudentApp from "./components/mobile/MobileStudentApp";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -47,7 +46,6 @@ const App = () => {
                 {/* Auth routes */}
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/merchant-login" element={<MerchantLogin />} />
-                <Route path="/merchant-signup" element={<MerchantSignup />} />
                 
                 {/* Public booking route - no authentication required */}
                 <Route path="/book/:id" element={<BookingPage />} />

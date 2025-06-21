@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -151,15 +152,7 @@ const MerchantLogin = () => {
               </Button>
             </form>
 
-            <div className="mt-6 text-center space-y-2">
-              <Button 
-                variant="link" 
-                onClick={() => navigate('/merchant-signup')}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                New merchant? Create account
-              </Button>
-              <br />
+            <div className="mt-6 text-center">
               <Button 
                 variant="link" 
                 onClick={() => navigate('/auth')}
