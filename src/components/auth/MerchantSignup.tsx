@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,9 +104,35 @@ const MerchantSignup = () => {
     setError('');
 
     try {
-      console.log('Creating merchant account...');
+      console.log('Starting merchant signup process...');
       
-      // Create the business address object
+      // First, try to sign up the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email.trim(),
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.fullName,
+            business_name: formData.businessName
+          }
+        }
+      });
+
+      if (authError) {
+        console.error('Auth signup error:', authError);
+        setError(`Failed to create account: ${authError.message}`);
+        return;
+      }
+
+      if (!authData.user) {
+        console.error('No user returned from signup');
+        setError('Failed to create user account');
+        return;
+      }
+
+      console.log('Auth user created:', authData.user.id);
+
+      // Create the merchant profile
       const businessAddress = {
         street: formData.businessAddress,
         city: formData.businessCity,
@@ -124,39 +149,65 @@ const MerchantSignup = () => {
         country: 'India'
       } : null;
 
-      // Use the database function to create merchant with auth
-      const { data, error: createError } = await supabase.rpc('create_merchant_with_auth', {
-        p_email: formData.email.trim(),
-        p_password: formData.password,
-        p_business_name: formData.businessName,
-        p_business_phone: formData.businessPhone,
-        p_full_name: formData.fullName,
-        p_contact_number: formData.contactNumber,
-        p_business_address: businessAddress,
-        p_communication_address: communicationAddress,
-        p_notes: formData.notes || null,
-        p_approval_status: 'pending'
-      });
+      console.log('Creating merchant profile...');
 
-      if (createError) {
-        console.error('Error creating merchant:', createError);
-        setError('Failed to create merchant account. Please try again.');
+      const { data: merchantData, error: merchantError } = await supabase
+        .from('merchant_profiles')
+        .insert({
+          user_id: authData.user.id,
+          business_name: formData.businessName,
+          business_phone: formData.businessPhone,
+          full_name: formData.fullName,
+          contact_number: formData.contactNumber,
+          business_address: businessAddress,
+          communication_address: communicationAddress,
+          approval_status: 'pending',
+          notes: formData.notes || null,
+          email: formData.email.trim()
+        })
+        .select()
+        .single();
+
+      if (merchantError) {
+        console.error('Merchant profile creation error:', merchantError);
+        setError(`Failed to create merchant profile: ${merchantError.message}`);
         return;
       }
 
-      console.log('Merchant created successfully:', data);
+      console.log('Merchant profile created:', merchantData);
+
+      // Create user profile
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: authData.user.id,
+          full_name: formData.fullName,
+          role: 'merchant',
+          merchant_id: merchantData.id
+        });
+
+      if (profileError) {
+        console.error('User profile creation error:', profileError);
+        setError(`Failed to create user profile: ${profileError.message}`);
+        return;
+      }
+
+      console.log('User profile created successfully');
 
       toast({
         title: "Account Created Successfully!",
         description: "Your merchant account has been created and is pending approval. You'll receive an email once approved.",
       });
 
+      // Sign out the user since they need approval first
+      await supabase.auth.signOut();
+
       // Redirect to login page
       navigate('/merchant-login');
 
     } catch (error: any) {
       console.error('Unexpected signup error:', error);
-      setError('An unexpected error occurred. Please try again.');
+      setError(`An unexpected error occurred: ${error.message || 'Please try again.'}`);
     } finally {
       setLoading(false);
     }
