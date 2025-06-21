@@ -1,5 +1,8 @@
+
 import { useSecureData } from './useSecureData';
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Merchant {
   id: string;
@@ -79,6 +82,7 @@ const validateMerchantData = (data: any): boolean => {
 };
 
 export const useMerchants = () => {
+  const { user } = useAuth();
   const secureDataHook = useSecureData<Merchant>({
     table: 'merchant_profiles',
     requireAuth: true,
@@ -109,6 +113,78 @@ export const useMerchants = () => {
     return sortedMerchants;
   }, [secureDataHook.data]);
 
+  // CRUD operations
+  const fetchMerchants = useCallback(async () => {
+    await secureDataHook.refetch();
+  }, [secureDataHook.refetch]);
+
+  const createMerchant = useCallback(async (merchantData: Partial<Merchant>) => {
+    if (!user) {
+      throw new Error('Authentication required');
+    }
+
+    const { data, error } = await supabase
+      .from('merchant_profiles')
+      .insert([{
+        ...merchantData,
+        created_by: user.id,
+        updated_by: user.id
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    // Refresh data after creation
+    await fetchMerchants();
+    return data;
+  }, [user, fetchMerchants]);
+
+  const updateMerchant = useCallback(async (id: string, updates: Partial<Merchant>) => {
+    if (!user) {
+      throw new Error('Authentication required');
+    }
+
+    const { data, error } = await supabase
+      .from('merchant_profiles')
+      .update({
+        ...updates,
+        updated_by: user.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    // Refresh data after update
+    await fetchMerchants();
+    return data;
+  }, [user, fetchMerchants]);
+
+  const deleteMerchant = useCallback(async (id: string) => {
+    if (!user) {
+      throw new Error('Authentication required');
+    }
+
+    const { error } = await supabase
+      .from('merchant_profiles')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw error;
+    }
+
+    // Refresh data after deletion
+    await fetchMerchants();
+  }, [user, fetchMerchants]);
+
   console.log('useMerchants: Final merchants count:', merchants.length);
 
   // Memoize the return object to prevent unnecessary re-renders
@@ -116,11 +192,19 @@ export const useMerchants = () => {
     merchants: merchants,
     loading: secureDataHook.loading,
     error: secureDataHook.error,
-    refreshMerchants: secureDataHook.refetch
+    refreshMerchants: secureDataHook.refetch,
+    fetchMerchants,
+    createMerchant,
+    updateMerchant,
+    deleteMerchant
   }), [
     merchants,
     secureDataHook.loading,
     secureDataHook.error,
-    secureDataHook.refetch
+    secureDataHook.refetch,
+    fetchMerchants,
+    createMerchant,
+    updateMerchant,
+    deleteMerchant
   ]);
 };
