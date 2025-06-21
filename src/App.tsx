@@ -17,6 +17,7 @@ import InchargeDashboard from "./pages/InchargeDashboard";
 import BookingPage from "./pages/BookingPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
+import MerchantLogin from "./components/auth/MerchantLogin";
 import MobileStudentApp from "./components/mobile/MobileStudentApp";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -42,8 +43,9 @@ const App = () => {
           <AuthProvider>
             <BrowserRouter>
               <Routes>
-                {/* Auth route */}
+                {/* Auth routes */}
                 <Route path="/auth" element={<AuthPage />} />
+                <Route path="/merchant-login" element={<MerchantLogin />} />
                 
                 {/* Public booking route - no authentication required */}
                 <Route path="/book/:id" element={<BookingPage />} />
