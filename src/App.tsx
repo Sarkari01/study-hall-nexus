@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +17,7 @@ import InchargeDashboard from "./pages/InchargeDashboard";
 import BookingPage from "./pages/BookingPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
-import MobileStudentPortal from "./components/mobile/MobileStudentPortal";
+import MobileStudentApp from "./components/mobile/MobileStudentApp";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const queryClient = new QueryClient({
@@ -47,8 +48,17 @@ const App = () => {
                 {/* Public booking route - no authentication required */}
                 <Route path="/book/:id" element={<BookingPage />} />
                 
-                {/* Redirect root to admin */}
-                <Route path="/" element={<Navigate to="/admin" replace />} />
+                {/* Mobile Student App - Main route for mobile users */}
+                <Route 
+                  path="/" 
+                  element={
+                    isMobile ? (
+                      <MobileStudentApp />
+                    ) : (
+                      <Navigate to="/admin" replace />
+                    )
+                  } 
+                />
                 
                 {/* Protected Admin route */}
                 <Route 
@@ -71,7 +81,7 @@ const App = () => {
                     <AuthenticationGuard>
                       <RoleGuard requiredRole="student">
                         <ErrorBoundary>
-                          {isMobile ? <MobileStudentPortal /> : <StudentPortal />}
+                          {isMobile ? <MobileStudentApp /> : <StudentPortal />}
                         </ErrorBoundary>
                       </RoleGuard>
                     </AuthenticationGuard>
