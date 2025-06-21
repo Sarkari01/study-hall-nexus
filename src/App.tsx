@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,8 @@ import InchargeDashboard from "./pages/InchargeDashboard";
 import BookingPage from "./pages/BookingPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
+import MobileStudentPortal from "./components/mobile/MobileStudentPortal";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,116 +29,120 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ErrorBoundary>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
-          <BrowserRouter>
-            <Routes>
-              {/* Auth route */}
-              <Route path="/auth" element={<AuthPage />} />
-              
-              {/* Public booking route - no authentication required */}
-              <Route path="/book/:id" element={<BookingPage />} />
-              
-              {/* Redirect root to admin */}
-              <Route path="/" element={<Navigate to="/admin" replace />} />
-              
-              {/* Protected Admin route */}
-              <Route 
-                path="/admin" 
-                element={
-                  <AuthenticationGuard>
-                    <RoleGuard requiredRole="admin">
-                      <ErrorBoundary>
-                        <AdminDashboard />
-                      </ErrorBoundary>
-                    </RoleGuard>
-                  </AuthenticationGuard>
-                } 
-              />
-              
-              {/* Protected Student route */}
-              <Route 
-                path="/student" 
-                element={
-                  <AuthenticationGuard>
-                    <RoleGuard requiredRole="student">
-                      <ErrorBoundary>
-                        <StudentPortal />
-                      </ErrorBoundary>
-                    </RoleGuard>
-                  </AuthenticationGuard>
-                } 
-              />
-              
-              {/* Protected Merchant route */}
-              <Route 
-                path="/merchant" 
-                element={
-                  <AuthenticationGuard>
-                    <RoleGuard requiredRole="merchant">
-                      <ErrorBoundary>
-                        <MerchantDashboard />
-                      </ErrorBoundary>
-                    </RoleGuard>
-                  </AuthenticationGuard>
-                } 
-              />
-              
-              {/* Protected Editor route */}
-              <Route 
-                path="/editor" 
-                element={
-                  <AuthenticationGuard>
-                    <RoleGuard requiredRole="editor">
-                      <ErrorBoundary>
-                        <EditorDashboard />
-                      </ErrorBoundary>
-                    </RoleGuard>
-                  </AuthenticationGuard>
-                } 
-              />
-              
-              {/* Protected Telecaller route */}
-              <Route 
-                path="/telecaller" 
-                element={
-                  <AuthenticationGuard>
-                    <RoleGuard requiredRole="telecaller">
-                      <ErrorBoundary>
-                        <TelecallerDashboard />
-                      </ErrorBoundary>
-                    </RoleGuard>
-                  </AuthenticationGuard>
-                } 
-              />
-              
-              {/* Protected Incharge route */}
-              <Route 
-                path="/incharge" 
-                element={
-                  <AuthenticationGuard>
-                    <RoleGuard requiredRole="incharge">
-                      <ErrorBoundary>
-                        <InchargeDashboard />
-                      </ErrorBoundary>
-                    </RoleGuard>
-                  </AuthenticationGuard>
-                } 
-              />
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </ErrorBoundary>
-  </QueryClientProvider>
-);
+const App = () => {
+  const isMobile = useIsMobile();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AuthProvider>
+            <BrowserRouter>
+              <Routes>
+                {/* Auth route */}
+                <Route path="/auth" element={<AuthPage />} />
+                
+                {/* Public booking route - no authentication required */}
+                <Route path="/book/:id" element={<BookingPage />} />
+                
+                {/* Redirect root to admin */}
+                <Route path="/" element={<Navigate to="/admin" replace />} />
+                
+                {/* Protected Admin route */}
+                <Route 
+                  path="/admin" 
+                  element={
+                    <AuthenticationGuard>
+                      <RoleGuard requiredRole="admin">
+                        <ErrorBoundary>
+                          <AdminDashboard />
+                        </ErrorBoundary>
+                      </RoleGuard>
+                    </AuthenticationGuard>
+                  } 
+                />
+                
+                {/* Protected Student route - with mobile optimization */}
+                <Route 
+                  path="/student" 
+                  element={
+                    <AuthenticationGuard>
+                      <RoleGuard requiredRole="student">
+                        <ErrorBoundary>
+                          {isMobile ? <MobileStudentPortal /> : <StudentPortal />}
+                        </ErrorBoundary>
+                      </RoleGuard>
+                    </AuthenticationGuard>
+                  } 
+                />
+                
+                {/* Protected Merchant route */}
+                <Route 
+                  path="/merchant" 
+                  element={
+                    <AuthenticationGuard>
+                      <RoleGuard requiredRole="merchant">
+                        <ErrorBoundary>
+                          <MerchantDashboard />
+                        </ErrorBoundary>
+                      </RoleGuard>
+                    </AuthenticationGuard>
+                  } 
+                />
+                
+                {/* Protected Editor route */}
+                <Route 
+                  path="/editor" 
+                  element={
+                    <AuthenticationGuard>
+                      <RoleGuard requiredRole="editor">
+                        <ErrorBoundary>
+                          <EditorDashboard />
+                        </ErrorBoundary>
+                      </RoleGuard>
+                    </AuthenticationGuard>
+                  } 
+                />
+                
+                {/* Protected Telecaller route */}
+                <Route 
+                  path="/telecaller" 
+                  element={
+                    <AuthenticationGuard>
+                      <RoleGuard requiredRole="telecaller">
+                        <ErrorBoundary>
+                          <TelecallerDashboard />
+                        </ErrorBoundary>
+                      </RoleGuard>
+                    </AuthenticationGuard>
+                  } 
+                />
+                
+                {/* Protected Incharge route */}
+                <Route 
+                  path="/incharge" 
+                  element={
+                    <AuthenticationGuard>
+                      <RoleGuard requiredRole="incharge">
+                        <ErrorBoundary>
+                          <InchargeDashboard />
+                        </ErrorBoundary>
+                      </RoleGuard>
+                    </AuthenticationGuard>
+                  } 
+                />
+                
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </AuthProvider>
+        </TooltipProvider>
+      </ErrorBoundary>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
