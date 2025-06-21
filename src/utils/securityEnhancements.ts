@@ -208,6 +208,7 @@ export class SessionManager {
 // Audit Logger
 export class AuditLogger {
   private static async logSecurityEvent(
+    userId: string,
     action: string,
     resourceType: string,
     resourceId?: string,
@@ -218,6 +219,7 @@ export class AuditLogger {
       const { error } = await supabase
         .from('audit_logs')
         .insert({
+          user_id: userId,
           action,
           resource_type: resourceType,
           resource_id: resourceId,
@@ -250,6 +252,7 @@ export class AuditLogger {
 
   static async logLogin(userId: string, success: boolean, method: string = 'password'): Promise<void> {
     await this.logSecurityEvent(
+      userId,
       success ? 'login_success' : 'login_failure',
       'authentication',
       userId,
@@ -260,6 +263,7 @@ export class AuditLogger {
 
   static async logLogout(userId: string): Promise<void> {
     await this.logSecurityEvent(
+      userId,
       'logout',
       'authentication',
       userId,
@@ -269,16 +273,18 @@ export class AuditLogger {
 
   static async logRoleChange(userId: string, oldRole: string, newRole: string, changedBy: string): Promise<void> {
     await this.logSecurityEvent(
+      changedBy,
       'role_change',
       'user_management',
       userId,
       'high',
-      { oldRole, newRole, changedBy }
+      { oldRole, newRole, targetUserId: userId }
     );
   }
 
   static async logSuspiciousActivity(userId: string, activity: string, details?: any): Promise<void> {
     await this.logSecurityEvent(
+      userId,
       'suspicious_activity',
       'security',
       userId,
@@ -289,6 +295,7 @@ export class AuditLogger {
 
   static async logDataAccess(userId: string, resource: string, action: string): Promise<void> {
     await this.logSecurityEvent(
+      userId,
       `data_${action}`,
       resource,
       userId,

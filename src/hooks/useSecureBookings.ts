@@ -1,4 +1,3 @@
-
 import { useSecureData } from './useSecureData';
 import { isValidEmail, isValidUUID } from '@/utils/typeGuards';
 
@@ -42,8 +41,8 @@ const validateBookingData = (data: any): boolean => {
 export const useSecureBookings = () => {
   return useSecureData<Booking>({
     table: 'bookings',
-    auditResource: 'booking',
     requireAuth: true,
-    validateData: validateBookingData
+    validateData: validateBookingData,
+    logAccess: true
   });
 };

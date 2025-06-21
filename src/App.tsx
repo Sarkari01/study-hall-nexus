@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SecureAuthProvider } from "@/components/security/SecureAuthProvider";
 import AuthenticationGuard from "@/components/auth/AuthenticationGuard";
 import RoleGuard from "@/components/auth/RoleGuard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -17,6 +19,7 @@ import BookingPage from "./pages/BookingPage";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./pages/AuthPage";
 import MerchantLogin from "./components/auth/MerchantLogin";
+import SecureMerchantLogin from "./components/auth/SecureMerchantLogin";
 import MobileStudentApp from "./components/mobile/MobileStudentApp";
 import { useIsMobile } from "@/hooks/use-mobile";
 

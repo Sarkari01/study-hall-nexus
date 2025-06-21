@@ -1,4 +1,3 @@
-
 import { useSecureData } from './useSecureData';
 import { useMemo } from 'react';
 
@@ -82,9 +81,9 @@ const validateMerchantData = (data: any): boolean => {
 export const useMerchants = () => {
   const secureDataHook = useSecureData<Merchant>({
     table: 'merchant_profiles',
-    auditResource: 'merchant',
     requireAuth: true,
-    validateData: validateMerchantData
+    validateData: validateMerchantData,
+    logAccess: true
   });
 
   console.log('useMerchants: Raw data from useSecureData:', secureDataHook.data?.length || 0);
@@ -117,19 +116,11 @@ export const useMerchants = () => {
     merchants: merchants,
     loading: secureDataHook.loading,
     error: secureDataHook.error,
-    createMerchant: secureDataHook.create,
-    fetchMerchants: secureDataHook.read,
-    updateMerchant: secureDataHook.update,
-    deleteMerchant: secureDataHook.delete,
-    refreshMerchants: secureDataHook.refresh
+    refreshMerchants: secureDataHook.refetch
   }), [
     merchants,
     secureDataHook.loading,
     secureDataHook.error,
-    secureDataHook.create,
-    secureDataHook.read,
-    secureDataHook.update,
-    secureDataHook.delete,
-    secureDataHook.refresh
+    secureDataHook.refetch
   ]);
 };

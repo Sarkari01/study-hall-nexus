@@ -10,6 +10,7 @@ interface SecureDataOptions {
   filters?: Record<string, any>;
   requireAuth?: boolean;
   logAccess?: boolean;
+  validateData?: (data: any) => boolean;
 }
 
 interface SecureDataResult<T> {
@@ -44,7 +45,7 @@ export const useSecureData = <T = any>(
         throw new Error('Invalid table name');
       }
 
-      let query = supabase.from(options.table);
+      let query = supabase.from(options.table as any);
 
       if (options.select) {
         query = query.select(options.select);
@@ -70,7 +71,13 @@ export const useSecureData = <T = any>(
         throw queryError;
       }
 
-      setData(result);
+      // Validate data if validator provided
+      if (options.validateData && result) {
+        const validData = result.filter(options.validateData);
+        setData(validData);
+      } else {
+        setData(result);
+      }
 
       // Log data access if required
       if (options.logAccess && user) {
