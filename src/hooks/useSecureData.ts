@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -85,37 +84,43 @@ export const useSecureData = <T>({
         return;
       }
 
+      // Cancel any previous request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
       // Create new abort controller for this specific request
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      // Create new request promise with better error handling
-      const requestPromise = supabase  
-        .from(table)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .abortSignal(controller.signal)
-        .then(async (result) => {
-          console.log(`useSecureData(${table}): Supabase response:`, {
-            data: result.data?.length || 0,
-            error: result.error?.message,
-            status: result.status,
-            statusText: result.statusText
-          });
-
-          if (result.error) {
-            // Enhanced error handling for RLS issues
-            if (result.error.message?.includes('permission') || 
-                result.error.message?.includes('RLS') || 
-                result.error.message?.includes('policy')) {
-              console.error(`useSecureData(${table}): RLS Policy Error:`, result.error);
-              throw new Error(`Access denied - insufficient permissions for ${table}. User role: ${userRoleName}`);
-            }
-            throw result.error;
-          }
-
-          return result.data;
+      // Create new request promise with proper Promise conversion
+      const requestPromise = Promise.resolve(
+        supabase  
+          .from(table)
+          .select('*')
+          .order('created_at', { ascending: false })
+          .abortSignal(controller.signal)
+      ).then(async (result) => {
+        console.log(`useSecureData(${table}): Supabase response:`, {
+          data: result.data?.length || 0,
+          error: result.error?.message,
+          status: result.status,
+          statusText: result.statusText
         });
+
+        if (result.error) {
+          // Enhanced error handling for RLS issues
+          if (result.error.message?.includes('permission') || 
+              result.error.message?.includes('RLS') || 
+              result.error.message?.includes('policy')) {
+            console.error(`useSecureData(${table}): RLS Policy Error:`, result.error);
+            throw new Error(`Access denied - insufficient permissions for ${table}. User role: ${userRoleName}`);
+          }
+          throw result.error;
+        }
+
+        return result.data;
+      });
 
       // Cache the request
       requestCache.set(cacheKey, requestPromise);
