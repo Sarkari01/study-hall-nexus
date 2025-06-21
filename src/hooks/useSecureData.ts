@@ -45,8 +45,10 @@ export const useSecureData = <T = any>(
         throw new Error('Invalid table name');
       }
 
+      // Start building the query
       let query = supabase.from(options.table as any);
 
+      // Add select clause
       if (options.select) {
         query = query.select(options.select);
       } else {
@@ -65,6 +67,7 @@ export const useSecureData = <T = any>(
         });
       }
 
+      // Execute the query
       const { data: result, error: queryError } = await query;
 
       if (queryError) {
