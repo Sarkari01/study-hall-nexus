@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Vibration } from '@capacitor/haptics';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 interface MobileSeatSelectionProps {
   studyHall: any;
@@ -55,7 +54,7 @@ const MobileSeatSelection: React.FC<MobileSeatSelectionProps> = ({
     if (seat.status === 'available') {
       // Add haptic feedback for mobile
       try {
-        await Vibration.vibrate({ duration: 50 });
+        await Haptics.impact({ style: ImpactStyle.Light });
       } catch (error) {
         // Haptics not available, continue without
       }
