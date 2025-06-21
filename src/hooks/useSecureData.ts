@@ -93,14 +93,34 @@ export const useSecureData = <T>({
         return;
       }
 
-      // Create new request promise - Convert PromiseLike to Promise
+      // Create new request promise with better error handling
       const requestPromise = Promise.resolve(
-        supabase
+        supabase  
           .from(table)
           .select('*')
           .order('created_at', { ascending: false })
           .abortSignal(signal)
-      ).then(result => result.data);
+      ).then(async (result) => {
+        console.log(`useSecureData(${table}): Supabase response:`, {
+          data: result.data?.length || 0,
+          error: result.error?.message,
+          status: result.status,
+          statusText: result.statusText
+        });
+
+        if (result.error) {
+          // Enhanced error handling for RLS issues
+          if (result.error.message?.includes('permission') || 
+              result.error.message?.includes('RLS') || 
+              result.error.message?.includes('policy')) {
+            console.error(`useSecureData(${table}): RLS Policy Error:`, result.error);
+            throw new Error(`Access denied - insufficient permissions for ${table}. User role: ${userRoleName}`);
+          }
+          throw result.error;
+        }
+
+        return result.data;
+      });
 
       // Cache the request
       requestCache.set(cacheKey, requestPromise);
@@ -122,11 +142,11 @@ export const useSecureData = <T>({
       }
 
       // Validate data if validator provided
-      const validData = (fetchedData || []).filter(item => {
+      const validData = (fetchedData || []).filter((item, index) => {
         if (validateData) {
           const isValid = validateData(item);
           if (!isValid) {
-            console.warn(`useSecureData(${table}): Invalid data item filtered out:`, item);
+            console.warn(`useSecureData(${table}): Invalid data item filtered out at index ${index}:`, item);
           }
           return isValid;
         }
@@ -151,7 +171,7 @@ export const useSecureData = <T>({
         let errorMessage = `Failed to fetch data from ${table}`;
         
         if (err.message?.includes('permission') || err.message?.includes('RLS') || err.message?.includes('policy')) {
-          errorMessage = 'Access denied - insufficient permissions';
+          errorMessage = `Access denied - insufficient permissions for ${table}. User role: ${userRoleName || 'unknown'}`;
         } else if (err.message?.includes('Failed to fetch')) {
           errorMessage = 'Network error - please check your connection';
         } else if (err.message) {
@@ -168,6 +188,13 @@ export const useSecureData = <T>({
             description: errorMessage,
             variant: "destructive",
           });
+        } else {
+          // For RLS errors, show more specific guidance
+          toast({
+            title: "Access Denied",
+            description: `Unable to access ${table} data. Please check your permissions.`,
+            variant: "destructive",
+          });
         }
       }
     } finally {
@@ -175,7 +202,7 @@ export const useSecureData = <T>({
         setLoading(false);
       }
     }
-  }, [table, user, isAuthReady, requireAuth, validateData, toast, cacheKey]);
+  }, [table, user, isAuthReady, requireAuth, validateData, toast, cacheKey, userRoleName]);
 
   const create = useCallback(async (newData: Partial<T>) => {
     try {

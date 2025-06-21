@@ -32,18 +32,36 @@ const validateMerchantData = (data: any): boolean => {
   try {
     // Basic validation - check if required fields exist
     if (!data || typeof data !== 'object') {
-      console.warn('useMerchants: Invalid merchant data: not an object');
+      console.warn('useMerchants: Invalid merchant data: not an object', data);
       return false;
     }
     
-    if (!data.business_name || !data.full_name || !data.business_phone) {
-      console.warn('useMerchants: Invalid merchant data: missing required fields');
+    // Check required business fields
+    if (!data.business_name || typeof data.business_name !== 'string') {
+      console.warn('useMerchants: Invalid merchant data: missing or invalid business_name', data);
       return false;
     }
     
+    if (!data.full_name || typeof data.full_name !== 'string') {
+      console.warn('useMerchants: Invalid merchant data: missing or invalid full_name', data);
+      return false;
+    }
+    
+    if (!data.business_phone || typeof data.business_phone !== 'string') {
+      console.warn('useMerchants: Invalid merchant data: missing or invalid business_phone', data);
+      return false;
+    }
+
+    // user_id is optional - some merchants may not have associated auth users
+    if (data.user_id && typeof data.user_id !== 'string') {
+      console.warn('useMerchants: Invalid merchant data: invalid user_id format', data);
+      return false;
+    }
+    
+    console.log('useMerchants: Merchant data validation passed for:', data.business_name);
     return true;
   } catch (error) {
-    console.error('useMerchants: Merchant validation error:', error);
+    console.error('useMerchants: Merchant validation error:', error, data);
     return false;
   }
 };
@@ -62,7 +80,13 @@ export const useMerchants = () => {
 
   // Memoize merchants array to prevent unnecessary re-renders
   const merchants = useMemo(() => {
-    return Array.isArray(secureDataHook.data) ? secureDataHook.data : [];
+    if (!Array.isArray(secureDataHook.data)) {
+      console.log('useMerchants: Data is not an array:', typeof secureDataHook.data);
+      return [];
+    }
+    
+    console.log('useMerchants: Processing merchants array of length:', secureDataHook.data.length);
+    return secureDataHook.data;
   }, [secureDataHook.data]);
 
   console.log('useMerchants: Final merchants count:', merchants.length);
