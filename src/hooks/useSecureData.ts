@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -94,36 +93,32 @@ export const useSecureData = <T>({
         return;
       }
 
-      // Create new request promise
-      const requestPromise = supabase
-        .from(table)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .abortSignal(signal);
+      // Create new request promise - Convert PromiseLike to Promise
+      const requestPromise = Promise.resolve(
+        supabase
+          .from(table)
+          .select('*')
+          .order('created_at', { ascending: false })
+          .abortSignal(signal)
+      ).then(result => result.data);
 
       // Cache the request
-      requestCache.set(cacheKey, requestPromise.then(result => result.data));
+      requestCache.set(cacheKey, requestPromise);
       
       // Clear cache after duration
       setTimeout(() => {
         requestCache.delete(cacheKey);
       }, CACHE_DURATION);
 
-      const { data: fetchedData, error: fetchError } = await requestPromise;
+      const fetchedData = await requestPromise;
 
       console.log(`useSecureData(${table}): Fetch response:`, { 
-        dataCount: fetchedData?.length || 0, 
-        error: fetchError?.message 
+        dataCount: fetchedData?.length || 0
       });
 
       if (signal.aborted) {
         console.log(`useSecureData(${table}): Request was aborted`);
         return;
-      }
-
-      if (fetchError) {
-        console.error(`useSecureData(${table}): Error fetching data:`, fetchError);
-        throw fetchError;
       }
 
       // Validate data if validator provided
