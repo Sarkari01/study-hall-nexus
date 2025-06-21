@@ -27,7 +27,7 @@ export const useSecureData = <T>({
   const { user, userRole, isAuthReady } = useAuth();
   const isMountedRef = useRef(true);
 
-  console.log(`useSecureData(${table}): Auth state - user:`, user?.id, 'role:', userRole?.name, 'ready:', isAuthReady);
+  console.log(`useSecureData(${table}): Auth state - user:`, !!user, 'role:', userRole?.name, 'ready:', isAuthReady);
 
   const fetchData = async () => {
     try {
@@ -41,20 +41,13 @@ export const useSecureData = <T>({
         console.log(`useSecureData(${table}): User not authenticated or auth not ready`);
         if (isMountedRef.current) {
           setData([]);
-          setError('Authentication required');
           setLoading(false);
+          setError(null); // Don't set error for auth not ready
         }
         return;
       }
 
-      // For merchant_profiles, only proceed if user is admin or if they're fetching their own profile
-      if (table === 'merchant_profiles' && requireAuth) {
-        if (!userRole || userRole.name !== 'admin') {
-          console.log(`useSecureData(${table}): User is not admin, checking if they can access their own profile`);
-          // Non-admin users can only access their own merchant profile
-          // This will be handled by RLS policies
-        }
-      }
+      console.log(`useSecureData(${table}): User is authenticated, proceeding with fetch`);
       
       // Fetch data - RLS policies will handle access control
       const { data: fetchedData, error: fetchError } = await supabase
@@ -62,7 +55,10 @@ export const useSecureData = <T>({
         .select('*')
         .order('created_at', { ascending: false });
 
-      console.log(`useSecureData(${table}): Fetch response:`, { data: fetchedData, error: fetchError });
+      console.log(`useSecureData(${table}): Fetch response:`, { 
+        dataCount: fetchedData?.length || 0, 
+        error: fetchError?.message 
+      });
 
       if (fetchError) {
         console.error(`useSecureData(${table}): Error fetching data:`, fetchError);
@@ -81,7 +77,7 @@ export const useSecureData = <T>({
         return true;
       });
 
-      console.log(`useSecureData(${table}): Final processed data:`, validData);
+      console.log(`useSecureData(${table}): Final processed data count:`, validData.length);
 
       // Only update state if component is still mounted
       if (isMountedRef.current) {
@@ -91,17 +87,25 @@ export const useSecureData = <T>({
     } catch (err: any) {
       console.error(`useSecureData(${table}): Error in fetchData:`, err);
       if (isMountedRef.current) {
-        const errorMessage = err.message?.includes('permission') || err.message?.includes('RLS') || err.message?.includes('policy')
-          ? 'Access denied - insufficient permissions'
-          : `Failed to fetch data from ${table}: ${err.message || 'Unknown error'}`;
+        let errorMessage = `Failed to fetch data from ${table}`;
+        
+        if (err.message?.includes('permission') || err.message?.includes('RLS') || err.message?.includes('policy')) {
+          errorMessage = 'Access denied - insufficient permissions';
+        } else if (err.message) {
+          errorMessage = `${errorMessage}: ${err.message}`;
+        }
+        
         setError(errorMessage);
         setData([]);
         
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        // Only show toast for actual errors, not permission issues
+        if (!err.message?.includes('permission') && !err.message?.includes('RLS')) {
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
       }
     } finally {
       if (isMountedRef.current) {
@@ -234,15 +238,19 @@ export const useSecureData = <T>({
   useEffect(() => {
     isMountedRef.current = true;
     
-    // Only fetch when auth is ready
-    if (isAuthReady) {
+    // Only fetch when auth is ready and user is available (if required)
+    if (isAuthReady && (!requireAuth || user)) {
+      console.log(`useSecureData(${table}): Auth ready, fetching data`);
       fetchData();
+    } else {
+      console.log(`useSecureData(${table}): Auth not ready or user not available`, { isAuthReady, requireAuth, user: !!user });
+      setLoading(false);
     }
 
     return () => {
       isMountedRef.current = false;
     };
-  }, [user, userRole, isAuthReady, table]);
+  }, [user, userRole, isAuthReady, table, requireAuth]);
 
   return {
     data,

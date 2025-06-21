@@ -1,6 +1,5 @@
 
 import { useSecureData } from './useSecureData';
-import { validateMerchant } from '@/utils/dataValidation';
 
 interface Merchant {
   id: string;
@@ -32,18 +31,18 @@ const validateMerchantData = (data: any): boolean => {
   try {
     // Basic validation - check if required fields exist
     if (!data || typeof data !== 'object') {
-      console.warn('Invalid merchant data: not an object');
+      console.warn('useMerchants: Invalid merchant data: not an object');
       return false;
     }
     
     if (!data.business_name || !data.full_name || !data.business_phone) {
-      console.warn('Invalid merchant data: missing required fields');
+      console.warn('useMerchants: Invalid merchant data: missing required fields');
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Merchant validation error:', error);
+    console.error('useMerchants: Merchant validation error:', error);
     return false;
   }
 };
@@ -56,14 +55,13 @@ export const useMerchants = () => {
     validateData: validateMerchantData
   });
 
-  console.log('useMerchants: Raw data from useSecureData:', secureDataHook.data);
+  console.log('useMerchants: Raw data from useSecureData:', secureDataHook.data?.length || 0);
   console.log('useMerchants: Loading state:', secureDataHook.loading);
   console.log('useMerchants: Error state:', secureDataHook.error);
 
   // Ensure we always return an array
   const merchants = Array.isArray(secureDataHook.data) ? secureDataHook.data : [];
 
-  console.log('useMerchants: Final merchants data:', merchants);
   console.log('useMerchants: Final merchants count:', merchants.length);
 
   return {
