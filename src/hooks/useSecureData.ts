@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -46,15 +47,6 @@ export const useSecureData = <T>({
 
   const fetchData = useCallback(async () => {
     try {
-      // Cancel any existing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-
-      // Create new abort controller
-      abortControllerRef.current = new AbortController();
-      const signal = abortControllerRef.current.signal;
-
       setLoading(true);
       setError(null);
       
@@ -86,41 +78,44 @@ export const useSecureData = <T>({
       if (requestCache.has(cacheKey)) {
         console.log(`useSecureData(${table}): Using cached request`);
         const cachedData = await requestCache.get(cacheKey);
-        if (isMountedRef.current && !signal.aborted) {
+        if (isMountedRef.current) {
           setData(cachedData || []);
           setLoading(false);
         }
         return;
       }
 
+      // Create new abort controller for this specific request
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       // Create new request promise with better error handling
-      const requestPromise = Promise.resolve(
-        supabase  
-          .from(table)
-          .select('*')
-          .order('created_at', { ascending: false })
-          .abortSignal(signal)
-      ).then(async (result) => {
-        console.log(`useSecureData(${table}): Supabase response:`, {
-          data: result.data?.length || 0,
-          error: result.error?.message,
-          status: result.status,
-          statusText: result.statusText
-        });
+      const requestPromise = supabase  
+        .from(table)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .abortSignal(controller.signal)
+        .then(async (result) => {
+          console.log(`useSecureData(${table}): Supabase response:`, {
+            data: result.data?.length || 0,
+            error: result.error?.message,
+            status: result.status,
+            statusText: result.statusText
+          });
 
-        if (result.error) {
-          // Enhanced error handling for RLS issues
-          if (result.error.message?.includes('permission') || 
-              result.error.message?.includes('RLS') || 
-              result.error.message?.includes('policy')) {
-            console.error(`useSecureData(${table}): RLS Policy Error:`, result.error);
-            throw new Error(`Access denied - insufficient permissions for ${table}. User role: ${userRoleName}`);
+          if (result.error) {
+            // Enhanced error handling for RLS issues
+            if (result.error.message?.includes('permission') || 
+                result.error.message?.includes('RLS') || 
+                result.error.message?.includes('policy')) {
+              console.error(`useSecureData(${table}): RLS Policy Error:`, result.error);
+              throw new Error(`Access denied - insufficient permissions for ${table}. User role: ${userRoleName}`);
+            }
+            throw result.error;
           }
-          throw result.error;
-        }
 
-        return result.data;
-      });
+          return result.data;
+        });
 
       // Cache the request
       requestCache.set(cacheKey, requestPromise);
@@ -136,8 +131,9 @@ export const useSecureData = <T>({
         dataCount: fetchedData?.length || 0
       });
 
-      if (signal.aborted) {
-        console.log(`useSecureData(${table}): Request was aborted`);
+      // Check if component is still mounted and request wasn't cancelled
+      if (!isMountedRef.current || controller.signal.aborted) {
+        console.log(`useSecureData(${table}): Request was cancelled or component unmounted`);
         return;
       }
 
@@ -155,13 +151,13 @@ export const useSecureData = <T>({
 
       console.log(`useSecureData(${table}): Final processed data count:`, validData.length);
 
-      // Only update state if component is still mounted and request wasn't aborted
-      if (isMountedRef.current && !signal.aborted) {
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
         setData(validData as T[]);
         setError(null);
       }
     } catch (err: any) {
-      if (err.name === 'AbortError') {
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
         console.log(`useSecureData(${table}): Request was aborted`);
         return;
       }

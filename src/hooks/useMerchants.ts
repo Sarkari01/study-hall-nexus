@@ -37,17 +37,17 @@ const validateMerchantData = (data: any): boolean => {
     }
     
     // Check required business fields
-    if (!data.business_name || typeof data.business_name !== 'string') {
+    if (!data.business_name || typeof data.business_name !== 'string' || data.business_name.trim() === '') {
       console.warn('useMerchants: Invalid merchant data: missing or invalid business_name', data);
       return false;
     }
     
-    if (!data.full_name || typeof data.full_name !== 'string') {
+    if (!data.full_name || typeof data.full_name !== 'string' || data.full_name.trim() === '') {
       console.warn('useMerchants: Invalid merchant data: missing or invalid full_name', data);
       return false;
     }
     
-    if (!data.business_phone || typeof data.business_phone !== 'string') {
+    if (!data.business_phone || typeof data.business_phone !== 'string' || data.business_phone.trim() === '') {
       console.warn('useMerchants: Invalid merchant data: missing or invalid business_phone', data);
       return false;
     }
@@ -55,6 +55,19 @@ const validateMerchantData = (data: any): boolean => {
     // user_id is optional - some merchants may not have associated auth users
     if (data.user_id && typeof data.user_id !== 'string') {
       console.warn('useMerchants: Invalid merchant data: invalid user_id format', data);
+      return false;
+    }
+
+    // Validate status fields if present
+    const validApprovalStatuses = ['pending', 'approved', 'rejected'];
+    if (data.approval_status && !validApprovalStatuses.includes(data.approval_status)) {
+      console.warn('useMerchants: Invalid merchant data: invalid approval_status', data);
+      return false;
+    }
+
+    const validVerificationStatuses = ['unverified', 'pending', 'verified', 'rejected'];
+    if (data.verification_status && !validVerificationStatuses.includes(data.verification_status)) {
+      console.warn('useMerchants: Invalid merchant data: invalid verification_status', data);
       return false;
     }
     
@@ -86,7 +99,15 @@ export const useMerchants = () => {
     }
     
     console.log('useMerchants: Processing merchants array of length:', secureDataHook.data.length);
-    return secureDataHook.data;
+    
+    // Sort merchants by creation date (newest first) and ensure consistent ordering
+    const sortedMerchants = [...secureDataHook.data].sort((a, b) => {
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateB - dateA;
+    });
+    
+    return sortedMerchants;
   }, [secureDataHook.data]);
 
   console.log('useMerchants: Final merchants count:', merchants.length);
