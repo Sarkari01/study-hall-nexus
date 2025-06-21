@@ -123,13 +123,33 @@ export const useMerchants = () => {
       throw new Error('Authentication required');
     }
 
+    // Ensure required fields are present
+    const insertData: any = {
+      ...merchantData,
+      created_by: user.id,
+      updated_by: user.id
+    };
+
+    // Ensure required fields have default values if not provided
+    if (!insertData.business_name) {
+      throw new Error('Business name is required');
+    }
+    if (!insertData.business_phone) {
+      throw new Error('Business phone is required');
+    }
+    if (!insertData.full_name) {
+      throw new Error('Full name is required');
+    }
+    if (!insertData.contact_number) {
+      throw new Error('Contact number is required');
+    }
+    if (!insertData.business_address) {
+      throw new Error('Business address is required');
+    }
+
     const { data, error } = await supabase
       .from('merchant_profiles')
-      .insert([{
-        ...merchantData,
-        created_by: user.id,
-        updated_by: user.id
-      }])
+      .insert(insertData)
       .select()
       .single();
 
