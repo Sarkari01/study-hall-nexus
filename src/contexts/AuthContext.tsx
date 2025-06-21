@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -65,6 +65,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  
+  // Use ref to prevent unnecessary re-renders during auth state changes
+  const initializingRef = useRef(false);
+
+  // Memoize stable values to prevent unnecessary re-renders in consuming components
+  const memoizedUserRole = useMemo(() => userRole, [userRole?.id, userRole?.name]);
+  const memoizedUser = useMemo(() => user, [user?.id, user?.email]);
+  const memoizedSession = useMemo(() => session, [session?.access_token]);
 
   const createDefaultProfile = async (userId: string, userEmail: string) => {
     try {
@@ -126,9 +134,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('AuthContext: Profile found/created:', finalProfile);
 
-      // Create role data based on the profile role
+      // Create stable role data based on the profile role
       const roleData = {
-        id: finalProfile.custom_role_id || '',
+        id: finalProfile.custom_role_id || `system-${finalProfile.role}`,
         name: finalProfile.role || 'student',
         description: `${finalProfile.role || 'student'} role`,
         is_system_role: true,
@@ -144,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshUser = async () => {
-    if (user?.id) {
+    if (user?.id && !initializingRef.current) {
       setLoading(true);
       try {
         const { profile, role, permissions: userPermissions } = await fetchUserData(user.id, user.email);
@@ -165,6 +173,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const initializeAuth = async () => {
+      if (initializingRef.current) return;
+      initializingRef.current = true;
+
       try {
         console.log('AuthContext: Initializing auth...');
         
@@ -208,6 +219,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAuthReady(true);
           setError('Failed to initialize authentication');
         }
+      } finally {
+        initializingRef.current = false;
       }
     };
 
@@ -278,19 +291,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasPermission = (permission: string): boolean => {
     // Admin has all permissions
-    if (userRole?.name === 'admin') return true;
+    if (memoizedUserRole?.name === 'admin') return true;
     return permissions.some(p => p.name === permission);
   };
 
   const hasRole = (roleName: string): boolean => {
-    return userRole?.name === roleName;
+    return memoizedUserRole?.name === roleName;
   };
 
-  const value = {
-    user,
-    session,
+  const value = useMemo(() => ({
+    user: memoizedUser,
+    session: memoizedSession,
     userProfile,
-    userRole,
+    userRole: memoizedUserRole,
     permissions,
     loading,
     error,
@@ -299,7 +312,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     hasRole,
     refreshUser,
     isAuthReady,
-  };
+  }), [
+    memoizedUser,
+    memoizedSession, 
+    userProfile,
+    memoizedUserRole,
+    permissions,
+    loading,
+    error,
+    isAuthReady
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

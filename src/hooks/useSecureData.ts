@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +15,13 @@ interface UseSecureDataOptions<T> {
   validateData?: (data: any) => boolean;
 }
 
+// Request deduplication cache
+const requestCache = new Map<string, Promise<any>>();
+const CACHE_DURATION = 5000; // 5 seconds
+
+// Request tracking for debugging
+const requestTracker = new Map<string, number>();
+
 export const useSecureData = <T>({
   table,
   auditResource,
@@ -26,15 +34,41 @@ export const useSecureData = <T>({
   const { toast } = useToast();
   const { user, userRole, isAuthReady } = useAuth();
   const isMountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  console.log(`useSecureData(${table}): Auth state - user:`, !!user, 'role:', userRole?.name, 'ready:', isAuthReady);
+  // Memoize stable values to prevent unnecessary re-renders
+  const isAuthenticated = useMemo(() => !!user && isAuthReady, [user, isAuthReady]);
+  const userRoleName = useMemo(() => userRole?.name, [userRole?.name]);
+  
+  console.log(`useSecureData(${table}): Auth state - user:`, !!user, 'role:', userRoleName, 'ready:', isAuthReady);
 
-  const fetchData = async () => {
+  // Create a stable cache key
+  const cacheKey = useMemo(() => `${table}-${user?.id || 'anonymous'}`, [table, user?.id]);
+
+  const fetchData = useCallback(async () => {
     try {
+      // Cancel any existing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create new abort controller
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
+
       setLoading(true);
       setError(null);
       
       console.log(`useSecureData(${table}): Starting fetch`);
+      
+      // Track request frequency
+      const currentTime = Date.now();
+      const lastRequest = requestTracker.get(cacheKey) || 0;
+      if (currentTime - lastRequest < 1000) {
+        console.warn(`useSecureData(${table}): Request too frequent, throttling`);
+        return;
+      }
+      requestTracker.set(cacheKey, currentTime);
       
       // Check authentication if required
       if (requireAuth && (!user || !isAuthReady)) {
@@ -42,23 +76,50 @@ export const useSecureData = <T>({
         if (isMountedRef.current) {
           setData([]);
           setLoading(false);
-          setError(null); // Don't set error for auth not ready
+          setError(null);
         }
         return;
       }
 
       console.log(`useSecureData(${table}): User is authenticated, proceeding with fetch`);
       
-      // Fetch data - RLS policies will handle access control
-      const { data: fetchedData, error: fetchError } = await supabase
+      // Check if request is already in progress
+      if (requestCache.has(cacheKey)) {
+        console.log(`useSecureData(${table}): Using cached request`);
+        const cachedData = await requestCache.get(cacheKey);
+        if (isMountedRef.current && !signal.aborted) {
+          setData(cachedData || []);
+          setLoading(false);
+        }
+        return;
+      }
+
+      // Create new request promise
+      const requestPromise = supabase
         .from(table)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .abortSignal(signal);
+
+      // Cache the request
+      requestCache.set(cacheKey, requestPromise.then(result => result.data));
+      
+      // Clear cache after duration
+      setTimeout(() => {
+        requestCache.delete(cacheKey);
+      }, CACHE_DURATION);
+
+      const { data: fetchedData, error: fetchError } = await requestPromise;
 
       console.log(`useSecureData(${table}): Fetch response:`, { 
         dataCount: fetchedData?.length || 0, 
         error: fetchError?.message 
       });
+
+      if (signal.aborted) {
+        console.log(`useSecureData(${table}): Request was aborted`);
+        return;
+      }
 
       if (fetchError) {
         console.error(`useSecureData(${table}): Error fetching data:`, fetchError);
@@ -79,18 +140,25 @@ export const useSecureData = <T>({
 
       console.log(`useSecureData(${table}): Final processed data count:`, validData.length);
 
-      // Only update state if component is still mounted
-      if (isMountedRef.current) {
+      // Only update state if component is still mounted and request wasn't aborted
+      if (isMountedRef.current && !signal.aborted) {
         setData(validData as T[]);
         setError(null);
       }
     } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.log(`useSecureData(${table}): Request was aborted`);
+        return;
+      }
+
       console.error(`useSecureData(${table}): Error in fetchData:`, err);
       if (isMountedRef.current) {
         let errorMessage = `Failed to fetch data from ${table}`;
         
         if (err.message?.includes('permission') || err.message?.includes('RLS') || err.message?.includes('policy')) {
           errorMessage = 'Access denied - insufficient permissions';
+        } else if (err.message?.includes('Failed to fetch')) {
+          errorMessage = 'Network error - please check your connection';
         } else if (err.message) {
           errorMessage = `${errorMessage}: ${err.message}`;
         }
@@ -112,9 +180,9 @@ export const useSecureData = <T>({
         setLoading(false);
       }
     }
-  };
+  }, [table, user, isAuthReady, requireAuth, validateData, toast, cacheKey]);
 
-  const create = async (newData: Partial<T>) => {
+  const create = useCallback(async (newData: Partial<T>) => {
     try {
       console.log(`useSecureData(${table}): Creating new record:`, newData);
       
@@ -135,6 +203,9 @@ export const useSecureData = <T>({
         });
       }
 
+      // Clear cache to refresh data
+      requestCache.delete(cacheKey);
+
       return createdData;
     } catch (err: any) {
       console.error(`useSecureData(${table}): Error creating record:`, err);
@@ -151,9 +222,9 @@ export const useSecureData = <T>({
       }
       throw err;
     }
-  };
+  }, [table, toast, cacheKey]);
 
-  const update = async (id: string, updates: Partial<T>) => {
+  const update = useCallback(async (id: string, updates: Partial<T>) => {
     try {
       console.log(`useSecureData(${table}): Updating record:`, id, updates);
       
@@ -177,6 +248,9 @@ export const useSecureData = <T>({
         });
       }
 
+      // Clear cache to refresh data
+      requestCache.delete(cacheKey);
+
       return updatedData;
     } catch (err: any) {
       console.error(`useSecureData(${table}): Error updating record:`, err);
@@ -193,9 +267,9 @@ export const useSecureData = <T>({
       }
       throw err;
     }
-  };
+  }, [table, toast, cacheKey]);
 
-  const deleteRecord = async (id: string) => {
+  const deleteRecord = useCallback(async (id: string) => {
     try {
       console.log(`useSecureData(${table}): Deleting record:`, id);
       
@@ -214,6 +288,9 @@ export const useSecureData = <T>({
           description: `Record deleted successfully`,
         });
       }
+
+      // Clear cache to refresh data
+      requestCache.delete(cacheKey);
     } catch (err: any) {
       console.error(`useSecureData(${table}): Error deleting record:`, err);
       const errorMessage = err.message?.includes('permission') 
@@ -229,28 +306,40 @@ export const useSecureData = <T>({
       }
       throw err;
     }
-  };
+  }, [table, toast, cacheKey]);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
+    // Clear cache and refetch
+    requestCache.delete(cacheKey);
     fetchData();
-  };
+  }, [fetchData, cacheKey]);
 
   useEffect(() => {
     isMountedRef.current = true;
     
     // Only fetch when auth is ready and user is available (if required)
-    if (isAuthReady && (!requireAuth || user)) {
+    if (isAuthReady && (!requireAuth || isAuthenticated)) {
       console.log(`useSecureData(${table}): Auth ready, fetching data`);
       fetchData();
     } else {
-      console.log(`useSecureData(${table}): Auth not ready or user not available`, { isAuthReady, requireAuth, user: !!user });
+      console.log(`useSecureData(${table}): Auth not ready or user not available`, { 
+        isAuthReady, 
+        requireAuth, 
+        isAuthenticated 
+      });
       setLoading(false);
     }
 
     return () => {
       isMountedRef.current = false;
+      // Cancel any ongoing requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      // Clear cache entry for this component
+      requestCache.delete(cacheKey);
     };
-  }, [user, userRole, isAuthReady, table, requireAuth]);
+  }, [isAuthenticated, isAuthReady, requireAuth, fetchData, cacheKey]);
 
   return {
     data,

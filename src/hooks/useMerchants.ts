@@ -1,5 +1,6 @@
 
 import { useSecureData } from './useSecureData';
+import { useMemo } from 'react';
 
 interface Merchant {
   id: string;
@@ -59,12 +60,15 @@ export const useMerchants = () => {
   console.log('useMerchants: Loading state:', secureDataHook.loading);
   console.log('useMerchants: Error state:', secureDataHook.error);
 
-  // Ensure we always return an array
-  const merchants = Array.isArray(secureDataHook.data) ? secureDataHook.data : [];
+  // Memoize merchants array to prevent unnecessary re-renders
+  const merchants = useMemo(() => {
+    return Array.isArray(secureDataHook.data) ? secureDataHook.data : [];
+  }, [secureDataHook.data]);
 
   console.log('useMerchants: Final merchants count:', merchants.length);
 
-  return {
+  // Memoize the return object to prevent unnecessary re-renders
+  return useMemo(() => ({
     merchants: merchants,
     loading: secureDataHook.loading,
     error: secureDataHook.error,
@@ -73,5 +77,14 @@ export const useMerchants = () => {
     updateMerchant: secureDataHook.update,
     deleteMerchant: secureDataHook.delete,
     refreshMerchants: secureDataHook.refresh
-  };
+  }), [
+    merchants,
+    secureDataHook.loading,
+    secureDataHook.error,
+    secureDataHook.create,
+    secureDataHook.read,
+    secureDataHook.update,
+    secureDataHook.delete,
+    secureDataHook.refresh
+  ]);
 };
