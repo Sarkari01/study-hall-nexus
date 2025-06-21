@@ -69,10 +69,10 @@ export const useSecureData = <T = any>(
 
       // Validate data if validator provided
       if (options.validateData && result) {
-        const validData = result.filter(options.validateData);
+        const validData = result.filter(options.validateData) as T[];
         setData(validData);
       } else {
-        setData(result);
+        setData(result as T[]);
       }
 
       // Log data access if required
